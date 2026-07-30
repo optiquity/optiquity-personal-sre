@@ -1,0 +1,16 @@
+# Codex MCP servers (guide/10-mcp.md) — the [mcp_servers] section of ~/.codex/config.toml.
+# PLACEHOLDERS ONLY: tokens via env (${GITHUB_TOKEN}), paths $HOME-relative. Claude-first
+# framework — this is the Codex equivalent of skeleton/mcp/claude.mcp.json; enable only what
+# a project needs, and treat each server as a capability grant (guide/09-permissions.md).
+
+[mcp_servers.github]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+# env.GITHUB_TOKEN = "${GITHUB_TOKEN}"   # read from environment; never a literal
+
+[mcp_servers.filesystem]
+command = "npx"
+# Scope to specific dirs — never $HOME root, never a secret path.
+args = ["-y", "@modelcontextprotocol/server-filesystem", "${HOME}/<a-scoped-work-dir>"]
+
+# Optional servers (docs-fetcher, browser automation) — add per project.

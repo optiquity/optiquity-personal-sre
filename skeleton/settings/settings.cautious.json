@@ -1,0 +1,22 @@
+{
+  "//": "CAUTIOUS preset (guide/09-permissions.md). Auto-runs READS ONLY; everything else prompts. Best for a new setup, an unattended server, or while building trust. Copy the block you want into your CLI's settings (e.g. ~/.claude/settings.json).",
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Read"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./**/*.key)",
+      "Read(./**/id_ed25519*)",
+      "Read(./**/*.kdbx)"
+    ]
+  },
+  "//everythingElse": "Not listed => prompts. All writes, all non-read shell, all network, all VC, all installs, all material actions require an explicit prompt."
+}

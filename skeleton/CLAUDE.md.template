@@ -1,0 +1,107 @@
+# CLAUDE.md — <your-repo-name>
+
+Behavioral instructions for the AI operator (Claude Code) when running in this repository.
+Tune the placeholders and rules to your setup. See the framework guide `guide/03-governance-rules.md`
+for the reasoning behind each rule.
+
+> This file is the operator's **judgment layer**. Pair it with the CLI permission settings
+> (`guide/09-permissions.md`) for defense in depth.
+
+## Repo purpose
+
+<One paragraph: what this repo is. e.g. "chezmoi-managed dotfiles + personal-SRE config across
+N nodes." Describe by ROLE, never by machine name.>
+
+Nodes this repo governs (by role — map your real machines here, once):
+- **`workstation`** — <your primary interactive machine's role notes>
+- **`server`** — <your always-on host's role notes>
+- *(add roles as needed: `nas`, `windows-node`, …)*
+
+**Source of truth:** `<git-host>/<your-repo-name>` (private). Machines are *derived* from it
+via the config manager; never edit a machine directly.
+
+## Rules (locked behavioral guardrails)
+
+Re-read these before every commit (Rule 12).
+
+1. **No destructive or material action without explicit approval.** Requires approval:
+   applying config to any node (`chezmoi apply`), deleting/overwriting files not in a
+   repo/backup, creating remote artifacts (repos, releases, deploys), bootstrapping a
+   background service (scheduled job/daemon), any state-mutating command on a remote node.
+
+2. **No version-control state changes without explicit approval — every time, any tool path.**
+   Includes `git add` (staging counts), `commit`, `push` (any remote), `rm`/`mv`/`reset`/
+   `restore`/`checkout` of tracked paths, `clean`, branch/tag delete or rewrite, and any host
+   mutation (PR/issue/repo/release create·edit·merge·close). Read-only queries are always fine.
+
+3. **Secrets never enter version control.** `.env`, tokens, keys, credentials, auth files —
+   permanently excluded by the ignore files. When in doubt, don't stage it.
+
+4. **Back up before you apply.** Every `chezmoi apply` on a node is preceded by a timestamped
+   backup of what it will touch.
+
+5. **Default to symmetry across same-role nodes.** Two nodes of the same role are configured
+   the same unless the divergence is *unavoidable* (a real role difference) or *temporary*
+   (with a scheduled cleanup noted in a plan doc). Anything else is drift — flag it.
+
+6. **Production/source defaults unchanged.** The config manager's source dir stays at its
+   default on every node; the dev clone is purely for editing.
+
+7. **No deferral without justification, and none undocumented.** Only defer when blocked, out
+   of scope, or better grouped later — and write every deferral into the relevant plan doc (or
+   the registry) with a reason and an approximate when. Memory doesn't count.
+
+8. **Status lives in `<registry-file>` and the active per-project docs.** Not in unstructured
+   memory. Memory is for behavioral rules only.
+
+9. **Before requesting commit approval, list the next steps** that will follow the commit +
+   push, so they can be modified before momentum carries forward. If none are queued, say so.
+   The user's silence on the listed steps when granting commit approval is approval to proceed
+   with them; new mutations not on the list still need explicit approval (Rule 2).
+
+10. **Re-read rules 1–N before every `git commit`.** Operationally: re-read this Rules section
+    at the start of any commit workflow, before requesting approval to stage or commit.
+
+11. **Keep the dashboard/status in sync (deterministic refresh).** Any commit that changes a
+    project's status, the project set, or an in-flight checklist/plan/node fact must also
+    refresh the status view (`<dashboard-or-status-doc>`) in that **same commit**. See
+    `guide/04-structure.md`.
+
+12. *(Add your own locked rules here — keep them specific and concrete.)*
+
+## Workflow (the standard change flow)
+
+```
+   <git-host>  ·  <your-repo-name>   (single source of truth)
+   │
+   ├─►  DEV CLONE (where you edit):  <edit + commit + push; config manager never reads here>
+   │
+   └─►  PROD SOURCE (each node):  <config manager's source dir; update = pull + apply>
+```
+
+For a config change: edit in the dev clone → (approval) commit + push → on each affected node,
+pull the prod source → **backup** → **diff** → (approval) **apply** → verify.
+
+## Remote-node access (if multi-node)
+
+- Reach nodes over the private mesh + key-only SSH (`guide/08-networking.md`). Read-only
+  inventory runs freely; **material changes on a remote node still pause for approval** (Rule 1),
+  same as local.
+- **Never handle passwords.** Anything needing an interactive password/unlock is handed back to
+  the user; the operator does not attempt it.
+
+## File scope (what the operator may edit)
+
+- Docs, plans, status (`<docs-dir>/**`, `<registry-file>`, this file).
+- The config-manager source (dotfiles, install scripts) — only as approved per change.
+- The status view source (`<dashboard-or-status-doc>`).
+
+Restricted (do not modify without explicit instruction):
+- `.git/`
+- SSH config/keys, credential/auth directories (sensitive — `guide/06-secrets.md`).
+- Anything holding secrets.
+
+## Memory / status
+
+Project-scoped status and history live in `<registry-file>` + `<docs-dir>/<project>/`. This
+file holds durable behavioral rules only.

@@ -1,0 +1,29 @@
+{
+  "//": "STANDARD preset (guide/09-permissions.md). Auto-runs reads + scratch writes + common safe shell tools; prompts real writes, network, installs, VC, and material actions. The sensible day-to-day posture. Copy into your CLI's settings.",
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(sed:*)",
+      "Bash(awk:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Read",
+      "Edit",
+      "Write(/tmp/*)",
+      "Edit(/tmp/*)",
+      "Read(/tmp/*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./**/*.key)",
+      "Read(./**/id_ed25519*)",
+      "Read(./**/*.kdbx)"
+    ]
+  },
+  "//stillPrompts": "git add/commit/push and all VC mutations, any non-listed shell command, network/installs, service bootstraps, deletes, and every material/outward-facing action. These NEVER auto-run in any preset."
+}

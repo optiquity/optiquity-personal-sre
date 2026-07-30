@@ -1,0 +1,33 @@
+# .chezmoiignore template — what the config manager should NOT render onto nodes
+# (guide/05-chezmoi.md, guide/06-secrets.md). Copy to your source root as
+# .chezmoiignore. Note: patterns are matched against the TARGET path (e.g.
+# .local/bin/foo), and this file is itself templatable.
+
+# ── Never render secrets / local-only state ────────────────────────────────
+**/.env
+**/*.kdbx
+**/*.key
+**/id_ed25519*
+.config/*/auth/**
+
+# ── Docs/design live in the repo but aren't dotfiles to apply ───────────────
+# (Adjust to your layout — keep design/status docs OUT of what gets rendered.)
+docs/**
+README.md
+LICENSE
+
+# ── Allowlist pattern (same idea as .gitignore): deny a dir, allow known files ──
+#   .local/share/some-skills/*
+#   !.local/share/some-skills/
+#   !.local/share/some-skills/example-skill/
+#   .local/share/some-skills/example-skill/*
+#   !.local/share/some-skills/example-skill/SKILL.md
+#
+# This lets you track + render a specific skill file while excluding everything
+# else in the tree (including any local state a tool writes there).
+
+# ── Role-conditional exclusion (template) ───────────────────────────────────
+# Exclude a file on nodes where its role doesn't want it:
+#   {{ if ne .role "server" }}
+#   .config/server-only-service.conf
+#   {{ end }}

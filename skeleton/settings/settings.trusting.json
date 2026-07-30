@@ -1,0 +1,36 @@
+{
+  "//": "TRUSTING preset (guide/09-permissions.md). Standard + more low-risk shell/edit auto-run, for an INTERACTIVE workstation where you are present and want flow. STILL prompts VC pushes, deletes, deploys, and service bootstraps — the invariant across every preset. Do NOT use on an unattended server.",
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(sed:*)",
+      "Bash(awk:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(diff:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Read",
+      "Edit",
+      "Write",
+      "Write(/tmp/*)",
+      "Edit(/tmp/*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./**/*.key)",
+      "Read(./**/id_ed25519*)",
+      "Read(./**/*.kdbx)",
+      "Bash(rm -rf:*)"
+    ]
+  },
+  "//invariant": "Even 'trusting' NEVER auto-approves: git push, git reset/clean, deletes of tracked paths, deploys, remote-artifact creation, or service bootstraps. Presets trade friction on LOW-RISK actions only — never on the dangerous set. A wrong auto-approved push outweighs the saved prompts.",
+  "//dangerousMode": "If your CLI has a skip-all-prompts / dangerous mode flag, understand exactly what it disables before enabling, prefer it only on a workstation where you're present, and document the choice. Do not enable it on a server."
+}

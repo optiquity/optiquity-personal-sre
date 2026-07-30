@@ -1,0 +1,43 @@
+# .gitignore template — the secrets-out-of-git wall (guide/06-secrets.md)
+#
+# Strategy: ALLOWLIST for sensitive areas — deny everything, then un-ignore only
+# the specific known-safe files. Fails CLOSED: a new file near secrets is excluded
+# until you deliberately allow it. Copy to your repo root as .gitignore and adapt.
+
+# ── Hard-exclude secret shapes, everywhere, permanently ─────────────────────
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/id_ed25519*
+**/id_rsa*
+**/*.kdbx                 # vault files
+**/*.p12
+**/*.pfx
+**/credentials.json
+**/service-account*.json
+
+# ── Credential/auth directories for your tools (add yours) ──────────────────
+# .config/<tool>/auth/
+# .<tool>/credentials
+
+# ── Config-manager local data (holds node identity) ─────────────────────────
+chezmoi.toml
+.chezmoi.toml.local
+
+# ── Allowlist pattern for a sensitive directory ─────────────────────────────
+# Deny-all the dir, then un-ignore ONLY known-safe files:
+#
+#   sensitive-dir/*
+#   !sensitive-dir/                 # keep the dir itself trackable
+#   !sensitive-dir/README.md        # a safe file, explicitly allowed
+#   !sensitive-dir/config.example   # placeholders only, no real values
+#
+# Never un-ignore an .env, a *.kdbx, or a *token* file back in.
+
+# ── OS / editor noise ───────────────────────────────────────────────────────
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/

@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# install-tooling.sh — generic idempotent, role-aware tool installer (guide/07).
+#
+# Run by the config manager on apply (e.g. as a chezmoi run_onchange script), or by
+# hand. Properties (guide/07): idempotent, role-aware, absolute-path-safe, loud on
+# failure, declarative-what / imperative-how.
+#
+# Fill in: PKGS (your required tools), the package-manager block for your platform
+# (see the platform spokes), and any role-conditional extras. Bump MARKER to force
+# a re-run under run_onchange.
+#
+# MARKER: tooling rev 1
+set -euo pipefail
+
+# The node's role comes from the config manager's data (guide/05). When run by the
+# manager, it templates this in; standalone, default sensibly.
+ROLE="${NODE_ROLE:-<workstation>}"
+
+# Absolute path to your package manager — the apply/launchd context has a MINIMAL
+# PATH that may not include it (guide/07, property 3). Set per platform (spoke):
+#   macOS:   PM=/opt/homebrew/bin/brew   ; PM_INSTALL=("$PM" install)
+#   debian:  PM=/usr/bin/apt-get         ; PM_INSTALL=(sudo "$PM" install -y)
+#   arch:    PM=/usr/bin/pacman          ; PM_INSTALL=(sudo "$PM" -S --noconfirm)
+PM="<absolute-path-to-package-manager>"
+PM_INSTALL=("$PM" install)
+
+# Tools every node of this repo gets. Add yours (space-separated, quoted names).
+PKGS=( git chezmoi )
+# Role-specific extras — add your tool names inside the arrays:
+case "$ROLE" in
+  server)      PKGS+=( )  ;;   # e.g. PKGS+=( docker n8n )
+  workstation) PKGS+=( )  ;;   # e.g. PKGS+=( gh ripgrep )
+esac
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+for pkg in "${PKGS[@]}"; do
+  if have "$pkg"; then
+    echo "ok: $pkg already present ($("$pkg" --version 2>/dev/null | head -1 || echo installed))"
+  else
+    echo "installing: $pkg"
+    if ! "${PM_INSTALL[@]}" "$pkg"; then
+      echo "FAIL: could not install $pkg" >&2      # loud on failure (property 4)
+      exit 1
+    fi
+  fi
+done
+
+# Role-conditional post-install (e.g. enable a service at boot on server only).
+# Bootstrapping a service is a MATERIAL action — do it via your approved workflow,
+# not silently here (guide/03, Rule 1). This script installs; it does not bootstrap.
+
+echo "install-tooling: done (role=$ROLE)"

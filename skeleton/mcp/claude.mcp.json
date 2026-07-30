@@ -1,0 +1,24 @@
+{
+  "//": "Claude Code MCP servers (guide/10-mcp.md). Merge the servers you want into your CLI settings' mcpServers block. PLACEHOLDERS ONLY — no real tokens (use ${ENV_VAR}) and no real paths (use $HOME-relative). Enable only what a project needs.",
+  "mcpServers": {
+    "//github": "Git-host access — reads repos/issues/PRs, can open/manage PRs. A capability grant: scope + gate its mutating tools (guide/09). Token from the environment, never inline.",
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" }
+    },
+
+    "//filesystem": "Scoped file access. List ONLY the directories the work needs — NEVER $HOME root and NEVER a secret-bearing path.",
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "${HOME}/<a-scoped-work-dir>"
+      ]
+    },
+
+    "//optional-docs": "Optional: a docs/context fetcher so the operator cites current docs, not training memory.",
+    "//optional-browser": "Optional: browser automation for tasks with no API (guide/11-agents-skills.md). Enable per project."
+  }
+}

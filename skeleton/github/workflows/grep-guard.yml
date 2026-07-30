@@ -1,0 +1,16 @@
+# CI grep-guard (guide/14-sharing.md) — server-side backstop so a bypassed local
+# hook is still caught. A failing guard fails the build. Copy to
+# .github/workflows/grep-guard.yml in the public repo.
+name: grep-guard
+on:
+  push:
+  pull_request:
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run grep-guard
+        run: |
+          chmod +x scripts/grep-guard.sh
+          scripts/grep-guard.sh .

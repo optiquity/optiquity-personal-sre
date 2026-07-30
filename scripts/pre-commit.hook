@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# pre-commit hook — run the grep-guard before every commit (guide/14-sharing.md).
+# Install:  cp scripts/pre-commit.hook .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# (or symlink it). A non-zero exit BLOCKS the commit — fail closed.
+set -euo pipefail
+DIR="$(git rev-parse --show-toplevel)"
+exec "$DIR/scripts/grep-guard.sh" "$DIR"

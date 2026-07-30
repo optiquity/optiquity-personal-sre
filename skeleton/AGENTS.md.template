@@ -1,0 +1,63 @@
+# AGENTS.md — <your-repo-name> (Codex)
+
+Rules for the AI operator when it's **Codex** (the `AGENTS.md` analog of `CLAUDE.md.template`).
+The framework is Claude-first; this is the cheap Codex equivalent. The **rules are identical** —
+only the filename and a couple of config locations differ. See `guide/03-governance-rules.md`
+for the reasoning and `CLAUDE.md.template` for the fully-annotated version.
+
+> If you run Claude Code, use `CLAUDE.md.template` instead. Running both CLIs? Keep the rule
+> *content* in sync between the two files (or generate both from one source via the config
+> manager) so the operator behaves the same whichever CLI you use — that's Rule 5 (symmetry)
+> applied to your own tooling.
+
+## Repo purpose
+
+<One paragraph — what this repo is, described by ROLE not machine name. Same as the CLAUDE.md
+version.>
+
+Nodes (by role): `workstation`, `server`, … (map your real machines to roles once, in the
+config manager's data).
+
+**Source of truth:** `<git-host>/<your-repo-name>` (private). Machines are derived; never edit
+a node directly.
+
+## Rules (locked — re-read before every commit)
+
+1. **No destructive/material action without explicit approval** — applying config, deleting
+   non-backed-up files, creating remote artifacts, bootstrapping a service, any state-mutating
+   remote command.
+2. **No version-control state change without explicit approval — every time** — `git add`
+   included, plus commit/push/reset/rebase and any host mutation (PR/issue/repo). Reads are free.
+3. **Secrets never enter version control** — enforced by the ignore files; when in doubt, don't
+   stage it.
+4. **Back up before you apply.**
+5. **Default to symmetry across same-role nodes** — divergence must be unavoidable or
+   temporary-with-cleanup.
+6. **Production/source defaults unchanged.**
+7. **No undocumented deferral** — write deferrals into a plan doc with reason + when.
+8. **Status lives in `<registry-file>` + project docs, not memory.**
+9. **Before requesting commit approval, list the next steps** that follow the commit + push.
+10. **Re-read these rules before every commit.**
+11. **Keep the status view in sync in the same commit** as any status/checklist change.
+12. *(your own locked rules)*
+
+## Workflow
+
+Edit in the dev clone → (approval) commit + push → on each node pull the prod source → backup →
+diff → (approval) apply → verify. Same flow as the Claude version.
+
+## Codex-specific config locations
+
+- **This rules file:** `AGENTS.md` at the repo root (Codex reads it like Claude reads
+  `CLAUDE.md`).
+- **Model / global config:** `~/.codex/config.toml`.
+- **MCP servers:** the `[mcp_servers]` section of `~/.codex/config.toml` — see
+  `skeleton/mcp/codex.mcp.toml` (placeholders, no tokens/paths; `guide/10-mcp.md`).
+- **Permissions:** Codex's own approval settings — map the framework's presets
+  (cautious/standard/trusting, `guide/09-permissions.md`) to Codex's equivalents; the
+  invariant holds: never auto-approve pushes, deletes, deploys, or service bootstraps.
+
+## File scope / restricted
+
+Same as the Claude version: docs/registry/rules editable; SSH config/keys, credential dirs, and
+anything holding secrets are off-limits without explicit instruction.

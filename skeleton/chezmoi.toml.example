@@ -1,0 +1,35 @@
+# chezmoi.toml.example — per-node config-manager data (the role model)
+#
+# Copy to the config manager's config location on each node and fill in. This file
+# is LOCAL and UNTRACKED (it holds this node's identity) — never commit it.
+# See guide/05-chezmoi.md (roles) and guide/13-setup.md (onboarding).
+#
+# The [data] block is what your templated files read (e.g. {{ if eq .role "server" }}).
+# Keep it to non-secret facts; secrets come from the vault at runtime (guide/06-secrets.md).
+
+[data]
+    # THE key field: this node's role. Drives all role-templated config.
+    #   common roles: "workstation" | "server" | "nas" | "windows-node"
+    role = "<workstation|server|...>"
+
+    # Non-secret identity used by templates. Placeholders only — no real secrets.
+    gitHost   = "<github|gitlab|...>"
+    gitUser   = "<your-git-username>"        # username, not a token
+    email     = "<your-git-email>"           # for git config; a public email is fine
+
+    # Multi-node facts (leave blank/omit if single-node). Non-secret.
+    tailnet   = "<your-tailnet-name>"        # e.g. the MagicDNS suffix; NOT an auth key
+    # Feature flags your templates branch on (add your own):
+    hasContainers = false
+    hasAutomation = false
+
+# ── Onboarding prompts (optional) ───────────────────────────────────────────
+# If you want `chezmoi init` to PROMPT for these instead of hand-editing, use a
+# .chezmoi.toml.tmpl in the source repo with promptString/promptBool, e.g.:
+#
+#   [data]
+#       role = {{ promptStringOnce . "role" "Node role (workstation/server/nas)" }}
+#       gitUser = {{ promptStringOnce . "gitUser" "Your git username" }}
+#       hasContainers = {{ promptBoolOnce . "hasContainers" "Install a container runtime?" }}
+#
+# promptStringOnce/promptBoolOnce persist the answer so re-running init won't re-ask.
