@@ -24,7 +24,7 @@ added because a project needs it, scoped to the minimum, and understood before i
 
 | Server | Grants | Why core |
 |---|---|---|
-| **git host** (e.g. GitHub) | Read/manage repos, issues, PRs, releases | The framework is git-host-centric; the operator manages your repos. |
+| **git host** (e.g. GitHub) | Read/manage repos, issues, PRs, releases | The framework is git-host-centric; the operator manages your repos. **For GitHub, use the official `github/github-mcp-server`** (local binary via `brew install github-mcp-server` / Docker, PAT auth; or the remote hosted server at `api.githubcopilot.com/mcp/` via OAuth). The old community `@modelcontextprotocol/server-github` is deprecated/archived — don't use it. Scope with `--toolsets` and `--read-only`. |
 | **filesystem** (scoped) | Read/write specific paths | Structured file access beyond the CLI's built-in tools, scoped to chosen dirs. |
 | **shell** (scoped) | Run commands | Some CLIs route shell through MCP; scope it tightly. |
 

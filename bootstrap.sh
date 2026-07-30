@@ -192,7 +192,7 @@ if [ "$REPO_READY" = 1 ] && [ -d "$TARGET_DIR/.git" ]; then
   # Copy the onboarding seed from this framework, filling placeholders.
   mkdir -p "$TARGET_DIR/docs/onboarding"
   # Rules file (filled from the template):
-  sed -e "s|<your-repo-name>|$REPO_NAME|g" -e "s|<git-host>|$GIT_HOST|g" \
+  sed -e "s|<your-repo-name>|$REPO_NAME|g" -e "s|<git-host>|$GIT_HOST|g" -e "s|<git-user>|$GIT_USER|g" \
       "$FRAMEWORK_DIR/skeleton/CLAUDE.md.template" > "$TARGET_DIR/CLAUDE.md" 2>/dev/null || true
   # Onboarding registry + resume-here doc:
   if [ -f "$FRAMEWORK_DIR/skeleton/onboarding/PROJECTS.md" ]; then

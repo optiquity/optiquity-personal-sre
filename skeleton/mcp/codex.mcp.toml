@@ -1,12 +1,17 @@
 # Codex MCP servers (guide/10-mcp.md) — the [mcp_servers] section of ~/.codex/config.toml.
-# PLACEHOLDERS ONLY: tokens via env (${GITHUB_TOKEN}), paths $HOME-relative. Claude-first
-# framework — this is the Codex equivalent of skeleton/mcp/claude.mcp.json; enable only what
-# a project needs, and treat each server as a capability grant (guide/09-permissions.md).
+# PLACEHOLDERS ONLY: tokens via env, paths $HOME-relative. Claude-first framework — this is the
+# Codex equivalent of skeleton/mcp/claude.mcp.json; enable only what a project needs, and treat
+# each server as a capability grant (guide/09-permissions.md).
 
+# GitHub's OFFICIAL MCP server (github/github-mcp-server). The old community
+# @modelcontextprotocol/server-github is deprecated/archived (Apr 2025) — use this.
+# Local binary: brew install github-mcp-server (or Docker ghcr.io/github/github-mcp-server).
+# Scope with --toolsets; add --read-only to gate mutations. Remote hosted alt:
+# https://api.githubcopilot.com/mcp/ (OAuth). See mcp/README.md.
 [mcp_servers.github]
-command = "npx"
-args = ["-y", "@modelcontextprotocol/server-github"]
-# env.GITHUB_TOKEN = "${GITHUB_TOKEN}"   # read from environment; never a literal
+command = "github-mcp-server"
+args = ["stdio", "--toolsets=repos,issues,pull_requests"]
+# env.GITHUB_PERSONAL_ACCESS_TOKEN = "${GITHUB_PERSONAL_ACCESS_TOKEN}"  # from env, never a literal
 
 [mcp_servers.filesystem]
 command = "npx"

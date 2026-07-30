@@ -120,7 +120,7 @@ Set these up first (or let the AI path / `bootstrap.sh` help). Full detail:
 | Requirement | Why | Notes |
 |---|---|---|
 | **git + a git host account** (e.g. GitHub) | source of truth | you'll create a private repo |
-| **Node.js + npm/npx** | the AI CLI + most **MCP servers** run on Node | install first; many MCP servers launch via `npx` |
+| **Node.js + npm/npx** | the AI CLI + many **MCP servers** run on Node | install first; several MCP servers launch via `npx` (others are native binaries or Docker — e.g. GitHub's official server) |
 | **An AI coding CLI + account** | the operator | Claude Code = reference; needs an Anthropic (or your provider's) account/subscription |
 | **A config manager — chezmoi** | renders the repo onto the machine | `guide/05-chezmoi.md` |
 | **A secret store** (OS keychain / vault) | runtime secrets, zero-in-git | `guide/06-secrets.md` + your platform spoke |
@@ -139,8 +139,11 @@ Set these up first (or let the AI path / `bootstrap.sh` help). Full detail:
 | **SSH with keys** | remote admin, config pull — key-only, no passwords |
 
 ### Optional — add per project
-- **MCP servers** (high value): GitHub, filesystem, and more — each is a **capability grant**,
-  so enable only what you need and scope it (`guide/10-mcp.md`).
+- **MCP servers** (high value): each is a **capability grant** — enable only what you need and
+  scope it (`guide/10-mcp.md`). For **GitHub**, use the official `github/github-mcp-server`
+  (`brew install github-mcp-server` / Docker, PAT auth — or the remote hosted server; **not** the
+  deprecated community `@modelcontextprotocol/server-github`). Plus filesystem, docs, browser,
+  and more.
 - A container runtime · an automation runtime · the multi-node coordination layer.
 
 ---

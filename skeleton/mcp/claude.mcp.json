@@ -1,11 +1,11 @@
 {
   "//": "Claude Code MCP servers (guide/10-mcp.md). Merge the servers you want into your CLI settings' mcpServers block. PLACEHOLDERS ONLY — no real tokens (use ${ENV_VAR}) and no real paths (use $HOME-relative). Enable only what a project needs.",
   "mcpServers": {
-    "//github": "Git-host access — reads repos/issues/PRs, can open/manage PRs. A capability grant: scope + gate its mutating tools (guide/09). Token from the environment, never inline.",
+    "//github": "GitHub's OFFICIAL MCP server (github/github-mcp-server). A capability grant: scope with --toolsets + use --read-only to gate mutations (guide/09-permissions.md). PAT from the environment, never inline. NOTE: the old community @modelcontextprotocol/server-github is deprecated/archived (Apr 2025) — use this. Two modes: (a) LOCAL binary below (brew install github-mcp-server, or Docker ghcr.io/github/github-mcp-server), PAT auth; (b) REMOTE hosted at https://api.githubcopilot.com/mcp/ (OAuth) — see mcp/README.md.",
     "github": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" }
+      "command": "github-mcp-server",
+      "args": ["stdio", "--toolsets=repos,issues,pull_requests"],
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}" }
     },
 
     "//filesystem": "Scoped file access. List ONLY the directories the work needs — NEVER $HOME root and NEVER a secret-bearing path.",
