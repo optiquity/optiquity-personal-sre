@@ -77,13 +77,20 @@ say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
 info() { printf '  %s\n' "$*"; }
 have() { command -v "$1" >/dev/null 2>&1; }
 # prompt with default: prompt_default VAR "question" "default"
+# If the var is already set (a flag was passed), keep it. Under --yes, take the
+# default without prompting. Otherwise prompt, defaulting on empty input.
 prompt_default() {
   local __var="$1" q="$2" def="$3" ans
-  if [ "$ASSUME_YES" = 1 ] || [ -n "${!__var}" ]; then
-    [ -z "${!__var}" ] && printf -v "$__var" '%s' "$def"; return
+  if [ -n "${!__var}" ]; then
+    return 0                                   # already set via flag — keep it
+  fi
+  if [ "$ASSUME_YES" = 1 ]; then
+    printf -v "$__var" '%s' "$def"
+    return 0
   fi
   read -r -p "  $q [$def]: " ans
   printf -v "$__var" '%s' "${ans:-$def}"
+  return 0
 }
 ask() {  # yes/no, default No
   local ans; [ "$ASSUME_YES" = 1 ] && return 0
