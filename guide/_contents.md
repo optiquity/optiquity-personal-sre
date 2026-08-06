@@ -1,0 +1,28 @@
+# Guide contents
+
+The hub — platform-agnostic concepts (the *why*). New? Begin with **00 · Introduction**, then
+read in order. Per-platform *how* lives in [`../platforms/`](../platforms/); starter files in
+[`../skeleton/`](../skeleton/).
+
+| # | Doc | In one line |
+|---|---|---|
+| 00 | [Introduction](00-introduction.md) | **Start here** — the philosophy + the four minimal foundations of a personal-SRE operator. |
+| 01 | [Concepts](01-concepts.md) | The model + vocabulary: nodes-as-roles, source-of-truth, the two-repo model. |
+| 02 | [The operator](02-operator.md) | How you actually work with the AI operator — the propose→approve→act rhythm. |
+| 03 | [Governance rules](03-governance-rules.md) | The rules the operator obeys, and *when it must stop and ask*. |
+| 04 | [Structure](04-structure.md) | Projects, the registry, the status taxonomy, and the optional dashboard. |
+| 05 | [chezmoi](05-chezmoi.md) | Config as source of truth: the dev-clone → prod-source → pull+apply flow, by role. |
+| 06 | [Secrets](06-secrets.md) | Zero-secrets-in-git: allowlist ignore files, vault/keychain, the `.env` recipe. |
+| 07 | [Tools & requirements](07-tools-requirements.md) | Hard vs optional tools + the idempotent, role-aware installer pattern. |
+| 08 | [Networking](08-networking.md) | Private mesh (Tailscale) + key-only SSH, and the access-edge graph. |
+| 09 | [Permissions](09-permissions.md) | The two permission layers: CLI auto-approve presets + session rules. |
+| 10 | [MCP](10-mcp.md) | External capabilities (GitHub, filesystem, …) — each a scoped capability grant. |
+| 11 | [Agents & skills](11-agents-skills.md) | Subagents + the `SKILL.md` pattern; the multi-CLI config-location map. |
+| 12 | [Multi-node](12-multinode.md) | The advanced layer: remote apply, session mobility, the fleet view. |
+| 13 | [Setup](13-setup.md) | The onboarding journey — the three tiers and what they share. |
+| 14 | [Public/shared repos](14-sharing.md) | Publishing a scrubbed framework: derive-don't-copy + the grep-guard. |
+| 15 | [Example projects](15-example-projects.md) | A catalog of worked, end-to-end examples of the operator owning install + maintenance. |
+
+**Platform spokes** (the *how*): [macOS](../platforms/macos.md) (complete) ·
+[Windows](../platforms/windows.md) (partial) · [Linux](../platforms/linux.md) (stub) ·
+[Cloud](../platforms/cloud.md) (stub).

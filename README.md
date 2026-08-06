@@ -15,14 +15,22 @@ machines; the framework gives you the operating system for running them.
 
 ## ▶ Start here
 
-**New?** Read **[`GETTING-STARTED.md`](GETTING-STARTED.md)** — the full intro, requirements, and
-step-by-step. Two things to know before anything else:
+**New?** Two entry points, depending on what you want first:
+
+- **Understand it →** read the guide's **[`guide/00-introduction.md`](guide/00-introduction.md)**
+  first — the *philosophy* plus the **four minimal foundations** (tools, permissions, privacy,
+  rules) that make the operator genuinely useful and unblocked. It's the doorway to the whole
+  guide (index: [`guide/_contents.md`](guide/_contents.md)).
+- **Set it up →** **[`GETTING-STARTED.md`](GETTING-STARTED.md)** — the requirements and
+  step-by-step.
+
+Two things to know before anything else:
 
 - **This repo is a read-only REFERENCE — you don't edit it or commit to it.** Your work happens
   in **your own private repo**, which the setup creates for you (the "two-repo model" below).
-- **The fastest path is to let your AI CLI do the setup for you** — paste
-  the AI-setup prompt from [`GETTING-STARTED.md`](GETTING-STARTED.md) into the CLI and it walks you through everything,
-  installing prerequisites included, exactly as the framework was built.
+- **The fastest path is to let your AI CLI do the setup for you** — paste the AI-guided-setup
+  prompt from [`GETTING-STARTED.md`](GETTING-STARTED.md) into the CLI and it walks you through
+  everything, installing prerequisites included, exactly as the framework was built.
 
 ## The two-repo model
 
@@ -76,7 +84,7 @@ how much is automated vs. explained:
 
 | Tier | You do | Best if |
 |---|---|---|
-| **3 · setup-with-ai** ⭐ | paste the prompt from [`GETTING-STARTED.md`](GETTING-STARTED.md) into your AI CLI | **Recommended** — the operator sets it up for you, prerequisites included. |
+| **3 · AI-guided setup** ⭐ | paste the prompt from [`GETTING-STARTED.md`](GETTING-STARTED.md) into your AI CLI | **Recommended** — the operator sets it up for you, prerequisites included. |
 | **2 · bootstrap.sh** | `./bootstrap.sh` (creates your repo; `--help` for options) | You want a script you can read that also creates your repo. |
 | **1 · chezmoi init** | `chezmoi init …` with data prompts | You already have your repo and want to see every file placed. |
 
@@ -102,9 +110,12 @@ and `guide/13-setup.md`.
 
 ```
 guide/          # THE HUB — platform-agnostic concepts (read these for the "why")
+  _contents        # one-line index of the whole guide
+  00-introduction  # ▶ start here: philosophy + the four minimal foundations
   01-concepts · 02-operator · 03-governance-rules · 04-structure · 05-chezmoi ·
   06-secrets · 07-tools-requirements · 08-networking · 09-permissions · 10-mcp ·
   11-agents-skills · 12-multinode · 13-setup · 14-sharing
+  15-example-projects · examples/   # worked, end-to-end install+maintenance examples
 platforms/      # THE SPOKES — per-OS "how" (macos ✓ · windows ◑ · linux ○ · cloud ○)
 skeleton/       # generic starter files you copy + fill (all placeholders, no secrets)
   CLAUDE.md.template · AGENTS.md.template · chezmoi.toml.example · *ignore templates ·
@@ -117,11 +128,13 @@ bootstrap.sh    # Tier-2 onboarding (creates YOUR repo; --help for options)
 
 ## Reading order
 
-1. `guide/01-concepts.md` — the model + vocabulary.
-2. `guide/02-operator.md` — how you actually work with the AI operator.
-3. `guide/03-governance-rules.md` — the rules that make handing ops to an AI safe.
-4. Skim `guide/04`–`14` for the pieces you'll use.
-5. Your platform spoke, then a setup tier above.
+1. **`guide/00-introduction.md`** — start here: the philosophy + the four minimal foundations.
+2. `guide/01-concepts.md` — the model + vocabulary.
+3. `guide/02-operator.md` — how you actually work with the AI operator.
+4. `guide/03-governance-rules.md` — the rules that make handing ops to an AI safe.
+5. Skim `guide/04`–`14` for the pieces you'll use (`guide/_contents.md` is the one-line index).
+6. `guide/15-example-projects.md` — worked, end-to-end examples of owning install + maintenance.
+7. Your platform spoke, then a setup tier above.
 
 ## A note on safety & sharing
 
