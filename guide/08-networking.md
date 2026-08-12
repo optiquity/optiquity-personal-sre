@@ -176,5 +176,36 @@ third party calls. The framework's stance:
 - **Treat every published surface as a project** with its own doc: what's exposed, to whom, and
   how to unpublish. Exposure you can't describe is exposure you can't secure.
 
+### Trap — a *private* service that answers on the *public* door
+
+Mesh publishing tools (Tailscale's `serve`/`funnel`, and equivalents) often give a node's service a
+**mesh DNS name** that *also* carries a **public DNS record** pointing at the provider's public
+ingress — so the same name resolves two ways, and which one a client gets decides everything:
+
+- A client using the **mesh's DNS** resolves the name to the node's **mesh IP** → the **private**
+  proxy answers. ✅
+- A client that falls back to **public DNS** (a phone off the mesh's DNS path; the mesh not
+  overriding the system resolver) resolves it to the **public ingress** → and if the service is
+  private, the ingress **rejects** the connection. ❌
+
+This is maddening because it *looks* like a transport/TLS fault — the connection reaches the node
+and dies mid-handshake — while the mesh, the DNS name, and the certificate are all fine. It works
+from on-mesh devices and breaks from a roaming client, so it points the finger at the network when
+the real cause is **name resolution**. (Reproduce it and you'll chase MTU, relays, and IPv6 for
+hours; the tell is in the *service's own log*, which will say it rejected an unconfigured public
+ingress connection.)
+
+**Guardrails:**
+- **Make mesh clients always use the mesh's DNS.** Enable the mesh's *"override local DNS"* option so
+  every device resolves the mesh domain through the mesh resolver (→ mesh IPs), not the public
+  record. This is the single fix for "works via the exit node / on the LAN, fails roaming."
+- **Never enable public exposure on a private service, even briefly to test.** Many providers publish
+  the public DNS record the instant you flip it on and **leave it in place after you flip it off** —
+  a stale public door that then intercepts roaming clients.
+- **Scope the public-exposure *capability* narrowly** (to the one node that needs it) so private
+  services can't inherit it through a shared tag/role.
+- **When a published service is refused but reachable, read the service's own logs first** — the
+  transport is almost always fine; the app is rejecting the connection and will tell you why.
+
 Next: [09 · Permissions](09-permissions.md) — the CLI-level permission layer that, together
 with the governance rules, bounds what the operator may do without asking.
