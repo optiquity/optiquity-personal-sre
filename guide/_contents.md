@@ -14,7 +14,7 @@ read in order. Per-platform *how* lives in [`../platforms/`](../platforms/); sta
 | 05 | [chezmoi](05-chezmoi.md) | Config as source of truth: the dev-clone → prod-source → pull+apply flow, by role. |
 | 06 | [Secrets](06-secrets.md) | Zero-secrets-in-git: allowlist ignore files, vault/keychain, the `.env` recipe. |
 | 07 | [Tools & requirements](07-tools-requirements.md) | Hard vs optional tools + the idempotent, role-aware installer pattern. |
-| 08 | [Networking](08-networking.md) | Private mesh (Tailscale) + key-only SSH, and the access-edge graph. |
+| 08 | [Networking](08-networking.md) | Private mesh (Tailscale) + key-only SSH, the access-edge graph, and subnet-router / exit-node gateways (+ their traps). |
 | 09 | [Permissions](09-permissions.md) | The two permission layers: CLI auto-approve presets + session rules. |
 | 10 | [MCP](10-mcp.md) | External capabilities (GitHub, filesystem, …) — each a scoped capability grant. |
 | 11 | [Agents & skills](11-agents-skills.md) | Subagents + the `SKILL.md` pattern; the multi-CLI config-location map. |
@@ -24,5 +24,5 @@ read in order. Per-platform *how* lives in [`../platforms/`](../platforms/); sta
 | 15 | [Example projects](15-example-projects.md) | A catalog of worked, end-to-end examples of the operator owning install + maintenance. |
 
 **Platform spokes** (the *how*): [macOS](../platforms/macos.md) (complete) ·
-[Windows](../platforms/windows.md) (partial) · [Linux](../platforms/linux.md) (stub) ·
+[Windows](../platforms/windows.md) (partial) · [Linux](../platforms/linux.md) (partial) ·
 [Cloud](../platforms/cloud.md) (stub).

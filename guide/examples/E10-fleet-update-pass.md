@@ -53,6 +53,13 @@ Not everything should be updated the same way:
   via a package manager ([A3](A3-npm-global-cli.md)).
 - **Platform/OS + anything that reboots** (a NAS, a Windows box) — schedule for a quiet window; a
   reboot may drop mounts/services other nodes depend on.
+- **Vendor channels that stall** — a tool can be installed *through* a package manager whose
+  channel **lags or freezes**: a third-party app-store repo that quietly stopped publishing, a
+  distro repo far behind upstream. **"Auto-update is on" does not mean "current"** — an automatic
+  channel that's stalled is doing no good. For these, know where the vendor's *own* latest lives,
+  and **track them manually** (a periodic check against upstream) if the built-in channel doesn't
+  advance them. A security-sensitive tool stuck years behind on a "self-maintaining" box is exactly
+  the drift a deliberate pass is meant to catch.
 
 ### 3. Update per machine, verify, record
 

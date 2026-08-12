@@ -78,6 +78,11 @@ exposure creep in.
 - **[E11 · Publishing a service safely](examples/E11-publish-a-service.md)** — take a local
   service and expose it **private-first** (mesh-only), **public only deliberately**, with what's
   exposed and how-to-unpublish written down. The exposure discipline as its own tracked example.
+- **[E12 · A dedicated mesh gateway (+ HA backup)](examples/E12-dedicated-mesh-gateway.md)** — move
+  the mesh's subnet-router + exit-node roles off a busy multi-duty box onto a small **dedicated**
+  node, keep the old host as a **standby** for automatic failover, and close the **subnet-route
+  hairpin** (on-LAN nodes must not accept the tunnel route for their own LAN). Owning the tailnet's
+  edge.
 
 ---
 

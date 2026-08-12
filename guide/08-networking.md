@@ -46,6 +46,69 @@ Alternatives (a self-hosted WireGuard mesh, a VPN, or plain LAN if all nodes are
 same network) can fill this slot — the *model* (private mesh, stable names, private-by-default)
 is what the framework depends on, not the specific product.
 
+## Subnet routes and exit nodes — reaching beyond the mesh (and two traps)
+
+Two mesh features let a node act as a **gateway** for traffic that isn't itself on the mesh.
+Both are useful; both have a trap that bites hard if you don't know it.
+
+- **Subnet routing.** One node (the **subnet router**) advertises a whole LAN — your home
+  network's CIDR — into the tailnet, so **remote** mesh devices can reach LAN-only gear that
+  *can't* run the mesh itself: a printer, a smart-home hub, an appliance. Without it, a traveling
+  `workstation` reaches your mesh nodes but not the printer next to your `server`.
+- **Exit node.** A node advertises a default route (all traffic), so other devices can send their
+  **internet** traffic out through it — appearing at that node's location (useful on untrusted
+  Wi-Fi, or to reach the internet as if from home).
+
+Advertising either is a **material action** ([Rule 1](03-governance-rules.md)), and the routes
+must be **approved** in the mesh's admin console before they carry traffic. Keep the role on a
+**dedicated, capable, always-on** node — see the worked
+[E12 · dedicated mesh gateway](examples/E12-dedicated-mesh-gateway.md) — not bolted onto a busy
+multi-duty box, for the reason the first trap makes clear.
+
+### Trap 1 — the subnet-route hairpin (the expensive one)
+
+If the subnet router advertises **its own LAN**, and another always-on node that is **physically
+on that same LAN** *accepts* that route, that node will send **local** traffic to its on-LAN
+neighbors **through the mesh tunnel** — encrypting it, shipping it to the router node and back —
+instead of straight across the switch. On capable hardware you might not notice; on a modest or
+busy box the crypto pegs a core and throughput **collapses**: a fast local transfer can drop to a
+**crawl**, with the router node's mesh daemon pinned near a full core for traffic that never
+needed to leave the LAN.
+
+**The rule:** a node that is **always on its home LAN** does **not** need — and must **not** use
+— the tailnet route for that LAN. Set **accept-routes off** on such nodes; they reach the LAN
+directly. Accept-routes stays **on** only for devices that are genuinely **remote** and need the
+router to reach LAN-only gear (a **roaming** laptop while traveling). This is the mesh analog of
+the SSH access-edge graph: use the route only where it's actually needed.
+
+*(Symptom to recognize: a "network is slow" that's really a local transfer or mount silently
+routing over the tunnel — check whether the connection's **local** address is the node's **mesh**
+address instead of its LAN address. If so, it's hairpinning.)*
+
+### Trap 2 — exit-node throughput is bounded, and must go *direct*
+
+Routing through an exit node has hard ceilings that are physics, not misconfiguration — worth
+knowing before you conclude "the node is too slow":
+
+- **Your download through the exit node ≈ the exit node's *upload* bandwidth.** The exit node
+  downloads on your behalf, then **uploads** it all back to you — so *its* upstream is your cap.
+  It will never match a direct connection's raw speed.
+- **The connection must be *direct*, not relayed.** A mesh falls back to a bandwidth-limited
+  **relay** when it can't punch a direct peer-to-peer path, and relayed throughput is badly
+  throttled. The path **upgrades** to direct a short while after connecting, so a speed test run
+  *immediately* can catch it still relayed. Check the mesh status for `direct` vs `relay` first.
+- **Carrier-grade NAT (cellular) is usually bypassed via IPv6.** Phones on cell sit behind CGNAT
+  that defeats direct IPv4 traversal — but if the exit node has a **public IPv6** address, the
+  direct path forms over IPv6 automatically. You don't toggle this; the mesh picks it.
+- **Throughput varies by the *target's* distance.** You now route via the exit node's location,
+  so per-connection speed follows the round-trip to each target (bandwidth-delay product) — a
+  well-connected target is fast, a distant one much slower. Don't judge an exit node by one far
+  speed-test server.
+- **The node usually isn't the bottleneck.** Diagnose by **isolating the layer**: measure the
+  node's own internet speed, watch its **per-core** CPU during a transfer (a single pegged core =
+  crypto-bound; low CPU = it's the path/RTT), and check direct-vs-relay. More often the limit is
+  your upstream or the target RTT, not the box.
+
 ## SSH with keys — the access layer
 
 On top of the mesh, **SSH is how the operator administers remote nodes** and how config is
