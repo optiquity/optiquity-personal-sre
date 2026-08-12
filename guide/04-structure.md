@@ -104,6 +104,16 @@ different kinds of thing:
    an adoption matrix and a divergence ledger (Rule 7's unavoidable-vs-temporary splits). Live,
    drifting figures (free space, backup size) appear only as **dated snapshots** under a
    drift note — never as fake real-time health.
+   - Each node page also carries a **static hardware inventory** — CPU (cores, plus any
+     performance/efficiency split), GPU and other accelerators (a Neural Engine, a discrete
+     card), total memory, internal **and** external/expansion storage (capacity + layout), and
+     OS. It's the reference you reach for when sizing work or diagnosing, so keep it complete.
+     **Query it from the host itself, never guess** (`system_profiler`/`diskutil` on macOS,
+     `lscpu`/`lsblk` on Linux, `systeminfo`/`Get-CimInstance` on Windows, `/sys/block` +
+     `/proc/mdstat` for a NAS array). Stamp the whole block with a single "as of" date and
+     refresh it only when the hardware actually changes (a RAM or disk upgrade, an OS bump) —
+     it belongs **with state, distinct from the drifting snapshots**, precisely because it
+     rarely moves.
 
 ### Keeping it honest and current
 
