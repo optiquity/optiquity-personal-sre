@@ -100,7 +100,7 @@ how much is automated vs. explained:
 | **1 · chezmoi init** | `chezmoi init …` with data prompts | You already have your repo and want to see every file placed. |
 
 Start with your platform's **spoke** for install specifics: `platforms/macos.md`,
-`platforms/windows.md`, `platforms/linux.md`, `platforms/cloud.md`.
+`platforms/windows.md`, `platforms/linux.md`, `platforms/raspberry-pi.md`, `platforms/cloud.md`.
 
 ## Requirements
 
@@ -127,7 +127,7 @@ guide/          # THE HUB — platform-agnostic concepts (read these for the "wh
   06-secrets · 07-tools-requirements · 08-networking · 09-permissions · 10-mcp ·
   11-agents-skills · 12-multinode · 13-setup · 14-sharing
   15-example-projects · examples/   # worked, end-to-end install+maintenance examples
-platforms/      # THE SPOKES — per-OS "how" (macos ✓ · windows ◑ · linux ○ · cloud ○)
+platforms/      # THE SPOKES — per-OS "how" (macos ✓ · windows ◑ · linux ◑ · raspberry-pi ◑ · cloud ○)
 skeleton/       # generic starter files you copy + fill (all placeholders, no secrets)
   CLAUDE.md.template · AGENTS.md.template · chezmoi.toml.example · *ignore templates ·
   env.example · settings/ (3 permission presets) · mcp/ · installers/ ·

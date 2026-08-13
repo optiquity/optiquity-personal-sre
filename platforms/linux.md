@@ -124,6 +124,26 @@ printf 'net.ipv4.ip_forward = 1\nnet.ipv6.conf.all.forwarding = 1\n' \
 sudo sysctl -p /etc/sysctl.d/99-<gateway>.conf
 ```
 
+## Monitoring the fleet from a host (native)
+
+A Linux node can watch the rest of the fleet without a container stack. Two complementary tools answer
+two different questions — don't conflate them:
+
+- **Up/down of always-on infrastructure** — a lightweight health checker (e.g. Gatus) with
+  **in-memory storage** (no disk writes), checking internet / DNS / router / servers by
+  TCP/HTTP/DNS. Bind it to loopback and publish via the mesh's private proxy ("serve"). If the tool
+  ships **Docker-only** (no arm64/native binary), build the static binary from source rather than
+  dragging a container runtime onto a lean node.
+- **Presence/inventory of *everything* on the LAN** — an ARP-based scanner (e.g. WatchYourLAN) that
+  discovers every device and tracks **last-seen + new-device alerts**. This is the right tool for
+  **sleep-prone devices** — printers, streamers, TVs, a 3D printer — which power down their network
+  interface in energy-saver and would show a permanent false "down" under an up/down check. Presence
+  ("last seen 2 h ago") is honest where up/down lies. It needs raw sockets → grant **`CAP_NET_RAW`**
+  (don't run it as full root); bind loopback + serve (it has no auth of its own).
+
+Rule of thumb: **up/down-monitor only what's *supposed* to always be up; inventory everything else.**
+Mixing sleepers into up/down alerts just trains you to ignore the dashboard.
+
 ## chezmoi on Linux
 
 Standard ([05](../guide/05-chezmoi.md)); `run_onchange_`/`run_once_` scripts are POSIX sh, so

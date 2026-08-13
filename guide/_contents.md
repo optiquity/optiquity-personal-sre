@@ -25,4 +25,4 @@ read in order. Per-platform *how* lives in [`../platforms/`](../platforms/); sta
 
 **Platform spokes** (the *how*): [macOS](../platforms/macos.md) (complete) ·
 [Windows](../platforms/windows.md) (partial) · [Linux](../platforms/linux.md) (partial) ·
-[Cloud](../platforms/cloud.md) (stub).
+[Raspberry Pi](../platforms/raspberry-pi.md) (partial) · [Cloud](../platforms/cloud.md) (stub).
