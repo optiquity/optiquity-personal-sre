@@ -66,6 +66,17 @@ start**; the model scales to many nodes without changing shape.
   your head.
 - **Zero secrets in git, ever** — enforced structurally (ignore files + a vault), not by memory.
 
+## The playbook — the operator's entrypoint
+
+When you sit down to *do* or *fix* something, you need one front door that routes you to the right
+place. That's **`PLAYBOOK.md`** at your repo root — a thin, **layered** hub (hardware → foundation →
+networking → servers → storage → monitoring → applications) that indexes every project and links to
+its runbook, plus a cross-cutting **troubleshooting index** ("seen this symptom?") and **external
+vendor docs**. It holds no content of its own — it only links out and in — so it never drifts. Where
+the registry says *what state* a thing is in, the playbook says *how to do or fix it*. See
+`guide/04-structure.md` → "The playbook" for the pattern, and `skeleton/onboarding/PLAYBOOK.md` for a
+starter.
+
 ## The dashboard (optional)
 
 For a system of any size, an optional **status dashboard** turns your project registry + node

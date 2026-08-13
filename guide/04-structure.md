@@ -133,6 +133,36 @@ pattern, both page formats, and the render logic, so you start from a working pa
 fill in your data. A dedicated dashboard doc in the skeleton records the refresh procedure so
 it's reproducible.
 
+## The playbook — where the operator starts
+
+The registry, the runbooks, the guide, and the dashboard each answer a different question. When you
+(or the operator) sit down to actually *do* or *fix* something, you need a **single front door** that
+routes you to the right one. That's the **playbook** — a thin **`PLAYBOOK.md`** at the repo root.
+
+It is deliberately a **hub, not a home for content** — a map that links out and in, so it never goes
+stale:
+
+- **Which doc for what** — a short table: procedure → the project's runbook; known problem → the
+  troubleshooting index; concept → the guide; status → the registry; live state → the dashboard.
+- **Layered sections, not one flat list** — index **every** project, grouped by purpose/level rather
+  than dumped in a single list: *hardware → foundation (cross-cutting: config management, the mesh,
+  container runtime, the dashboard) → networking → servers/hosts → storage → monitoring →
+  applications*. Add or drop layers to fit your system; the point is that someone scanning for "the
+  monitoring stuff" or "the networking stuff" lands in one place. A per-host "what runs where" section
+  complements the layers.
+- **A troubleshooting index** — the highest-value part: a growing "seen this symptom?" table where
+  each row points to the doc that fixed it. Seed it from this guide's documented **traps**, then add
+  a row every time you solve something non-obvious. This is what turns scattered fixes into a
+  reference someone can actually search.
+- **External references** — the upstream vendor docs for every tool you run, so the operator links
+  out to the current source instead of trusting stale memory.
+
+Keep it thin on purpose: content lives in the runbooks and the guide; the playbook only *routes*.
+The distinction from the registry matters — the **registry says what state a thing is in; the
+playbook says how to do or fix it.** The framework ships a **starter `PLAYBOOK.md`**
+(`skeleton/onboarding/`); you copy it to your root and grow the three tables as you build, your first
+project supplying the first real rows.
+
 ## Scaling down and up
 
 - **One machine, three projects?** You still benefit: the registry is your to-do-with-context,
