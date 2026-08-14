@@ -199,11 +199,16 @@ if [ "$REPO_READY" = 1 ] && [ -d "$TARGET_DIR/.git" ]; then
     sed -e "s|<repo-name>|$REPO_NAME|g" -e "s|<role>|$ROLE|g" \
         "$FRAMEWORK_DIR/skeleton/onboarding/PROJECTS.md" > "$TARGET_DIR/PROJECTS.md"
   fi
+  # Operator playbook — the layered entrypoint, seeded at the repo ROOT (guide/04-structure.md):
+  if [ -f "$FRAMEWORK_DIR/skeleton/onboarding/PLAYBOOK.md" ]; then
+    sed -e "s|<repo-name>|$REPO_NAME|g" -e "s|<role>|$ROLE|g" \
+        "$FRAMEWORK_DIR/skeleton/onboarding/PLAYBOOK.md" > "$TARGET_DIR/PLAYBOOK.md"
+  fi
   if [ -f "$FRAMEWORK_DIR/skeleton/onboarding/onboarding-PLAN.md" ]; then
     sed -e "s|<repo-name>|$REPO_NAME|g" -e "s|<role>|$ROLE|g" -e "s|<framework-dir>|$FRAMEWORK_DIR|g" \
         "$FRAMEWORK_DIR/skeleton/onboarding/onboarding-PLAN.md" > "$TARGET_DIR/docs/onboarding/PLAN.md"
   fi
-  info "✓ Seeded (uncommitted): CLAUDE.md, PROJECTS.md, docs/onboarding/PLAN.md"
+  info "✓ Seeded (uncommitted): CLAUDE.md, PROJECTS.md, PLAYBOOK.md, docs/onboarding/PLAN.md"
   info "  Review + your first commit happen in the next step, under your approval."
 fi
 

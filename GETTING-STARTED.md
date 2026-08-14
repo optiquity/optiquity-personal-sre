@@ -161,8 +161,8 @@ framework repo, and it commits nothing.
    ./bootstrap.sh --repo-name my-sre --dir ~/code/my-sre --role workstation
    ```
    It will: check prerequisites → (if your `gh` auth allows, after a y/N prompt) **create your
-   private repo** → **seed it (uncommitted)** with a rules file, a project registry, and an
-   onboarding "resume here" doc. If `gh` can't create the repo, it tells you exactly what's
+   private repo** → **seed it (uncommitted)** with a rules file, a project registry, a starter
+   **playbook** (the layered entrypoint), and an onboarding "resume here" doc. If `gh` can't create the repo, it tells you exactly what's
    missing and prints the manual steps — it degrades gracefully.
 3. **Continue in YOUR repo.** When bootstrap finishes, open your AI CLI **in the new repo's
    directory**:
