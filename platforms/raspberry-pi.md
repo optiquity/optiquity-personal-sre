@@ -89,6 +89,11 @@ directly; the Pi just makes "stay lean" non-negotiable.
   temperature and the throttled state periodically (surface it in your monitoring).
 - **On a UPS?** Run the mesh/NUT **client** so the Pi shuts down gracefully on low battery, with the
   UPS's USB-connected host as the master — no extra wiring, and the Pi never becomes the authority.
+- **Feed it into metrics.** The Pi runs the same `node_exporter` + **textfile collector** as any Linux
+  node ([linux.md](linux.md) · [E13](../guide/examples/E13-fleet-metrics-stack.md)): a small timer
+  script writes the **Pi-specific** signals the built-ins miss — `vcgencmd measure_temp` /
+  `get_throttled`, and a `upsc` read of the network UPS — as `.prom` files the exporter serves. Keep
+  the write cadence modest (SD wear) and the exporter version **pinned**.
 
 ## Reuse the Linux spoke
 

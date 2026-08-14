@@ -144,6 +144,27 @@ two different questions — don't conflate them:
 Rule of thumb: **up/down-monitor only what's *supposed* to always be up; inventory everything else.**
 Mixing sleepers into up/down alerts just trains you to ignore the dashboard.
 
+## Metrics exporter — node_exporter (+ textfile collector, UPS/NUT)
+
+For the fleet metrics stack ([E13](../guide/examples/E13-fleet-metrics-stack.md)), Linux (incl. the
+Pi) runs **`prometheus-node-exporter`** (apt) as a systemd service on **`:9100`**. **Pin what you
+rely on**, resource-cap it, and bind it where your collector can reach it — the LAN address if your
+Prometheus is a container that can't reach the mesh (see E13's reachability note).
+
+- **Textfile collector.** Point the exporter at a directory
+  (`--collector.textfile.directory=/var/lib/node_exporter/textfile_collector`) and a tiny
+  timer-driven script can drop `<name>.prom` files there for anything the built-in collectors don't
+  cover (a speedtest, mesh direct-vs-relay, a UPS read). Write **atomically** (`mv` a temp file) and
+  leave it world-readable so the exporter's user can read it.
+- **UPS over the network (NUT).** If a UPS's USB host runs a NUT server, `apt install nut-client` and
+  read it **read-only** with `upsc <ups>@<host>` (the server must allowlist your client); a textfile
+  collector turns that into `ups_*` metrics → a panel. For **graceful shutdown**, set
+  `MODE=netclient` and add an `upsmon` **secondary** (`MONITOR <ups>@<host> 1 <user> <pass> secondary`)
+  with a `SHUTDOWNCMD` — the USB host stays the authority and shuts down last.
+  - **Debian trap:** upsmon may log `fopen /run/nut/…: No such file or directory` if the packaged
+    tmpfiles entry is missing — create `/run/nut` (and an `/etc/tmpfiles.d/` entry). It's cosmetic
+    under `Type=simple`, but tidy it.
+
 ## chezmoi on Linux
 
 Standard ([05](../guide/05-chezmoi.md)); `run_onchange_`/`run_once_` scripts are POSIX sh, so
