@@ -108,6 +108,20 @@ rest). **⛏ TODO:** the non-interactive vault-unlock pattern on Windows (how a 
 master key from Credential Manager, à la `security` on macOS), and which vault CLIs
 (`keepassxc-cli`, `op`) behave well on Windows.
 
+## Metrics exporter — windows_exporter
+
+For the fleet metrics stack ([E13](../guide/examples/E13-fleet-metrics-stack.md)), Windows uses
+**`windows_exporter`**, not `node_exporter`:
+
+- **Install:** grab the latest `windows_exporter-<ver>-amd64.msi` from GitHub releases (no `winget`
+  needed) and `msiexec /i … /quiet`. It installs a **service** on **`:9182`** with default collectors
+  (cpu, memory, net, os, …). **Pin the version.**
+- **⚠️ Firewall — you must add an inbound rule.** The `.msi` adds none, so `:9182` answers on
+  localhost but is **invisible from the LAN** (the collector gets nothing). Add a LAN-scoped allow:
+  `New-NetFirewallRule -DisplayName windows_exporter -Direction Inbound -Protocol TCP -LocalPort 9182 -Action Allow -RemoteAddress <lan-cidr>`.
+- **Different metric namespace** — Windows metrics are `windows_*`, not `node_*`; combine them in
+  PromQL with `or` (see E13). Windows has **no load average**.
+
 ## Roles on Windows — common mapping
 
 - **`windows-node`** — a Windows box joined for specific workloads (containers, Windows-only

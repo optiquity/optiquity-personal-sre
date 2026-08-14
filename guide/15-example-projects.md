@@ -83,6 +83,10 @@ exposure creep in.
   node, keep the old host as a **standby** for automatic failover, and close the **subnet-route
   hairpin** (on-LAN nodes must not accept the tunnel route for their own LAN). Owning the tailnet's
   edge.
+- **[E13 · A fleet metrics stack (exporters → Prometheus + Grafana)](examples/E13-fleet-metrics-stack.md)** —
+  a lightweight **exporter on every node** (multi-OS), one **central node** that stores + graphs, the UI
+  **private on the mesh**, dashboards **provisioned as config**, and power/**UPS** folded in. The
+  emit-here / store-there fleet watch — with the multi-OS metric-name reality and the real traps.
 
 ---
 

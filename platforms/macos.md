@@ -104,6 +104,18 @@ Standard ([05](../guide/05-chezmoi.md)); macOS notes:
 - **Tailscale** provides the private mesh + MagicDNS ([08](../guide/08-networking.md)); its
   "serve"/"funnel" features publish a service privately/publicly when a project needs it.
 
+## Metrics exporter — node_exporter
+
+For the fleet metrics stack ([E13](../guide/examples/E13-fleet-metrics-stack.md)), macOS runs
+**`node_exporter`** natively:
+
+- **Install:** `brew install node_exporter` + `brew services start node_exporter` → a LaunchAgent on
+  **`:9100`**. **Pin the version** for anything you rely on.
+- **Fewer collectors than Linux, and different memory metrics** — macOS has no
+  `node_memory_MemAvailable_bytes`; use `node_memory_active/wired/compressed/total_bytes` (used ≈
+  `(active+wired+compressed)/total`). CPU (`node_cpu_seconds_total`), load (`node_load1`), and uptime
+  match Linux.
+
 ## Roles on macOS — common mapping
 
 - **`workstation`** — a MacBook; Tailscale on; services on-demand; permission preset
