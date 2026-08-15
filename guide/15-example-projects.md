@@ -87,6 +87,10 @@ exposure creep in.
   a lightweight **exporter on every node** (multi-OS), one **central node** that stores + graphs, the UI
   **private on the mesh**, dashboards **provisioned as config**, and power/**UPS** folded in. The
   emit-here / store-there fleet watch — with the multi-OS metric-name reality and the real traps.
+- **[E14 · GitHub-as-a-service metrics](examples/E14-github-metrics.md)** — fold **GitHub repo metrics**
+  into the metrics stack you already run: a **maintained exporter as one internal container** (no mesh
+  sidecar), a gentle rate-limited scrape, a **read-only scoped token**, and the judgment call of **which
+  repos are worth tracking** (public yes; private usually not, and why). Adopt the *piece*, not the demo stack.
 
 ---
 
