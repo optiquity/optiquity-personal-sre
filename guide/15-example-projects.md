@@ -91,6 +91,12 @@ exposure creep in.
   into the metrics stack you already run: a **maintained exporter as one internal container** (no mesh
   sidecar), a gentle rate-limited scrape, a **read-only scoped token**, and the judgment call of **which
   repos are worth tracking** (public yes; private usually not, and why). Adopt the *piece*, not the demo stack.
+- **[E15 · Media automation for a self-hosted library](examples/E15-media-automation.md)** — *enhance*
+  and *observe* a media server with **small add-ons, not a second stack**: a **config-as-code
+  collection manager** (scheduled batch job, no UI, env-injected secrets) and an **analytics exporter**
+  into the Grafana you already run. The judgment calls people miss — **where hardware transcoding
+  actually works** (container vs native), what **"missing" really means** (titles ≠ episodes), and
+  matching collection sources to a library's intent.
 
 ---
 
