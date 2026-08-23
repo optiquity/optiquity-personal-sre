@@ -1,5 +1,14 @@
 # optiquity-personal-sre
 
+## What is an SRE?
+
+SRE stands for Site Reliability Engineering (or Engineer). It is a practice that applies
+software engineering to IT operations and infrastructure. Pioneered by Google, SRE aims to
+create ultra-reliable, scalable software systems by replacing manual administrative work with
+code and automation.
+
+## What is this repo?
+
 **A framework for running your own machines, services, and dotfiles the way a small ops team
 runs infrastructure — with an AI coding CLI as the operator, under explicit rules, against
 version-controlled configuration, with every change tracked.**
