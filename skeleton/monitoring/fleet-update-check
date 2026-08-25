@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""fleet-update-check — surface AVAILABLE software updates across your fleet, by install
+method, and email an actionable digest. NOTIFY-ONLY: it never upgrades anything.
+
+This is the automation half of the "deliberate update pass" (guide example E10): instead of
+letting nodes auto-update (a surprise-breakage risk on always-on hosts), a scheduled job
+*inventories* what's behind and emails you the list — you run the upgrades deliberately, per
+node, from your runbook. Reads are always free (governance Rule 10); this tool only reads.
+
+Nodes come from a config file (default $HOME/.config/fleet-monitoring/fleet-nodes.conf, override
+with --config or $FLEET_NODES) — one line per node:
+
+    # role | ssh-target (or "local") | os | methods (comma: brew,npm,softwareupdate,apt,manual)
+    always-on | local          | macos    | brew,npm,softwareupdate
+    laptop    | <laptop-host>   | macos    | brew,npm,softwareupdate
+    gateway   | <gateway-host>  | linux    | apt
+    windows   | <win-host>      | windows  | manual
+    nas       | <nas-host>      | synology | manual
+
+Local macos/linux nodes run via a login shell (to pick up brew/npm); remote nodes over SSH
+(key auth, BatchMode). "manual" emits an OS-specific reminder (winget/DSM etc. can't be driven
+safely non-interactively). Emails via a mailer command (default: fleet-mail) when there are
+updates OR errors; silent when all-current (--always forces, --dry-run prints instead).
+--refresh also refreshes indexes first (brew update / apt-get update) for exact counts.
+
+Exit: 0 ok · 1 the digest email failed to send · 2 config error
+"""
+import argparse, os, shlex, subprocess, sys, datetime
+
+SSH = ["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes"]
+DEFAULT_CONFIG = os.path.expanduser("~/.config/fleet-monitoring/fleet-nodes.conf")
+MANUAL_HINT = {
+    "windows":  "winget needs an interactive elevated session: winget upgrade --all --include-unknown --accept-source-agreements",
+    "synology": "DSM → Package Center → Installed → Update. Sideloaded packages (e.g. a mesh-VPN .spk) update manually.",
+    "nas":      "check the NAS admin UI for package/OS updates.",
+}
+
+def sh(args, timeout=300):
+    try:
+        p = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
+        return p.returncode, (p.stdout or "").strip(), (p.stderr or "").strip()
+    except subprocess.TimeoutExpired:
+        return 124, "", "timed out"
+    except Exception as e:
+        return 1, "", str(e)
+
+def load_nodes(path):
+    if not os.path.isfile(path):
+        sys.exit(f"fleet-update-check: node config not found: {path}  (copy fleet-nodes.conf.template)")
+    nodes = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) < 4:
+                continue
+            role, target, os_, methods = parts[0], parts[1], parts[2], parts[3]
+            nodes.append({"role": role, "target": target, "os": os_,
+                          "methods": [m.strip() for m in methods.split(",") if m.strip()]})
+    return nodes
+
+def run_on(node, cmd, timeout=300):
+    shell = "zsh -lc" if node["os"] == "macos" else "bash -lc"
+    if node["target"] == "local":
+        return sh(shell.split() + [cmd], timeout)
+    return sh(SSH + [node["target"], f"{shell} {shlex.quote(cmd)}"], timeout)
+
+def check_node(node, refresh):
+    """Return (lines, count, errors) for one node across its methods."""
+    lines, count, errs = [], 0, []
+    if node["target"] != "local":
+        if sh(SSH + [node["target"], "true"], 12)[0] != 0:
+            return ["unreachable over SSH — skipped this run"], 0, []
+    for m in node["methods"]:
+        if m == "brew":
+            upd = "brew update >/dev/null 2>&1; " if refresh else ""
+            rc, out, err = run_on(node, f'{upd}echo "==F=="; brew outdated --formula --verbose 2>/dev/null; '
+                                        f'echo "==C=="; brew outdated --cask 2>/dev/null')
+            if rc == 124 or (rc != 0 and not out):
+                errs.append(f"brew: {err or 'failed'}"); continue
+            formula = out.split("==C==")[0].replace("==F==", "").strip()
+            cask = out.split("==C==")[1].strip() if "==C==" in out else ""
+            if not refresh and (formula or cask):
+                lines.append("(brew index not refreshed — run with --refresh for exact counts)")
+            for label, blob in (("Homebrew formulae", formula), ("Homebrew casks", cask)):
+                items = [l for l in blob.splitlines() if l.strip()]
+                if items:
+                    count += len(items); lines.append(f"{label} ({len(items)}):"); lines += [f"  {l}" for l in items]
+        elif m == "npm":
+            rc, out, err = run_on(node, "npm outdated -g 2>/dev/null")
+            items = [l for l in out.splitlines() if l.strip() and not l.startswith("Package")]
+            if items:
+                count += len(items); lines.append(f"npm globals ({len(items)}):"); lines += [f"  {l}" for l in items]
+        elif m == "softwareupdate":
+            rc, out, err = run_on(node, "softwareupdate -l 2>&1")
+            items = [l.strip() for l in out.splitlines() if l.strip().startswith("*") or l.strip().startswith("Title:")]
+            if items:
+                count += len(items); lines.append("macOS (softwareupdate — not auto-applied):"); lines += [f"  {l}" for l in items]
+        elif m == "apt":
+            upd = "sudo apt-get update -qq >/dev/null 2>&1; " if refresh else ""
+            rc, out, err = run_on(node, f'{upd}apt list --upgradable 2>/dev/null | grep -v "^Listing"')
+            items = [l for l in out.splitlines() if l.strip()]
+            if rc == 124:
+                errs.append(f"apt: {err or 'timed out'}")
+            elif items:
+                count += len(items); lines.append(f"apt upgradable ({len(items)}):"); lines += [f"  {l}" for l in items]
+        elif m == "manual":
+            lines.append("MANUAL: " + MANUAL_HINT.get(node["os"], "check this node's native updater manually."))
+    if not lines and not errs:
+        lines.append("current — nothing outdated")
+    return lines, count, errs
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", default=os.environ.get("FLEET_NODES", DEFAULT_CONFIG))
+    ap.add_argument("--mailer", default=os.environ.get("FLEET_MAILER", "fleet-mail"))
+    ap.add_argument("--refresh", action="store_true", help="refresh package indexes first (brew/apt update)")
+    ap.add_argument("--always", action="store_true", help="email even when nothing is outdated")
+    ap.add_argument("--dry-run", action="store_true", help="print the digest; do not email")
+    a = ap.parse_args()
+
+    nodes = load_nodes(a.config)
+    blocks, summary, any_updates, any_errs = [], [], False, False
+    for node in nodes:
+        lines, cnt, errs = check_node(node, a.refresh)
+        any_updates = any_updates or cnt > 0
+        any_errs = any_errs or bool(errs)
+        tag = f"{cnt} update(s)" if cnt else ("ERROR" if errs else "current")
+        body = [f"== {node['role']} ({node['os']}) — {tag} =="]
+        body += [f"  {e}  ⚠" for e in errs] + lines
+        blocks.append("\n".join(body))
+        summary.append(f"{node['role']} {cnt if cnt else ('ERR' if errs else 'ok')}")
+
+    stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    header = (f"Fleet update digest — {stamp}\n"
+              f"Summary — {' | '.join(summary)}\n"
+              f"Notify-only: nothing was upgraded. Run the per-node upgrades from your update runbook (guide E10).\n"
+              + ("Package indexes were refreshed.\n" if a.refresh else "Indexes NOT refreshed (run with --refresh for exact counts).\n"))
+    digest = header + "\n" + "\n\n".join(blocks) + "\n"
+
+    if a.dry_run:
+        print(digest); return 0
+    if not (any_updates or any_errs or a.always):
+        print("fleet-update-check: everything current, no errors — no email sent.")
+        return 0
+    tag = "updates available" if any_updates else "check errors"
+    if any_errs and any_updates:
+        tag = "updates available + check errors"
+    subj = f"[fleet] update digest — {tag} ({stamp})"
+    p = subprocess.run([a.mailer, "--subject", subj, "--body", digest])
+    if p.returncode != 0:
+        sys.stderr.write("fleet-update-check: mailer failed to send the digest\n")
+        return 1
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

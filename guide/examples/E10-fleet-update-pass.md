@@ -104,4 +104,6 @@ recurring project.
 
 **Related:** [07 · Tools & requirements](../07-tools-requirements.md) ·
 [A3 · one install method](A3-npm-global-cli.md) · [Rule 4 + Rule 7](../03-governance-rules.md) ·
-[12 · Multi-node](../12-multinode.md) · [catalog](../15-example-projects.md).
+[12 · Multi-node](../12-multinode.md) ·
+[E16 · Health + alerting](E16-fleet-health-and-alerting.md) (automates this inventory into a weekly digest) ·
+[catalog](../15-example-projects.md).

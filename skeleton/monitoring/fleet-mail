@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""fleet-mail — send a fleet notification/alert email via SMTP (e.g. a Gmail app password).
+
+A tiny, dependency-free mailer for your operator's automation to raise alarms. Credentials +
+defaults come from an env file (KEY=VALUE, # comments ok):
+    SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, MAIL_FROM, MAIL_TO
+Default env path: $HOME/.config/fleet-monitoring/mail.env  (override with --env or $FLEET_MAIL_ENV).
+That env file is a host-local secret (chmod 600) and must NEVER be committed (see guide § 06).
+
+Body comes from --body, --body-file, or stdin (whichever is given; stdin last). A short footer
+(host + UTC time) is appended so alerts are self-identifying.
+
+Why SMTP directly (not via your automation platform): alerting must not depend on the very
+service it might be alerting about. A standalone mailer with its own credential still fires when
+the rest of the stack is down.
+
+Usage:
+    fleet-mail --subject "Backup failed" --body "disk full on <mount>"
+    some_command 2>&1 | fleet-mail --subject "nightly job output"
+    fleet-mail -s "digest" --body-file <path> --to <recipient> --html
+
+Exit: 0 sent · 1 send failed · 2 config/usage error
+"""
+import argparse, os, socket, ssl, sys, smtplib, datetime
+from email.message import EmailMessage
+
+DEFAULT_ENV = os.path.expanduser("~/.config/fleet-monitoring/mail.env")
+
+def load_env(path):
+    if not os.path.isfile(path):
+        sys.exit(f"fleet-mail: env file not found: {path}  (create it from mail.env.template)")
+    env = {}
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            env[k.strip()] = v.strip()
+    return env
+
+def main():
+    ap = argparse.ArgumentParser(description="Send a fleet notification email via SMTP.")
+    ap.add_argument("-s", "--subject", required=True)
+    ap.add_argument("--body", help="body text (inline)")
+    ap.add_argument("--body-file", help="read body from a file")
+    ap.add_argument("--to", help="override recipient (default MAIL_TO from env)")
+    ap.add_argument("--from", dest="from_", help="override sender (default MAIL_FROM from env)")
+    ap.add_argument("--html", action="store_true", help="send body as HTML")
+    ap.add_argument("--env", default=os.environ.get("FLEET_MAIL_ENV", DEFAULT_ENV))
+    ap.add_argument("--no-footer", action="store_true")
+    a = ap.parse_args()
+
+    env = load_env(a.env)
+    host = env.get("SMTP_HOST", "smtp.gmail.com")
+    port = int(env.get("SMTP_PORT", "587"))
+    user = env.get("SMTP_USERNAME", "")
+    pw   = env.get("SMTP_PASSWORD", "")
+    mfrom = a.from_ or env.get("MAIL_FROM") or user
+    mto   = a.to or env.get("MAIL_TO", "")
+    if not (user and pw):
+        sys.exit(f"fleet-mail: SMTP_USERNAME/SMTP_PASSWORD missing in {a.env}")
+    if not mto:
+        sys.exit(f"fleet-mail: no recipient (set MAIL_TO in {a.env} or pass --to)")
+
+    if a.body is not None:
+        body = a.body
+    elif a.body_file:
+        with open(a.body_file) as f:
+            body = f.read()
+    elif not sys.stdin.isatty():
+        body = sys.stdin.read()
+    else:
+        body = ""
+    if not a.no_footer:
+        stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        body = (body.rstrip() + f"\n\n—\nfleet-mail · {socket.gethostname()} · {stamp}\n")
+
+    msg = EmailMessage()
+    msg["Subject"] = a.subject
+    msg["From"] = mfrom
+    msg["To"] = mto
+    msg.set_content(body, subtype=("html" if a.html else "plain"))
+
+    try:
+        ctx = ssl.create_default_context()
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, timeout=30, context=ctx) as s:
+                s.login(user, pw); s.send_message(msg)
+        else:
+            with smtplib.SMTP(host, port, timeout=30) as s:
+                s.ehlo(); s.starttls(context=ctx); s.ehlo()
+                s.login(user, pw); s.send_message(msg)
+    except Exception as e:
+        sys.stderr.write(f"fleet-mail: send failed via {host}:{port} as {user}: {e}\n")
+        return 1
+    print(f"fleet-mail: sent '{a.subject}' -> {mto}")
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

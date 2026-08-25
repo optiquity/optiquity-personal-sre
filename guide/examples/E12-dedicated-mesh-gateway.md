@@ -103,4 +103,6 @@ update pass, and add "re-audit accept-routes" to your maintenance cadence.
 **Related:** [08 · Networking](../08-networking.md) (the mesh, subnet routes/exit nodes + both
 traps) · [platforms/linux](../../platforms/linux.md) (the headless-appliance *how*) ·
 [E10 · Fleet-update pass](E10-fleet-update-pass.md) ·
-[E11 · Publish a service](E11-publish-a-service.md) · [catalog](../15-example-projects.md).
+[E11 · Publish a service](E11-publish-a-service.md) ·
+[E16 · Health + alerting](E16-fleet-health-and-alerting.md) (Gatus health checks live here) ·
+[catalog](../15-example-projects.md).

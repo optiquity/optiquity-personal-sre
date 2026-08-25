@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- launchd timer for the weekly update digest (macOS). Run it on your ALWAYS-ON node only
+     (the one that SSHes out to the rest of the fleet) — an intentional per-host divergence.
+     bootstrap-monitoring.sh substitutes __HOME__ and __LABEL__ and installs it to
+     $HOME/Library/LaunchAgents/, then: launchctl bootstrap gui/$(id -u) <plist>. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>__LABEL__</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HOME__/.local/bin/fleet-update-check</string>
+        <string>--refresh</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:__HOME__/.local/bin</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/tmp/fleet-update-check.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/fleet-update-check.err</string>
+</dict>
+</plist>

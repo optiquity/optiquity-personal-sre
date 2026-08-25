@@ -74,7 +74,9 @@ If the Pi runs something the fleet *depends on* — a mesh gateway, DNS, a UPS m
 network/NAT layers to reason about on a small box), cap optional services with systemd
 (`Nice=`, `CPUWeight=`, `MemoryMax=`), and **test the critical role after every change**. The generic
 [Linux appliance/gateway pattern](linux.md#single-purpose-headless-appliance-eg-a-mesh-gateway) applies
-directly; the Pi just makes "stay lean" non-negotiable.
+directly; the Pi just makes "stay lean" non-negotiable. A Pi like this is also the ideal home for a
+lightweight **fleet health page + alerts** (native Gatus, in-memory storage, capped) — see
+[E16 · Health + alerting](../guide/examples/E16-fleet-health-and-alerting.md).
 
 - **Wired appliance?** Disable Wi-Fi for determinism (`dtoverlay=disable-wifi` in the boot config +
   turn the radio off), and give it a static/reserved address.

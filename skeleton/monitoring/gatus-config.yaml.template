@@ -1,0 +1,117 @@
+# Gatus config — fleet health (infra + your app stack), with email alerts on failure.
+# Gatus (https://github.com/TwiN/gatus) is a tiny Go health-check dashboard: it periodically
+# hits each endpoint and asserts CONDITIONS, then alerts when they fail. Runs great native on a
+# gateway/Pi with in-memory storage (zero disk writes).
+#
+# Install to the Gatus config path on the node running it (e.g. /etc/gatus/config.yaml), supply
+# SMTP creds via an env file + a service drop-in (see gatus.env.template + gatus-smtp.dropin.conf),
+# and fill every <placeholder>. Conditions verify FUNCTION (status + body + latency), not just a
+# ping — that's what catches "up but broken".
+storage:
+  type: memory                       # no disk writes; history lives in RAM
+  maximum-number-of-results: 100
+
+web:
+  address: 127.0.0.1                 # bind local; expose privately via your mesh/reverse proxy
+  port: 8080
+
+ui:
+  title: "fleet health"
+  header: "fleet health — infra + apps"
+
+# ── Email alerting ──────────────────────────────────────────────────────────
+# Credentials come from the environment (systemd EnvironmentFile / a wrapper), NOT this file:
+#   ${SMTP_USERNAME}, ${SMTP_PASSWORD}  ->  see gatus.env.template.
+# from/to are not secret, so they live here. A plus-tagged sender you own is handy for filtering.
+alerting:
+  email:
+    from: "<sender-address>"
+    to: "<recipient-address>"
+    host: "smtp.gmail.com"           # example: Gmail app-password SMTP
+    port: 587
+    username: ${SMTP_USERNAME}       # resolved from the environment (see gatus.env.template)
+    password: ${SMTP_PASSWORD}       # never a literal here — env-injected, unquoted plain scalar
+    default-alert:
+      failure-threshold: 3           # N consecutive failures before it emails (dampens blips)
+      success-threshold: 2
+      send-on-resolved: true         # also email when it recovers
+
+endpoints:
+  # ── Infra: reachability (TCP/ICMP/DNS) ────────────────────────────────────
+  - name: Internet
+    group: Core
+    url: "https://1.1.1.1"
+    interval: 60s
+    conditions: ["[STATUS] == 200"]
+    alerts: [{type: email}]
+
+  - name: DNS
+    group: Core
+    url: "8.8.8.8"
+    interval: 60s
+    dns: {query-name: "example.com", query-type: "A"}
+    conditions: ["[DNS_RCODE] == NOERROR"]
+    alerts: [{type: email}]
+
+  - name: Router
+    group: LAN
+    url: "tcp://<router-ip>:80"
+    interval: 2m
+    conditions: ["[CONNECTED] == true"]
+    alerts: [{type: email}]
+
+  - name: NAS
+    group: LAN
+    url: "tcp://<nas-ip>:5000"
+    interval: 2m
+    conditions: ["[CONNECTED] == true"]
+    alerts: [{type: email}]
+
+  - name: Always-on host
+    group: LAN
+    url: "tcp://<server-ip>:22"
+    interval: 2m
+    conditions: ["[CONNECTED] == true"]
+    alerts: [{type: email}]
+
+  # ── Apps: functional checks (status + body + latency), not just up/down ───
+  # Repeat this shape per self-hosted service. Pick a no-auth health path and a body marker.
+  - name: Automation platform            # e.g. an n8n / workflow engine
+    group: Apps
+    url: "https://<service-host>/healthz"
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == ok"            # JSON field assertion
+      - "[RESPONSE_TIME] < 3000"
+    alerts: [{type: email}]
+
+  - name: Media server                   # e.g. Plex /identity (no auth, returns server id)
+    group: Apps
+    url: "http://<server-ip>:32400/identity"
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == pat(*machineIdentifier*)"   # substring/glob match on the raw body
+      - "[RESPONSE_TIME] < 3000"
+    alerts: [{type: email}]
+
+  - name: Metrics/dashboards             # e.g. Grafana /api/health -> {"database":"ok"}
+    group: Apps
+    url: "https://<service-host>/api/health"
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].database == ok"
+      - "[RESPONSE_TIME] < 3000"
+    alerts: [{type: email}]
+
+  - name: Login-walled UI                # e.g. a UI that 200s on its login page
+    group: Apps
+    url: "https://<service-host>/auth/login"
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == pat(*<expected-marker>*)"
+      - "[RESPONSE_TIME] < 3000"
+    alerts: [{type: email}]
