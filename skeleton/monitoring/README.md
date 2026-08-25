@@ -19,7 +19,10 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 |---|---|
 | `fleet-mail` | dependency-free SMTP mailer; reads `mail.env`; used by the digest + any script alert |
 | `fleet-update-check` | the digest; reads `fleet-nodes.conf`; notify-only; local + SSH nodes |
+| `fleet-local-check` | local-only probes Gatus can't reach; reads `local-checks.conf`; email on state change |
 | `fleet-nodes.conf.template` | your node inventory (`role | ssh-target | os | methods`) |
+| `local-checks.conf.template` | typed local checks (`service | mount | http | command`) |
+| `fleet-local-check.plist.template` | launchd timer for the local probe (every 15 min) |
 | `mail.env.template` | SMTP secret stub for `fleet-mail` (host-local, chmod 600) |
 | `gatus-config.yaml.template` | Gatus endpoints (infra + apps) + email alerter |
 | `gatus.env.template` | SMTP secret stub for Gatus (root-owned on the Gatus node) |
@@ -64,6 +67,31 @@ sudo systemctl daemon-reload && sudo systemctl restart gatus
 (`url: "tcp://127.0.0.1:1"`, `conditions: ["[CONNECTED] == true"]`, `failure-threshold: 1`),
 confirm the email lands, then remove it. Pointing the config at a service that's up is not proof
 the *alert* works — only an induced failure is.
+
+## Local checks (what Gatus can't reach)
+
+Gatus checks anything reachable over the network. Some things aren't: a **service with no
+listening port** (an outbound bridge/agent), a **local network mount**, the **monitor itself**
+(if Gatus is down it can't alert on its own outage), or a check that needs **local DB/CLI
+access**. `fleet-local-check` runs on the node that *can* see them, driven by
+`local-checks.conf` — typed checks (`service`, `mount`, `http`, `command`). It emails only when
+a check **transitions** (a state file dedups), so a 15-minute cadence never spams.
+
+```sh
+$EDITOR ~/.config/fleet-monitoring/local-checks.conf   # seeded by bootstrap
+fleet-local-check --dry-run                             # preview; drop --dry-run to arm it
+```
+
+Two gotchas worth internalizing (both cost real debugging):
+
+- **Enumerate services, not containers.** It's easy to build a monitoring list from
+  `docker ps` (or your container UI) and silently miss **native** services — a launchd/systemd
+  agent, a gateway daemon. List what's *running*, by role, not what's *containerized*.
+- **`mount` checks do NO I/O.** On macOS an NFS/SMB share is bound to the GUI login session, so
+  `ls`/`stat` against it **hangs from a launchd/background run even when the mount is healthy** —
+  a guaranteed false alarm on a schedule. `fleet-local-check`'s `mount` type reads only the
+  kernel mount table (reliable everywhere); for genuine hung-detection, use a `command` check
+  through a login shell (`ssh localhost 'ls <path>'`).
 
 ## Secrets & privacy
 

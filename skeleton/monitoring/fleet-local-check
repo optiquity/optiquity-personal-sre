@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+"""fleet-local-check — health checks Gatus (or any remote prober) structurally can't do.
+
+Some things aren't reachable from a central health page: a service with no listening port, a
+local network mount, "is my monitor itself up?", or a check that needs local DB/CLI access. Run
+this ON the node that can see them. It reads a config of typed checks, and emails (via fleet-mail)
+ONLY when a check TRANSITIONS (ok→fail or fail→ok) — a state file dedups, so a tight cadence
+never spams.
+
+Config (default $HOME/.config/fleet-monitoring/local-checks.conf, override --config/$FLEET_LOCAL_CHECKS):
+    type | name | arg
+      service | <name> | <launchd-label | systemd-unit>   is that service running?
+      mount   | <name> | <path>                           is <path> a mount? (kernel table, NO I/O)
+      http    | <name> | <url>                             does <url> return 200? (e.g. cross-ping Gatus)
+      command | <name> | <shell command>                  exit 0 == ok (escape hatch: DB query, docker…)
+
+IMPORTANT (the `mount` type does NO I/O): on macOS an NFS/SMB mount is bound to the GUI login
+session, so I/O (ls/stat) against it HANGS from a launchd/background context even when the mount
+is perfectly healthy. So `mount` checks only the kernel mount table (ismount + `mount`/`findmnt`),
+which is reliable everywhere. It catches "unmounted", not "mounted-but-hung" — use a `command`
+check via a login shell (e.g. `ssh localhost 'ls <path>'`) if you need hung-detection.
+
+Exit: 0 all ok · 1 one or more failing. Flags: --dry-run (print, no email/state), --always (email regardless).
+"""
+import argparse, json, os, platform, shutil, subprocess, sys
+
+STATE = os.path.expanduser("~/.config/fleet-monitoring/local-check.state")
+DEFAULT_CONFIG = os.path.expanduser("~/.config/fleet-monitoring/local-checks.conf")
+MAILER = os.environ.get("FLEET_MAILER", os.path.expanduser("~/.local/bin/fleet-mail"))
+IS_MAC = platform.system() == "Darwin"
+
+def sh(args, timeout=15, shell=False):
+    try:
+        p = subprocess.run(args, capture_output=True, text=True, timeout=timeout, shell=shell)
+        return p.returncode, (p.stdout or "").strip(), (p.stderr or "").strip()
+    except subprocess.TimeoutExpired:
+        return 124, "", "timed out"
+    except Exception as e:
+        return 1, "", str(e)
+
+def chk_service(name, label):
+    if IS_MAC:
+        rc, out, _ = sh(["launchctl", "print", f"gui/{os.getuid()}/{label}"])
+        ok = rc == 0 and "state = running" in out
+    else:
+        rc, out, _ = sh(["systemctl", "is-active", label])
+        ok = out.strip() == "active"
+    return name, ok, ("running" if ok else "NOT running")
+
+def chk_mount(name, path):
+    # kernel mount table only — never I/O (see module docstring: NFS I/O hangs off-session)
+    if not os.path.ismount(path):
+        return name, False, "NOT mounted"
+    tbl = "mount" if shutil.which("mount") else "findmnt"
+    rc, out, _ = sh([tbl] + ([] if tbl == "mount" else [path]), timeout=8)
+    ok = any(path in l for l in out.splitlines())
+    return name, ok, ("mounted" if ok else "mountpoint present but not in the mount table")
+
+def chk_http(name, url):
+    rc, out, _ = sh(["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "-m", "10", url], timeout=15)
+    return name, out.strip() == "200", f"HTTP {out.strip() or 'no response'}"
+
+def chk_command(name, cmd):
+    rc, _, err = sh(cmd, timeout=30, shell=True)
+    return name, rc == 0, ("ok" if rc == 0 else f"exit {rc}{(' — ' + err) if err else ''}")
+
+DISPATCH = {"service": chk_service, "mount": chk_mount, "http": chk_http, "command": chk_command}
+
+def load_checks(path):
+    if not os.path.isfile(path):
+        sys.exit(f"fleet-local-check: config not found: {path}  (copy local-checks.conf.template)")
+    checks = []
+    for line in open(path):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = [p.strip() for p in line.split("|", 2)]
+        if len(parts) != 3 or parts[0] not in DISPATCH:
+            continue
+        checks.append(tuple(parts))  # (type, name, arg)
+    return checks
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", default=os.environ.get("FLEET_LOCAL_CHECKS", DEFAULT_CONFIG))
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--always", action="store_true")
+    a = ap.parse_args()
+
+    results = []
+    for typ, name, arg in load_checks(a.config):
+        try:
+            results.append(DISPATCH[typ](name, arg))
+        except Exception as e:
+            results.append((name, False, f"check crashed: {e}"))
+
+    try:
+        prev = json.load(open(STATE)) if os.path.exists(STATE) else {}
+    except Exception:
+        prev = {}
+    cur = {name: ok for name, ok, _ in results}
+    transitions = [n for n in cur if prev.get(n) is not None and prev[n] != cur[n]]
+    new_failures = [n for n in cur if not cur[n] and prev.get(n, True)]
+    failing = [name for name, ok, _ in results if not ok]
+
+    report = "\n".join(f"  [{'OK ' if ok else 'FAIL'}] {name}: {detail}" for name, ok, detail in results)
+    if a.dry_run:
+        print(report or "  (no checks configured)")
+        print(f"\ntransitions since last run: {transitions or 'none'}")
+        return 1 if failing else 0
+
+    os.makedirs(os.path.dirname(STATE), exist_ok=True)
+    json.dump(cur, open(STATE, "w"))
+
+    if transitions or a.always:
+        if new_failures:
+            subj = f"[fleet] local checks — {len(failing)} failing"
+        elif failing:
+            subj = f"[fleet] local checks — {len(failing)} still failing (a check recovered)"
+        else:
+            subj = "[fleet] local checks — all recovered"
+        body = f"Local health checks on {os.uname().nodename}:\n\n{report}\n"
+        if transitions:
+            body += f"\nChanged this run: {', '.join(transitions)}\n"
+        subprocess.run([MAILER, "--subject", subj, "--body", body])
+    return 1 if failing else 0
+
+if __name__ == "__main__":
+    sys.exit(main())

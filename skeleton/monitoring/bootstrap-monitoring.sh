@@ -17,34 +17,39 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 BIN="$HOME/.local/bin"
 CFG="$HOME/.config/fleet-monitoring"
 LABEL="${FLEET_LABEL:-com.example.fleet-update-check}"
+LOCAL_LABEL="${FLEET_LOCAL_LABEL:-com.example.fleet-local-check}"
 DO_TIMER=0
 [ "${1:-}" = "--with-timer" ] && DO_TIMER=1
 
 mkdir -p "$BIN" "$CFG"
 install -m 755 "$HERE/fleet-mail"          "$BIN/fleet-mail"
 install -m 755 "$HERE/fleet-update-check"  "$BIN/fleet-update-check"
-echo "installed: $BIN/fleet-mail, $BIN/fleet-update-check"
+install -m 755 "$HERE/fleet-local-check"   "$BIN/fleet-local-check"
+echo "installed: $BIN/fleet-mail, $BIN/fleet-update-check, $BIN/fleet-local-check"
 
 seed() {  # src dest mode — never overwrite a file you've already filled in
   if [ -e "$2" ]; then echo "kept existing: $2"; else install -m "$3" "$1" "$2"; echo "seeded:  $2  (edit me)"; fi
 }
-seed "$HERE/mail.env.template"          "$CFG/mail.env"          600
-seed "$HERE/fleet-nodes.conf.template"  "$CFG/fleet-nodes.conf"  644
+seed "$HERE/mail.env.template"           "$CFG/mail.env"           600
+seed "$HERE/fleet-nodes.conf.template"   "$CFG/fleet-nodes.conf"   644
+seed "$HERE/local-checks.conf.template"  "$CFG/local-checks.conf"  644
 
 if [ "$DO_TIMER" = 1 ]; then
   case "$(uname -s)" in
     Darwin)
       LA="$HOME/Library/LaunchAgents"; mkdir -p "$LA"
-      PL="$LA/$LABEL.plist"
-      sed -e "s#__HOME__#$HOME#g" -e "s#__LABEL__#$LABEL#g" \
-          "$HERE/fleet-update-check.plist.template" > "$PL"
-      chmod 644 "$PL"
-      launchctl bootstrap "gui/$(id -u)" "$PL" 2>/dev/null \
-        || echo "  (already loaded — 'launchctl bootout gui/$(id -u) $PL' to reload)"
-      echo "timer: installed + loaded $PL  (weekly Mon 09:00; edit the plist to change)"
+      load_timer() {  # label template desc
+        local pl="$LA/$1.plist"
+        sed -e "s#__HOME__#$HOME#g" -e "s#__LABEL__#$1#g" "$HERE/$2" > "$pl"; chmod 644 "$pl"
+        launchctl bootstrap "gui/$(id -u)" "$pl" 2>/dev/null \
+          || echo "  (already loaded — 'launchctl bootout gui/$(id -u) $pl' to reload)"
+        echo "timer: $pl  ($3)"
+      }
+      load_timer "$LABEL"       fleet-update-check.plist.template "weekly Mon 09:00"
+      load_timer "$LOCAL_LABEL" fleet-local-check.plist.template  "every 15 min"
       ;;
     *)
-      echo "timer: on Linux, wrap fleet-update-check in a weekly systemd timer or cron entry (see README)."
+      echo "timer: on Linux, wrap fleet-update-check (weekly) + fleet-local-check (~15 min) in systemd timers or cron (see README)."
       ;;
   esac
 fi
@@ -52,10 +57,12 @@ fi
 cat <<EOF
 
 next steps:
-  1) SMTP secret:   \$EDITOR $CFG/mail.env         # SMTP_PASSWORD + from/to; keep it chmod 600
-  2) node list:     \$EDITOR $CFG/fleet-nodes.conf  # your roles, ssh-targets, os, methods
-  3) test mail:     fleet-mail -s "test" --body "hello from \$(hostname)"
-  4) test digest:   fleet-update-check --dry-run    # then drop --dry-run to email it
-  5) schedule:      re-run with --with-timer (macOS) or add a systemd timer/cron (Linux)
-  6) Gatus health + alerts: separate node-specific deploy — see README.md § Gatus.
+  1) SMTP secret:   \$EDITOR $CFG/mail.env          # SMTP_PASSWORD + from/to; keep it chmod 600
+  2) node list:     \$EDITOR $CFG/fleet-nodes.conf   # roles, ssh-targets, os, methods (digest)
+  3) local checks:  \$EDITOR $CFG/local-checks.conf  # service/mount/http/command probes
+  4) test mail:     fleet-mail -s "test" --body "hello from \$(hostname)"
+  5) test digest:   fleet-update-check --dry-run     # then drop --dry-run to email
+  6) test local:    fleet-local-check  --dry-run     # then drop --dry-run to email on transitions
+  7) schedule:      re-run with --with-timer (macOS) or add systemd timers/cron (Linux)
+  8) Gatus health + alerts: separate node-specific deploy — see README.md § Gatus.
 EOF

@@ -1,0 +1,24 @@
+# local-checks.conf — typed checks fleet-local-check runs on THIS node (things a remote
+# health page can't reach). Copy to $HOME/.config/fleet-monitoring/local-checks.conf and edit.
+#
+#   type | name | arg
+#     service | <name> | <launchd-label | systemd-unit>   is that service running?
+#     mount   | <name> | <path>                           is <path> a mount? (kernel table, NO I/O)
+#     http    | <name> | <url>                             200 == ok (e.g. cross-ping your Gatus)
+#     command | <name> | <shell command>                  exit 0 == ok (escape hatch for anything)
+#
+# Replace these examples with your fleet's local-only concerns. Notes:
+#  - `mount` never does I/O — on macOS an NFS/SMB share is bound to the GUI login session, so
+#    ls/stat against it HANGS from a launchd/background run even when healthy. This catches
+#    "unmounted", not "hung". For hung-detection use a `command` via a login shell, e.g.:
+#       command | media reachable | ssh localhost 'ls /path/to/mount >/dev/null'
+#  - `command` is the escape hatch: assert an app's workflows are active, a batch job exited 0,
+#    a container is healthy — anything a shell one-liner can decide.
+#  - a `service` with NO listening port (an outbound bridge/agent) is exactly what a remote
+#    prober misses — check it here.
+
+service | bridge daemon    | com.example.some-bridge
+mount   | media share      | /path/to/your/mount
+http    | gatus cross-ping | https://<gatus-host>/
+# command | workflows active | test "$(sqlite3 ~/.app/db 'select count(*) from wf where active=1')" -ge 1
+# command | batch last-run   | test "$(docker inspect -f '{{.State.ExitCode}}' <container>)" = 0

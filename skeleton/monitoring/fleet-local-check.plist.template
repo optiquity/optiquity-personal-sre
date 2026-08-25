@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- launchd timer for the local health probe (macOS). Runs every 15 minutes; it emails only on
+     state transitions (a state file dedups), so the tight cadence never spams. Run it on the node
+     that can see the local-only things you're checking. bootstrap-monitoring.sh substitutes
+     __HOME__ and __LABEL__ and loads it. On Linux, use a systemd timer or cron instead. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>__LABEL__</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HOME__/.local/bin/fleet-local-check</string>
+    </array>
+    <key>StartInterval</key>
+    <integer>900</integer>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:__HOME__/.local/bin</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/tmp/fleet-local-check.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/fleet-local-check.err</string>
+</dict>
+</plist>

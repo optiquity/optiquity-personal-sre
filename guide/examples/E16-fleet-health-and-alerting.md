@@ -96,16 +96,46 @@ Gatus's native email alerter for endpoint failures, and the `fleet-mail` helper 
 and any script-level failure (`some_job || fleet-mail -s "job failed" --body "…"`). The secret
 lives only in a `chmod 600` env file on each sending node and is **never committed** (§ 06).
 
+### 4. Local checks — the things a remote prober can't reach
+
+Gatus sees anything on the network. Some things aren't: a **service with no listening port** (an
+outbound bridge), a **local mount**, the **monitor itself**, or a check needing **local DB/CLI**
+access. `fleet-local-check` runs on the node that can see them, driven by typed checks
+(`service | mount | http | command`), and emails only on **state transitions** (a state file
+dedups) so a 15-minute cadence never spams.
+
+```
+# ~/.config/fleet-monitoring/local-checks.conf
+service | bridge daemon    | com.example.some-bridge     # no port → Gatus can't see it
+mount   | media share      | /path/to/your/mount         # local NFS/SMB
+http    | gatus cross-ping | https://<gatus-host>/        # catch the monitor's own outage
+command | workflows active | test "$(…count active…)" -ge 1   # escape hatch for anything
+```
+
+**Two lessons this encodes (both cost real debugging):**
+
+- **Enumerate services, not containers.** Building the health list from `docker ps` silently
+  drops **native** services (a launchd/systemd agent, a gateway daemon that isn't containerised).
+  List what's *running by role*, not what's *containerised* — the thing you forget is exactly the
+  thing with no obvious dashboard.
+- **A `mount` check must do no I/O.** On macOS an NFS/SMB share is bound to the GUI login
+  session, so `ls`/`stat` against it **hangs from a launchd/background run even when the mount is
+  healthy** — a guaranteed false alarm on a timer. Check the **kernel mount table** (`ismount` /
+  `mount`), not the filesystem; for real hung-detection, go through a login shell
+  (`ssh localhost 'ls <path>'`) as a `command` check.
+
 ## Bootstrap
 
 On the always-on node:
 
 ```sh
 skeleton/monitoring/bootstrap-monitoring.sh --with-timer
-$EDITOR ~/.config/fleet-monitoring/mail.env          # SMTP_PASSWORD + from/to
-$EDITOR ~/.config/fleet-monitoring/fleet-nodes.conf  # your fleet
-fleet-mail -s "test" --body "hello"                  # confirm mail
-fleet-update-check --dry-run                         # preview the digest
+$EDITOR ~/.config/fleet-monitoring/mail.env           # SMTP_PASSWORD + from/to
+$EDITOR ~/.config/fleet-monitoring/fleet-nodes.conf   # your fleet (the digest)
+$EDITOR ~/.config/fleet-monitoring/local-checks.conf  # your local-only checks
+fleet-mail -s "test" --body "hello"                   # confirm mail
+fleet-update-check --dry-run                          # preview the digest
+fleet-local-check  --dry-run                          # preview the local probes
 ```
 
 Deploy Gatus on the gateway per [`skeleton/monitoring/README.md`](../../skeleton/monitoring/README.md) § Gatus.
