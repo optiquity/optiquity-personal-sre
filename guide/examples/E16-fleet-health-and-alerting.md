@@ -142,6 +142,39 @@ runs it `--local`, throttled, state-deduped) and **weekly** (folded into the `fl
 digest). It's the guard that keeps the "one install method per tool" discipline (§ 07) honest as
 the fleet grows.
 
+### 6. Container images — the update path no package manager can see
+
+The digest covers brew / npm / apt. But a self-hosted stack is **containers**, and an image pinned
+to a version tag — which is the *right* call for an appliance — **never moves on its own and no
+package manager sees it**. It quietly rots until someone happens to open the app and notice a "new
+version available" banner. Discovering updates by luck is not a strategy.
+
+`fleet-container-check` reads your compose file, finds version-pinned images (skipping `:latest`,
+which moves at pull time), asks the registry for newer semver, and reports — **read-only, it never
+pulls**. Folded into the weekly digest, so a stale image lands in the same email as everything else.
+
+Updating one is a small, gated ritual, and the verification is the important half:
+
+```sh
+# bump the tag in compose.yaml, then
+docker compose pull <svc> && docker compose up -d <svc>
+docker compose up -d ts-<svc>        # sidecar shares the netns — see the gotcha below
+```
+
+- Verify the service's **own health endpoint**, its **published URL**, and **whatever consumes it**
+  (an exporter, a dashboard). "The container started" is not "it works".
+- On a **major** bump, check the image's entrypoint/env before trusting it — a rewrite can change
+  the contract silently. (One exporter went from a Python image to a Go binary across a major; the
+  env contract happened to hold, but that was verified by confirming every dependent dashboard
+  query still returned data, not assumed.)
+
+**The sidecar gotcha** (bites anyone using the `network_mode: service:<app>` publishing pattern):
+touching the app container breaks the sidecar's networking — the app stays healthy while its
+published URL goes dark. `restart` the app → restart the sidecar; **recreate** the app (new
+container id) → **recreate** the sidecar, since a plain restart still points at the dead id. Sweep
+your published URLs after any such change. Better: avoid the restart entirely — dashboard
+provisioners and config-reload endpoints usually apply changes without touching the container.
+
 ## Bootstrap
 
 On the always-on node:
@@ -155,6 +188,7 @@ fleet-mail -s "test" --body "hello"                   # confirm mail
 fleet-update-check --dry-run                          # preview the digest (folds in the audit)
 fleet-local-check  --dry-run                          # preview the local probes
 fleet-install-audit --dry-run                         # preview the install-method audit
+fleet-container-check                                 # preview pinned-image updates
 ```
 
 Deploy Gatus on the gateway per [`skeleton/monitoring/README.md`](../../skeleton/monitoring/README.md) § Gatus.

@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""fleet-container-check — report pinned container images that have a newer upstream release.
+
+The blind spot this closes: fleet-update-check covers brew / npm / softwareupdate / apt, but the
+self-hosted stack is CONTAINERS. An image pinned to a version tag (the right thing for an
+appliance — you don't want it moving under you) never moves on its own and is invisible to every
+package manager, so it silently rots until someone happens to notice a "new version available"
+banner inside the app's own UI. That is a terrible update-detection mechanism; this is the fix.
+
+Reads a compose file, finds `image: repo:tag` lines pinned to a VERSION tag (`:latest` is skipped —
+those move on their own at pull time), asks the registry for that repo's tags, and reports any
+newer semver. Read-only: it never pulls, never recreates. Supports Docker Hub and ghcr.io
+(anonymous pull tokens); anything else is reported as "unsupported registry" rather than skipped
+silently.
+
+Usage: fleet-container-check [--compose PATH] [--json]
+Exit:  0 all current (or nothing pinned) · 1 updates available · 2 error
+"""
+import argparse, json, os, re, sys, urllib.request, urllib.error
+
+DEFAULT_COMPOSE = os.path.expanduser(os.environ.get("FLEET_COMPOSE", "~/selfhost/compose.yaml"))
+SEMVER = re.compile(r"^v?(\d+)\.(\d+)(?:\.(\d+))?$")
+
+def get(url, headers=None, timeout=15):
+    req = urllib.request.Request(url, headers=headers or {})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.load(r)
+
+def parse_ver(tag):
+    m = SEMVER.match(tag)
+    return tuple(int(x or 0) for x in m.groups()) if m else None
+
+def tags_dockerhub(repo):
+    ns, name = repo.split("/", 1) if "/" in repo else ("library", repo)
+    out, url = [], f"https://hub.docker.com/v2/repositories/{ns}/{name}/tags?page_size=100"
+    for _ in range(3):                       # up to 300 tags is plenty to find the newest
+        d = get(url)
+        out += [t["name"] for t in d.get("results", [])]
+        url = d.get("next")
+        if not url:
+            break
+    return out
+
+def tags_ghcr(repo):
+    tok = get(f"https://ghcr.io/token?scope=repository:{repo}:pull&service=ghcr.io")["token"]
+    d = get(f"https://ghcr.io/v2/{repo}/tags/list?n=200", {"Authorization": f"Bearer {tok}"})
+    return d.get("tags", [])
+
+def newest(repo, registry):
+    tags = tags_ghcr(repo) if registry == "ghcr.io" else tags_dockerhub(repo)
+    vers = [(parse_ver(t), t) for t in tags]
+    vers = [(v, t) for v, t in vers if v]
+    return max(vers)[1] if vers else None
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--compose", default=os.environ.get("FLEET_COMPOSE", DEFAULT_COMPOSE))
+    ap.add_argument("--json", action="store_true")
+    a = ap.parse_args()
+    if not os.path.isfile(a.compose):
+        print(f"fleet-container-check: compose not found: {a.compose}", file=sys.stderr); return 2
+
+    seen, rows, outdated = set(), [], 0
+    for line in open(a.compose):
+        m = re.match(r"\s*image:\s*(\S+)", line)
+        if not m:
+            continue
+        ref = m.group(1)
+        if ":" not in ref or ref.endswith(":latest"):
+            continue                                   # floating tags move at pull time
+        repo, tag = ref.rsplit(":", 1)
+        if not parse_ver(tag) or ref in seen:
+            continue
+        seen.add(ref)
+        registry = "ghcr.io" if repo.startswith("ghcr.io/") else "docker.io"
+        short = repo[len("ghcr.io/"):] if registry == "ghcr.io" else repo
+        try:
+            new = newest(short, registry)
+        except Exception as e:
+            rows.append({"image": repo, "current": tag, "latest": None, "error": str(e)[:60]})
+            continue
+        behind = bool(new and parse_ver(new) > parse_ver(tag))
+        outdated += behind
+        rows.append({"image": repo, "current": tag, "latest": new, "outdated": behind})
+
+    if a.json:
+        print(json.dumps(rows, indent=2)); return 1 if outdated else 0
+
+    print(f"Pinned container images ({a.compose}) — {outdated} update(s) available")
+    for r in rows:
+        if r.get("error"):
+            print(f"  [?]  {r['image']:42} {r['current']:12} (check failed: {r['error']})")
+        elif r.get("outdated"):
+            print(f"  [UP] {r['image']:42} {r['current']:12} -> {r['latest']}")
+        else:
+            print(f"  [ok] {r['image']:42} {r['current']:12}")
+    if outdated:
+        print("\n  To update one:  edit the tag in compose.yaml, then")
+        print("    docker compose pull <svc> && docker compose up -d <svc> && docker compose up -d ts-<svc>")
+        print("  (if the service has a mesh sidecar sharing its netns, recreate the sidecar too)")
+    return 1 if outdated else 0
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -21,6 +21,7 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 | `fleet-update-check` | the digest; reads `fleet-nodes.conf`; notify-only; local + SSH nodes |
 | `fleet-local-check` | local-only probes Gatus can't reach; reads `local-checks.conf`; email on state change |
 | `fleet-install-audit` | generalized install-method conflict detector across nodes; email on state change |
+| `fleet-container-check` | pinned container images with a newer upstream release (read-only; folded into the digest) |
 | `fleet-install-audit.plist.template` | after-install WatchPaths trigger (runs the audit `--local`) |
 | `fleet-nodes.conf.template` | your node inventory (`role | ssh-target | os | methods`) |
 | `local-checks.conf.template` | typed local checks (`service | mount | http | command`) |
@@ -118,6 +119,49 @@ Two intended triggers (both wired by bootstrap): **after any install** — the
 `fleet-install-audit.plist.template` WatchPaths agent runs it `--local` whenever an install dir
 changes (throttled, state-deduped); and **weekly** — `fleet-update-check` folds the audit into its
 digest email. On Linux, use a systemd `.path` unit watching your install dirs instead of WatchPaths.
+
+## Container images — the blind spot package managers can't see
+
+`fleet-update-check` covers brew / npm / softwareupdate / apt. Your **self-hosted stack is
+containers**, and an image pinned to a version tag (correct for an appliance — you don't want it
+moving under you) **never moves on its own and no package manager sees it**. In practice it rots
+until somebody happens to notice a "new version available" banner inside the app's own UI. That is
+a terrible detection mechanism.
+
+`fleet-container-check` closes it: parse your compose file, find version-pinned images (skipping
+`:latest`, which moves at pull time anyway), ask the registry (Docker Hub / ghcr.io) for newer
+semver tags, and report. **Read-only — it never pulls and never recreates.** It's folded into the
+weekly digest, so stale images arrive in the same email as everything else.
+
+```sh
+fleet-container-check                 # or: FLEET_COMPOSE=/path/to/compose.yaml fleet-container-check
+```
+
+**Updating a pinned image** — bump the tag, then:
+
+```sh
+docker compose pull <svc> && docker compose up -d <svc>
+docker compose up -d ts-<svc>     # if a mesh sidecar shares its netns — see below
+```
+
+Verify afterwards: the service's own health endpoint, its published URL, **and anything that
+consumes it** (an exporter, a dashboard). A **major** bump deserves a look at the image's
+entrypoint/env first — a rewrite can silently change the contract; check that dependent dashboard
+queries still return data before you call it done.
+
+## Gotcha: a sidecar shares the app's network namespace
+
+If you publish services through a mesh sidecar (`network_mode: service:<app>`), **touching the app
+container breaks the sidecar's networking** — the app stays healthy but its published URL goes dark:
+
+| What you did | Fix |
+|---|---|
+| `docker restart <app>` (id unchanged) | `docker restart ts-<app>` |
+| `docker compose up -d <app>` / recreate (**new** id) | `docker compose up -d ts-<app>` — a plain restart fails; it still points at the dead container id |
+
+Sweep your published URLs after any such change; anything returning no response needs its sidecar
+restarted or recreated. Better still, **avoid the restart**: dashboard provisioners and config
+reload endpoints (e.g. a `POST /-/reload`) usually apply changes without touching the container.
 
 ## Secrets & privacy
 

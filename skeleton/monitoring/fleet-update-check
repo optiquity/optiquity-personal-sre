@@ -140,6 +140,18 @@ def main():
               + ("Package indexes were refreshed.\n" if a.refresh else "Indexes NOT refreshed (run with --refresh for exact counts).\n"))
     digest = header + "\n" + "\n\n".join(blocks) + "\n"
 
+    # fold the pinned-container-image check in — containers are invisible to brew/npm/apt, so a
+    # version-pinned image rots silently until someone spots a banner in the app's own UI
+    container_updates = False
+    cc = os.path.expanduser("~/.local/bin/fleet-container-check")
+    if os.path.exists(cc):
+        try:
+            cr = subprocess.run([cc], capture_output=True, text=True, timeout=180)
+            container_updates = cr.returncode == 1
+            digest += "\n\n" + "=" * 56 + "\n" + (cr.stdout or "(no container output)")
+        except Exception as e:
+            digest += f"\n\n(container image check failed to run: {e})\n"
+
     # fold the generalized install-method audit into the weekly digest (if the tool is installed)
     audit_conflict = False
     audit = os.path.expanduser("~/.local/bin/fleet-install-audit")
@@ -153,11 +165,12 @@ def main():
 
     if a.dry_run:
         print(digest); return 0
-    if not (any_updates or any_errs or audit_conflict or a.always):
+    if not (any_updates or any_errs or audit_conflict or container_updates or a.always):
         print("fleet-update-check: everything current, no errors, no install conflicts — no email sent.")
         return 0
     tags = []
     if any_updates: tags.append("updates available")
+    if container_updates: tags.append("container images")
     if audit_conflict: tags.append("install conflicts")
     if any_errs: tags.append("check errors")
     tag = " + ".join(tags) or "summary"

@@ -27,7 +27,8 @@ install -m 755 "$HERE/fleet-mail"           "$BIN/fleet-mail"
 install -m 755 "$HERE/fleet-update-check"   "$BIN/fleet-update-check"
 install -m 755 "$HERE/fleet-local-check"    "$BIN/fleet-local-check"
 install -m 755 "$HERE/fleet-install-audit"  "$BIN/fleet-install-audit"
-echo "installed: fleet-mail, fleet-update-check, fleet-local-check, fleet-install-audit (in $BIN)"
+install -m 755 "$HERE/fleet-container-check" "$BIN/fleet-container-check"
+echo "installed: fleet-mail, fleet-update-check, fleet-local-check, fleet-install-audit, fleet-container-check (in $BIN)"
 
 seed() {  # src dest mode — never overwrite a file you've already filled in
   if [ -e "$2" ]; then echo "kept existing: $2"; else install -m "$3" "$1" "$2"; echo "seeded:  $2  (edit me)"; fi
