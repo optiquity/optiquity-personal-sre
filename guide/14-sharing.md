@@ -42,6 +42,10 @@ The non-negotiable exclusion list:
 - **Personal skills/projects** — anything tied to *your* specific accounts or services stays
   private. Only *generic* example skills ([11](11-agents-skills.md)) go public.
 - **Vault paths, backup locations, service URLs** — anything that describes *your* actual
+- **Monitoring config**, which is quietly full of your topology: node inventories (SSH targets and
+  hostnames), local-check configs (mount paths, service labels), and health-check configs (service
+  URLs, mesh names). Publish the `.template` with `<placeholders>`; never the filled file. The
+  alerting credential and the recipient address are secrets in the ordinary sense.
   infrastructure.
 
 If you're unsure whether something is personal: it's personal. Leave it out.

@@ -97,7 +97,6 @@ exposure creep in.
   into the Grafana you already run. The judgment calls people miss — **where hardware transcoding
   actually works** (container vs native), what **"missing" really means** (titles ≠ episodes), and
   matching collection sources to a library's intent.
-
 - **[E16 · Fleet health, alerting, and the update digest](examples/E16-fleet-health-and-alerting.md)** —
   give the operator **eyes and a voice**: **functional health checks** across the fleet (Gatus —
   status + body + latency, not just up/down) with **email on failure**, plus a **weekly update

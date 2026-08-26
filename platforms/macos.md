@@ -61,6 +61,13 @@ launchctl print gui/$(id -u)/<label>            # inspect
 Schedule with `StartCalendarInterval`; keep the config file chezmoi-managed, but treat the
 `bootstrap` itself as the gated step.
 
+**Trigger on a file change, not a clock.** Besides `StartCalendarInterval`/`StartInterval`, a
+LaunchAgent can use **`WatchPaths`** — it fires whenever a watched directory changes. That's how
+you run something *after any install* (watch the package manager's bin dirs) rather than guessing
+a schedule. Pair it with `ThrottleInterval` so a bulk upgrade can't fire it a hundred times.
+Ready-to-use agent templates (weekly timer, periodic probe, WatchPaths trigger) ship in
+[`../skeleton/monitoring/`](../skeleton/monitoring/).
+
 ### The big macOS gotcha: TCC + network volumes
 
 macOS **TCC** (privacy protection) blocks launchd-spawned processes from **writing** to network
@@ -73,6 +80,13 @@ didn't.
 Either grant the specific binary Full Disk Access, or (more robust) **avoid the mount** — e.g.
 push data over SSH to the remote host instead of writing through the mount. Test the job **as
 launchd runs it**, not just from your shell.
+
+**A network mount is bound to the GUI login session.** This bites anything scheduled: from a
+launchd/background context, I/O against a mounted NFS/SMB share (`ls`, `stat`) can **hang
+indefinitely even when the mount is perfectly healthy** — so a naive "is the share up?" check
+becomes a guaranteed false alarm on a timer. Check the **kernel mount table** (`mount`, or
+`os.path.ismount`) instead, which is reliable from any context and does no I/O. If you genuinely
+need hung-detection, do it through a login shell (`ssh localhost 'ls <path>'`).
 
 ## Secret store — Keychain + vaults
 
@@ -115,6 +129,12 @@ For the fleet metrics stack ([E13](../guide/examples/E13-fleet-metrics-stack.md)
   `node_memory_MemAvailable_bytes`; use `node_memory_active/wired/compressed/total_bytes` (used ≈
   `(active+wired+compressed)/total`). CPU (`node_cpu_seconds_total`), load (`node_load1`), and uptime
   match Linux.
+
+**Consequence for dashboards:** the popular community "Node Exporter Full" dashboard is written
+against **Linux** metric names, so on a Mac its memory panels render *No data* — macOS exposes
+`node_memory_total_bytes` / `active` / `wired` / `compressed` and has **no** `MemAvailable` or
+`MemTotal`. Don't debug it as a broken exporter: use a Darwin-specific dashboard (or fix the
+queries) and keep the Linux one for Linux nodes.
 
 ## Roles on macOS — common mapping
 

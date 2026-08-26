@@ -79,7 +79,15 @@ of work. Two reasons to use them:
   changes is fine; the actual gated action (commit, apply, deploy) happens in the main
   operator where you approve it. Don't scatter approval-requiring actions across subagents
   where they're harder to supervise.
-- **A subagent's result is a report, not a side effect.** Use subagents to *learn* and
+- **A subagent's result is a report, not a side effect.** Use subagents to *learn* and The same instinct is worth
+  applying to unattended automation: a scheduled job that only *reports* is safe to run without a
+  human, while one that acts needs a session — that's the **notify-only** posture in
+  [E16](examples/E16-fleet-health-and-alerting.md).
+
+- **A skill is not a cron job.** If a task is deterministic, runs on a schedule, and needs no
+  judgement — an inventory, a health probe — write it as a plain script under a timer, not a
+  skill. Skills are for when the operator must *decide* something; give it the script's output to
+  triage, not the polling loop.
   *decide*; use the main operator to *act*.
 - **Scope them.** A subagent gets the tools and context its task needs — not blanket access.
   The permission model ([09](09-permissions.md)) still applies.

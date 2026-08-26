@@ -27,7 +27,8 @@ And when either goes wrong, you want to **find out by email**, not by stumbling 
 
 ## Why do it "the framework way"
 
-- **Notify-only, always.** The digest upgrades nothing (governance Rule 7 / § 07 — a node's
+- **Notify-only, always.** The digest upgrades nothing — upgrading a running node is a *material
+  action*, so it needs a human (governance [Rule 1](../03-governance-rules.md) / [§ 07](../07-tools-requirements.md) — a node's
   tooling changes when *you* decide). Health checks observe; they never restart or "fix." The
   operator's job here is to *surface*, yours is to *act*.
 - **Alerting independent of the stack.** Email goes out over a standalone SMTP credential, not
@@ -221,10 +222,30 @@ Deploy Gatus on the gateway per [`skeleton/monitoring/README.md`](../../skeleton
 - A **weekly digest** of exactly what's behind on each node, with nothing changed behind your back.
 - One credential, kept out of git, that makes both speak up — even when the stack is down.
 
+## Adapt it
+
+- **One machine?** Still worth it — the local checks and the update digest need no fleet, and the
+  alert path is the same. Skip the SSH node list; keep `local` in it.
+- **Already running Prometheus + Grafana ([E13](E13-fleet-metrics-stack.md))?** You could alert
+  from Alertmanager instead. The deliberate argument for a *separate*, out-of-band checker: it
+  keeps working when the metrics stack is the thing that broke, and it needs no query language to
+  answer "is it up".
+- **Don't want mail?** The shape is unchanged — swap the mailer for whatever you actually read
+  (push, chat webhook). Keep it **out-of-band** from the stack it watches.
+- **Nervous about noise?** Start with `Alert` only: health checks and nothing else. Add the
+  weekly digest once you trust it, and keep state-dedup on so recoveries don't double-notify.
+- **Track it as a project.** Give it a registry row and a plan doc like any other work
+  ([04 · Structure](../04-structure.md)) — including which checks you deliberately *don't* alert
+  on, which is the kind of decision that's invisible six months later.
+
 ## Related
 
 - [E10 · a deliberate fleet-update pass](E10-fleet-update-pass.md) — the runbook the digest feeds.
 - [E12 · dedicated mesh gateway](E12-dedicated-mesh-gateway.md) — where Gatus lives.
 - [E13 · fleet metrics stack](E13-fleet-metrics-stack.md) — metrics/history (Prometheus/Grafana);
   Gatus is the up/down + alerting complement, not a replacement.
-- Governance [§ 03](../03-governance-rules.md) (Rules 7/10) · secrets [§ 06](../06-secrets.md).
+- [09 · Permissions](../09-permissions.md) — why unattended, read-only probes are safe.
+- [12 · Multi-node](../12-multinode.md) — the dashboard is state-of-record; this is live health.
+- [13 · Setup](../13-setup.md) — where standing this up belongs in the onboarding path.
+- Governance [§ 03](../03-governance-rules.md) (Rule 1 = material actions need you; Rule 10 =
+  reads are free) · secrets [§ 06](../06-secrets.md) (the daemon-read credential recipe).

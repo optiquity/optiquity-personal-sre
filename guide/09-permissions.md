@@ -85,6 +85,14 @@ friction on *low-risk* actions; it never hands over the dangerous ones. That inv
 point — presets differ in convenience, not in whether a push can happen silently (it can't).
 
 Pick per role: a `server` that runs unattended deserves **cautious**; a `workstation` you sit
+
+**Scheduled checks live outside this model entirely.** A timer-driven health probe or update
+inventory runs under launchd/systemd with no session and no CLI, so neither preset nor session
+rules apply to it. That is only acceptable because such jobs are strictly **read-only and
+notify-only** — they report, they never change a node. Two consequences worth stating: anything
+that *would* change a node must come back through a session and Rule 1; and the credential such a
+job needs (e.g. SMTP) is a host-local `chmod 600` file, not a permission grant
+([06](06-secrets.md), [E16](examples/E16-fleet-health-and-alerting.md)).
 at can run **standard** or **trusting**. Because permissions are per-machine config, the config
 manager can render the right preset per role ([05 · chezmoi](05-chezmoi.md)).
 

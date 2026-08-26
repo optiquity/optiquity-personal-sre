@@ -2,8 +2,9 @@
 # bootstrap-monitoring.sh — stand up the fleet-monitoring tools on THIS node.
 #
 # Run on your ALWAYS-ON node (the one that SSHes out to the rest of the fleet). Idempotent:
-# installs the two CLIs, seeds config + secret stubs (never clobbering ones you've filled), and
-# — with --with-timer — installs the weekly update-digest timer. Deploying Gatus itself and its
+# installs the five CLIs, seeds config + secret stubs (never clobbering ones you've filled), and
+# — with --with-timer — loads three launchd jobs: the weekly update digest, the ~15-min local
+# health probe, and the after-install WatchPaths audit trigger. Deploying Gatus itself and its
 # config is a separate, node-specific step (see README.md § Gatus), because Gatus usually runs
 # on a different node (a gateway/Pi) with root-owned config.
 #

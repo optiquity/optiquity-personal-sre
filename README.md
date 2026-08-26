@@ -74,6 +74,9 @@ start**; the model scales to many nodes without changing shape.
 - **Everything is a tracked project** in a registry, so the system's state is legible, not in
   your head.
 - **Zero secrets in git, ever** — enforced structurally (ignore files + a vault), not by memory.
+- **It tells you when something breaks** — health checks + a scheduled digest, delivered by mail,
+  so you learn about a failure or a stale package without going to look
+  ([E16](guide/examples/E16-fleet-health-and-alerting.md), tools in `skeleton/monitoring/`).
 
 ## The playbook — the operator's entrypoint
 
@@ -140,7 +143,8 @@ platforms/      # THE SPOKES — per-OS "how" (macos ✓ · windows ◑ · linux
 skeleton/       # generic starter files you copy + fill (all placeholders, no secrets)
   CLAUDE.md.template · AGENTS.md.template · chezmoi.toml.example · *ignore templates ·
   env.example · settings/ (3 permission presets) · mcp/ · installers/ ·
-  skills/ (2 examples) · onboarding/ (repo seed) · github/
+  skills/ (2 examples) · onboarding/ (repo seed) · github/ ·
+  monitoring/ (health checks, alert mail, update digest — ready to run)
 scripts/        # grep-guard (the never-leak backstop) + pre-commit hook
 GETTING-STARTED.md # ▶ the front door: intro + requirements + step-by-step
 bootstrap.sh    # Tier-2 onboarding (creates YOUR repo; --help for options)

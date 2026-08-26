@@ -145,6 +145,9 @@ Set these up first (or let the AI path / `bootstrap.sh` help). Full detail:
   deprecated community `@modelcontextprotocol/server-github`). Plus filesystem, docs, browser,
   and more.
 - A container runtime · an automation runtime · the multi-node coordination layer.
+- **Health checks + alerting** — an SMTP credential (an app password is fine) and a health checker,
+  so the system mails you when something breaks or falls behind. Ready to run in
+  `skeleton/monitoring/`; narrated in `guide/examples/E16-fleet-health-and-alerting.md`.
 
 ---
 
@@ -185,6 +188,8 @@ You're done when:
 - A secret-scan of your repo finds **nothing** (`guide/06-secrets.md`).
 - A config change flows edit → commit → apply → verify **without hand-editing any machine**.
 - Your `PROJECTS.md` answers "what's going on" without you reciting it.
+- If you set up alerting: **a deliberately-failed check actually emails you.** Green endpoints
+  prove the checks run; only an induced failure proves the *alerting* does.
 
 Full reference: the `guide/` sections (the *why*) and your platform spoke in `platforms/` (the
 *how*).

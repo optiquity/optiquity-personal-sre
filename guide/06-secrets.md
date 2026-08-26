@@ -30,6 +30,8 @@ Treat all of these as never-in-git:
 - Container-registry / package-registry auth
 - Session state that embeds any of the above
 - `.env` files (they almost always contain the above)
+- **SMTP / app passwords** — the credential your alerting uses to send mail. Easy to overlook
+  because it feels like "just notifications", but it can send mail *as you*.
 
 **Not** secrets (safe to version): public keys, non-sensitive config, *references* to secrets
 (a variable name like `${GITHUB_TOKEN}`, not its value), and the *names* of vault entries.
@@ -114,6 +116,25 @@ of use), the concrete setup:
    (`set -a` exports everything the file defines; `set +a` turns that off again.)
 3. **Reference, never inline.** In tracked config, write `${GITHUB_TOKEN}` — the config manager
    renders the reference; the value comes from the loaded env or the store at runtime.
+
+### Recipe: a secret a *daemon* reads (not your shell)
+
+A background service — a health checker, a scheduled job — has no shell and no session, so the
+recipe above doesn't reach it. The shape that does:
+
+1. **A dedicated env file next to the service's config**, owned by whoever runs the service and
+   `chmod 600` (root-owned if the unit starts as root). Not in any repo.
+2. **Hand it to the service the way its runtime does it** — a systemd `EnvironmentFile=` drop-in,
+   or the timer/job's own environment. A **drop-in** is better than editing the shipped unit:
+   it survives package upgrades and keeps your change separable.
+3. **Commit the `.template`, never the filled file.** Ship `<placeholder>` values so the shape is
+   documented and reviewable; the real one is created on the node and stays there.
+4. **Split secret from non-secret.** Only the credential needs the locked file — sender and
+   recipient addresses aren't secrets and can live in the versioned config as plain values.
+
+Worked example: the alerting credential in
+[`../skeleton/monitoring/`](../skeleton/monitoring/) (`mail.env.template`, `gatus.env.template`,
+`gatus-smtp.dropin.conf`), narrated in [E16](examples/E16-fleet-health-and-alerting.md).
 
 > `~/.zshenv` itself is a dotfile you may config-manage — but it should only ever *load* the
 > secrets file, never *contain* secrets. Keep the split: env file = values (git-ignored);

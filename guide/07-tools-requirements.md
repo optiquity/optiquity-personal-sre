@@ -114,5 +114,20 @@ Updates are a project, not a reflex:
 The principle: **a node's tooling changes when you decide it does**, and every change is
 visible — never a surprise from a background auto-upgrade.
 
+**Automate the *noticing*, not the upgrading.** The posture above only works if you actually know
+what's behind — otherwise "deliberate" quietly becomes "never". The framework ships that half:
+a scheduled job inventories every node by install method and **emails you a digest**, upgrading
+nothing (`fleet-update-check` in [`../skeleton/monitoring/`](../skeleton/monitoring/)). Two traps
+it also covers, both of which this chapter warns about but can't catch by hand:
+
+- **"Don't mix the two for one tool"** is detectable — `fleet-install-audit` flags any command
+  backed by two package managers at once (a manual shim shadowing a formula, an npm CLI vs a cask).
+- **Version-pinned container images are invisible to every package manager.** Pinning is correct
+  for an appliance, but nothing tells you the pin is stale — you find out from a banner inside the
+  app, if ever. `fleet-container-check` asks the registry instead.
+
+Worked end-to-end in [E16 · Health, alerting & the update digest](examples/E16-fleet-health-and-alerting.md);
+the human runbook it feeds is [E10 · A deliberate fleet-update pass](examples/E10-fleet-update-pass.md).
+
 Next: [08 · Networking](08-networking.md) — the private-network + SSH-key substrate that lets
 nodes reach each other securely.

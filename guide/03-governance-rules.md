@@ -102,6 +102,12 @@ inventory over SSH — needs no approval, anywhere.
 **Why:** the gates are about *change*. Making reads frictionless is what lets the operator
 investigate thoroughly before proposing an action, which makes its proposals better.
 
+This is also what makes **unattended monitoring** safe. Scheduled health probes and update
+inventories run from a timer, outside any session and outside the CLI's permission model — that
+is only acceptable because they are strictly read-only and **notify-only**: they surface work and
+raise alarms, they never mutate a node. Anything that would *change* a node comes back through
+Rule 1 and waits for you. See [E16](examples/E16-fleet-health-and-alerting.md).
+
 ## Encoding the rules: the rules file
 
 The operator reads a **rules file** at the repo root — for Claude Code this is `CLAUDE.md`;

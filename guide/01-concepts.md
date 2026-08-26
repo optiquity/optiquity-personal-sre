@@ -106,6 +106,8 @@ You do not adopt everything at once. The framework has a **hard core** and **opt
 - **A private network** (Tailscale) + **SSH with keys** — for multi-node operation.
 - **A container/automation runtime** — for self-hosted services.
 - **The multi-node coordination layer** — session transfer, a fleet-wide dashboard.
+- **Monitoring + alerting** — health checks that tell you when something breaks, and a scheduled
+  digest of what's fallen behind, delivered by mail ([E16](examples/E16-fleet-health-and-alerting.md)).
 
 A complete requirements matrix (hard/optional × single/multi-node) is in
 [13 · Setup](13-setup.md). The point here: **a working adoption can be one machine with four
@@ -122,7 +124,15 @@ tools.** Everything else is opt-in.
 - **Project** — a tracked unit of work with a status, docs, and a paper trail.
 - **Registry** — the master index of all projects and their statuses.
 - **Dashboard** — an optional single-page, at-a-glance status view rendered from the registry +
-  node state (see [04 · Structure](04-structure.md)).
+  node state (see [04 · Structure](04-structure.md)). It is the **state of record**, refreshed
+  when you commit — *not* live health. (A health checker also calls its page a "dashboard"; when
+  both are in play, say **registry dashboard** vs **health page**.)
+- **Health check** — a probe that asserts a service *works* (status + expected body + timeliness),
+  not merely that it answers. "Up but broken" is the failure worth catching.
+- **Notify-only** — automation that surfaces work and raises alarms but never mutates a node;
+  the safe default for anything running unattended on a timer.
+- **Digest** — a scheduled summary email (e.g. what's behind on every node), as opposed to an
+  **alert**, which fires on a state change and wants action now.
 - **Material / destructive action** — anything hard to undo or outward-facing (a deploy, a
   push, a delete, a service bootstrap); the rules gate these behind approval.
 - **Placeholder** — a `<like-this>` token you replace with your own value; the framework's

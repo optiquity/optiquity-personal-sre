@@ -97,6 +97,12 @@ chezmoi runs on Windows, but templating and script hooks differ:
 
 ## ⛏ Service manager on Windows — TODO
 
+For fleet monitoring, the practical note today: Windows nodes are **digest-only**. `winget` needs
+an elevated *interactive* session, so an update pass can't be driven over SSH the way `apt`/`brew`
+can — the framework's update digest therefore reports Windows as a **manual** node (it tells you to
+go run it, rather than pretending it can). Metrics are fine: `windows_exporter` scrapes like any
+other node. Task Scheduler is the launchd/systemd-timer analog if you want local scheduled checks.
+
 The launchd equivalent is **Task Scheduler** (for scheduled jobs) and **Windows Services** (for
 daemons). **⛏ TODO:** how to define a scheduled task / service from tracked config, the
 approval-gated "bootstrap" step, and the headless-at-boot pattern for Podman.

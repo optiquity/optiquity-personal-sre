@@ -1,8 +1,8 @@
 # Guide contents
 
 The hub — platform-agnostic concepts (the *why*). New? Begin with **00 · Introduction**, then
-read in order. Per-platform *how* lives in [`../platforms/`](../platforms/); starter files in
-[`../skeleton/`](../skeleton/).
+read in order. Per-platform *how* lives in [`../platforms/`](../platforms/); starter files —
+including the ready-to-run **monitoring module** — in [`../skeleton/`](../skeleton/).
 
 | # | Doc | In one line |
 |---|---|---|
@@ -22,6 +22,11 @@ read in order. Per-platform *how* lives in [`../platforms/`](../platforms/); sta
 | 13 | [Setup](13-setup.md) | The onboarding journey — the three tiers and what they share. |
 | 14 | [Public/shared repos](14-sharing.md) | Publishing a scrubbed framework: derive-don't-copy + the grep-guard. |
 | 15 | [Example projects](15-example-projects.md) | A catalog of worked, end-to-end examples of the operator owning install + maintenance. |
+
+**Worked examples** — [`examples/`](examples/), catalogued in [15](15-example-projects.md): the
+A/B/C/D/E series, each an end-to-end project the operator owns. Several ship starter files in
+[`../skeleton/`](../skeleton/) — notably **[E16 · Health, alerting & the update digest](examples/E16-fleet-health-and-alerting.md)**,
+whose tools live in [`../skeleton/monitoring/`](../skeleton/monitoring/).
 
 **Platform spokes** (the *how*): [macOS](../platforms/macos.md) (complete) ·
 [Windows](../platforms/windows.md) (partial) · [Linux](../platforms/linux.md) (partial) ·

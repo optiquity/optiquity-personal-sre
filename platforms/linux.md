@@ -43,8 +43,19 @@ systemctl --user daemon-reload
 systemctl --user enable --now <name>.service     # (gated) enable + start
 journalctl --user -u <name> -f                   # inspect (a read)
 ```
-Schedule with a `.timer` unit (the cron/StartCalendarInterval equivalent). ⛏ TODO: a worked
-user-unit + timer example from tracked config.
+Schedule with a **`.timer`** unit (the cron / `StartCalendarInterval` equivalent), or trigger on a
+filesystem change with a **`.path`** unit (the `WatchPaths` equivalent — e.g. run an audit after
+anything is installed). Two habits worth keeping:
+
+- **Extend a unit with a drop-in, don't edit it.** `/etc/systemd/system/<unit>.d/10-thing.conf`
+  survives package upgrades and keeps your change separable — that's also how you hand a daemon a
+  secret (`EnvironmentFile=`, see [06](../guide/06-secrets.md)).
+- **Order anything that binds a specific address after the network.** A service that binds a fixed
+  LAN IP can start before DHCP assigns it, fail with *cannot assign requested address*, exhaust its
+  restart burst, and stay dead until you notice. `After=/Wants=network-online.target` plus a
+  patient `RestartSec=` prevents it. (Or bind `0.0.0.0` and sidestep it entirely.)
+
+Worked units + a drop-in ship in [`../skeleton/monitoring/`](../skeleton/monitoring/).
 
 ## Secret store — ⛏ verify
 
@@ -127,7 +138,9 @@ sudo sysctl -p /etc/sysctl.d/99-<gateway>.conf
 ## Monitoring the fleet from a host (native)
 
 A Linux node can watch the rest of the fleet without a container stack. Two complementary tools answer
-two different questions — don't conflate them:
+two different questions — don't conflate them. Ready-to-fill config, an email-alerting drop-in, and
+the surrounding tools are in [`../skeleton/monitoring/`](../skeleton/monitoring/); the end-to-end
+narrative is [E16](../guide/examples/E16-fleet-health-and-alerting.md):
 
 - **Up/down of always-on infrastructure** — a lightweight health checker (e.g. Gatus) with
   **in-memory storage** (no disk writes), checking internet / DNS / router / servers by

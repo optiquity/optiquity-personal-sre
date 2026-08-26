@@ -109,6 +109,10 @@ Recommended next steps, in rough order:
    map the new node to a role, apply.
 5. **Add optional tools** ([07](07-tools-requirements.md)) — a container runtime, automation,
    browser skills — as specific projects need them, never preemptively.
+6. **Stand up health checks + the update digest** ([E16](examples/E16-fleet-health-and-alerting.md))
+   — the point at which the system starts telling *you* things instead of waiting to be asked.
+   `skeleton/monitoring/bootstrap-monitoring.sh` installs the tools and seeds the config; you add
+   an SMTP credential and your node list. Worth doing as soon as anything runs unattended.
 
 ## Verifying your setup
 
@@ -119,9 +123,13 @@ You're set up correctly when:
   ([06 · Secrets](06-secrets.md)).
 - A config change flows edit → commit → apply → verify without hand-editing any machine.
 - Your registry answers "what's going on" without you reciting it from memory.
+- **A deliberately-broken check actually emails you.** If you've set up alerting
+  ([E16](examples/E16-fleet-health-and-alerting.md)), point a check at something guaranteed to
+  fail, confirm the mail lands, then remove it. A page full of green endpoints proves the
+  *checks* run; only an induced failure proves the *alerting* does.
 
-If all four hold, the framework is working as intended: your system is version-controlled,
-governed, legible, and operated by an AI you've bounded.
+If those hold, the framework is working as intended: your system is version-controlled,
+governed, legible, operated by an AI you've bounded — and it tells you when something breaks.
 
 Next: [14 · Public/shared repos](14-sharing.md) — if you want to publish your own generalized
 framework (as this one is), how to do it without leaking anything.

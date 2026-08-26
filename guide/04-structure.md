@@ -128,10 +128,11 @@ The dashboard is only useful if it's **true**, so make refreshing it **determini
 - **The registry is still the source of truth** — the dashboard is a view of it, reconciled to
   it when they differ.
 
-The framework ships a **dashboard skeleton** (`skeleton/dashboard/`) with the `DATA`-block
-pattern, both page formats, and the render logic, so you start from a working page and just
-fill in your data. A dedicated dashboard doc in the skeleton records the refresh procedure so
-it's reproducible.
+If you build one, keep it to a single self-contained page with one `DATA` block as its only
+source of truth, and record the refresh procedure alongside it so it's reproducible. Treat it as
+the **state of record** — what you and the operator agreed is true — not as live health: dated
+snapshots are not a monitor. For live up/down and alerting, see
+[E16 · Health & alerting](examples/E16-fleet-health-and-alerting.md).
 
 ## The playbook — where the operator starts
 

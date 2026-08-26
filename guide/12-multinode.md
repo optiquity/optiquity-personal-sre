@@ -72,8 +72,14 @@ operator on the `workstation`, occasionally reaching other nodes, is plenty.
 Once you're managing several nodes, the **dashboard** ([04 · Structure](04-structure.md)) becomes
 the fleet view: a page per node showing its current state (services, specs, dated snapshots),
 plus the config-management adoption matrix and the divergence ledger ([Rule 7](03-governance-rules.md)'s
-unavoidable-vs-temporary splits). This is where "what's the state of everything" gets answered
-at a glance — the payoff of the structure discipline scaling to many nodes.
+unavoidable-vs-temporary splits). This is where "what did we agree is true about everything" gets
+answered at a glance — the payoff of the structure discipline scaling to many nodes.
+
+**But a dashboard is not a monitor.** It shows the state of *record*, refreshed when you commit;
+its figures are dated snapshots. "Is it working *right now*, and who gets told when it isn't?" is
+a different job, answered by health checks + alerting — see
+[E16](examples/E16-fleet-health-and-alerting.md). Run both: the dashboard for what you decided,
+the checker for what is actually true this minute.
 
 ## Keeping multi-node sane
 

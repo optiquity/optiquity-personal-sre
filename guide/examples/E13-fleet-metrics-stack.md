@@ -102,8 +102,11 @@ it powers a machine down.
   index is built *before* provisioning runs; **restart Grafana once** (or hard-refresh).
 - **Container image pulls hang headless** when a credential helper wants a GUI keychain — pull from an
   interactive session, or bypass the helper with an empty `DOCKER_CONFIG` for public images.
-- **A restarted app container strands its Serve sidecar** (new network namespace) — recreate both
-  together, don't restart the app alone.
+- **Touching an app container strands its Serve sidecar** (it shares the app's network namespace).
+  Two cases, two fixes: `restart` the app (id unchanged) → **restart** the sidecar; **recreate** the
+  app (new container id) → **recreate** the sidecar, because a plain restart still points at the dead
+  id. Sweep your published URLs afterwards — the app stays healthy while its URL goes dark. See
+  [E16 § 6](E16-fleet-health-and-alerting.md).
 
 ## What you learn from this example
 
@@ -115,5 +118,17 @@ it powers a machine down.
 ## Adapt it
 
 - **One machine?** Still worth it — Prometheus + Grafana + one exporter on the same box.
-- **Prefer up/down + alerts over graphs?** Pair this with an availability monitor / status page.
+- **Prefer up/down + alerts over graphs?** Pair this with an availability monitor / status page —
+  that is exactly **[E16 · Health, alerting & the update digest](E16-fleet-health-and-alerting.md)**
+  (Gatus + email). The two are complements, not alternatives: **this stack answers "how has it
+  behaved over time"; E16 answers "is it broken right now, and who gets told."** Note the stack
+  built here is itself unmonitored until you add Prometheus and Grafana to that checker.
 - **Lighter TSDB?** A single-binary Prometheus-compatible store drops into the same slot.
+
+## Related
+
+[E16 · Health, alerting & the update digest](E16-fleet-health-and-alerting.md) (the up/down +
+alerting complement to these graphs) · [E14 · GitHub metrics](E14-github-metrics.md) ·
+[E12 · Dedicated mesh gateway](E12-dedicated-mesh-gateway.md) ·
+[E11 · Publish a service](E11-publish-a-service.md) ·
+[08 · Networking](../08-networking.md) · [catalog](../15-example-projects.md).

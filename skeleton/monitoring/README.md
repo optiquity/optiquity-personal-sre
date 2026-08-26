@@ -1,15 +1,21 @@
 # skeleton/monitoring — fleet health, failure email, and an update digest
 
-Reusable tools + templates to give your operator three things, all **notify-only** (they surface
-work and raise alarms; they never auto-mutate a running node):
+Reusable tools + templates that answer two questions without you going to look — *is it still
+working?* and *what has fallen behind?* — and tell you by email when the answer is bad. Everything
+here is **notify-only**: it surfaces work and raises alarms, it never auto-mutates a running node.
 
 1. **App/infra health checks** — Gatus runs a battery of functional checks (API status + body +
    latency, not just up/down) and **emails you when one fails**.
-2. **An update digest** — a weekly job inventories what's behind on every node (by install
-   method) and emails an actionable list. It **upgrades nothing** — you run the upgrades
-   deliberately (guide example **E10**).
-3. **Failure email** — a standalone SMTP path (e.g. a Gmail app password) shared by both, so
-   alerting still fires when the rest of the stack is down.
+2. **Local checks a remote prober can't do** — a service with no listening port, a local mount,
+   the monitor itself (`fleet-local-check`).
+3. **An update digest** — a weekly job inventories what's behind on every node, **by install
+   method** — including **pinned container images**, which no package manager can see
+   (`fleet-update-check` + `fleet-container-check`). It **upgrades nothing**; you run the
+   upgrades deliberately (guide example **E10**).
+4. **An install-method audit** — catches one command installed two ways, the trap that makes
+   upgrades break confusingly (`fleet-install-audit`).
+5. **Failure email** — a standalone SMTP path (e.g. an app password) shared by all of them, so
+   alerting still fires when the rest of the stack is down (`fleet-mail`).
 
 The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](../../guide/examples/E16-fleet-health-and-alerting.md)**. This folder is the parts.
 
@@ -38,7 +44,7 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 On your **always-on** node (the one that can SSH to the rest of the fleet):
 
 ```sh
-./bootstrap-monitoring.sh --with-timer          # installs tools, seeds config, schedules weekly
+./bootstrap-monitoring.sh --with-timer          # installs the 5 tools, seeds config, loads the timers
 $EDITOR ~/.config/fleet-monitoring/mail.env         # SMTP_PASSWORD + from/to (chmod 600)
 $EDITOR ~/.config/fleet-monitoring/fleet-nodes.conf # your nodes
 fleet-mail -s "test" --body "hello"                 # confirm mail works
