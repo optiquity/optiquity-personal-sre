@@ -96,5 +96,4 @@ tool updated on another, a rule that drifted. Counter it with the disciplines al
 Multi-node doesn't change the framework's shape — it's the same rules, structure, and
 config-flow applied to more nodes. That invariance is what keeps it manageable as you grow.
 
-Next: [13 · Setup](13-setup.md) — the onboarding journey that ties everything together into a
-step-by-step (or automated) adoption.
+Next: [13 · Monitoring](13-monitoring.md) — knowing the fleet works, and hearing when it doesn't.

@@ -71,7 +71,9 @@ correctly everywhere:
 ```
 
 Set the role once, in each node's **config-manager data** (a small local file — see the
-skeleton's `chezmoi.toml.example`), never scattered through the configs. Then:
+skeleton's [`chezmoi.toml.example`](../skeleton/chezmoi.toml.example)), never scattered through
+the configs — and pair it with [`chezmoiignore.template`](../skeleton/chezmoiignore.template),
+which lists what the manager must never apply. Then:
 
 - A file that's identical everywhere is just a plain managed file.
 - A file that differs by role uses a role template.

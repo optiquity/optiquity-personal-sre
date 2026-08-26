@@ -1,6 +1,6 @@
 # E12 · A dedicated mesh gateway (subnet router + exit node, with an HA backup)
 
-**Section E — fleet operations.** Back to the [catalog](../15-example-projects.md).
+**Section E — fleet operations.** Back to the [catalog](../16-example-projects.md).
 
 **What this shows:** giving the mesh's **gateway roles** — subnet router (reach LAN-only gear
 remotely) and exit node (route internet traffic out through home) — a **dedicated, capable node**
@@ -105,4 +105,4 @@ traps) · [platforms/linux](../../platforms/linux.md) (the headless-appliance *h
 [E10 · Fleet-update pass](E10-fleet-update-pass.md) ·
 [E11 · Publish a service](E11-publish-a-service.md) ·
 [E16 · Health + alerting](E16-fleet-health-and-alerting.md) (Gatus health checks live here) ·
-[catalog](../15-example-projects.md).
+[catalog](../16-example-projects.md).

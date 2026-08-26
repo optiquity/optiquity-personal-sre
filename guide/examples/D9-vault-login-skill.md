@@ -1,6 +1,6 @@
 # D9 · A vault-read helper + login-automation skill
 
-**Section D — composed skills & credentials.** Back to the [catalog](../15-example-projects.md).
+**Section D — composed skills & credentials.** Back to the [catalog](../16-example-projects.md).
 
 **What this shows:** turning credential access + browser automation into a **governed, reusable
 skill** — a **read-only** vault helper composed with browser automation into a `SKILL.md` that
@@ -86,7 +86,7 @@ Bake these into the `SKILL.md` so the safety can't be skipped:
 Skills are **tracked** ([05 · chezmoi](../05-chezmoi.md)) so every node has the same version, and
 recorded as a project ([04 · Structure](../04-structure.md)). Note whether it's a **generic** skill
 (shareable) or **personal** (tied to a specific account — stays in your private repo, never
-published — see [14 · Sharing](../14-sharing.md)).
+published — see [14 · Sharing](../15-sharing.md)).
 
 ## Maintenance — the ownership half
 
@@ -117,4 +117,4 @@ bake in the confirmation + no-echo guardrails, and track it (private if it's tie
 **Related:** [06 · Secrets](../06-secrets.md) · [11 · Agents & skills](../11-agents-skills.md) ·
 [`skeleton/skills/vault-read`](../../skeleton/skills/vault-read/SKILL.md) ·
 [`skeleton/skills/browser-login`](../../skeleton/skills/browser-login/SKILL.md) ·
-[14 · Sharing](../14-sharing.md) · [catalog](../15-example-projects.md).
+[14 · Sharing](../15-sharing.md) · [catalog](../16-example-projects.md).

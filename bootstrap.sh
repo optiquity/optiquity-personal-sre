@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bootstrap.sh — set up YOUR private personal-SRE repo (guide/13-setup.md, Tier 2).
+# bootstrap.sh — set up YOUR private personal-SRE repo (guide/14-setup.md, Tier 2).
 #
 # This framework repo is a READ-ONLY REFERENCE. You do NOT work in it. bootstrap
 # creates (or points you at) YOUR OWN private repo, where all your work happens —

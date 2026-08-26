@@ -19,14 +19,19 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 | 10 | [MCP](10-mcp.md) | External capabilities (GitHub, filesystem, …) — each a scoped capability grant. |
 | 11 | [Agents & skills](11-agents-skills.md) | Subagents + the `SKILL.md` pattern; the multi-CLI config-location map. |
 | 12 | [Multi-node](12-multinode.md) | The advanced layer: remote apply, session mobility, the fleet view. |
-| 13 | [Setup](13-setup.md) | The onboarding journey — the three tiers and what they share. |
-| 14 | [Public/shared repos](14-sharing.md) | Publishing a scrubbed framework: derive-don't-copy + the grep-guard. |
-| 15 | [Example projects](15-example-projects.md) | A catalog of worked, end-to-end examples of the operator owning install + maintenance. |
+| 13 | [Monitoring](13-monitoring.md) | Knowing it works and hearing when it doesn't: health checks, alerting, and the update digest. |
+| 14 | [Setup](14-setup.md) | The onboarding journey — the three tiers and what they share. |
+| 15 | [Public/shared repos](15-sharing.md) | Publishing a scrubbed framework: derive-don't-copy + the grep-guard. |
+| 16 | [Example projects](16-example-projects.md) | A catalog of worked, end-to-end examples of the operator owning install + maintenance. |
 
-**Worked examples** — [`examples/`](examples/), catalogued in [15](15-example-projects.md): the
+**Worked examples** — [`examples/`](examples/), catalogued in [15](16-example-projects.md): the
 A/B/C/D/E series, each an end-to-end project the operator owns. Several ship starter files in
 [`../skeleton/`](../skeleton/) — notably **[E16 · Health, alerting & the update digest](examples/E16-fleet-health-and-alerting.md)**,
 whose tools live in [`../skeleton/monitoring/`](../skeleton/monitoring/).
+
+**Starter files** — [`../skeleton/`](../skeleton/) is the parts bin: templates and ready-to-run
+modules, each explained by the chapter it belongs to. Its
+[README](../skeleton/README.md) indexes every entry and points back to that chapter.
 
 **Platform spokes** (the *how*): [macOS](../platforms/macos.md) (complete) ·
 [Windows](../platforms/windows.md) (partial) · [Linux](../platforms/linux.md) (partial) ·

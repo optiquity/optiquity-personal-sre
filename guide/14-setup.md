@@ -1,4 +1,4 @@
-# 13 · Setup — the onboarding journey
+# 14 · Setup — the onboarding journey
 
 > **Doing setup right now?** Start with **[`GETTING-STARTED.md`](../GETTING-STARTED.md)** — the
 > practical front door (intro, requirements, step-by-step, and the paste-in AI-setup prompt).
@@ -131,5 +131,5 @@ You're set up correctly when:
 If those hold, the framework is working as intended: your system is version-controlled,
 governed, legible, operated by an AI you've bounded — and it tells you when something breaks.
 
-Next: [14 · Public/shared repos](14-sharing.md) — if you want to publish your own generalized
+Next: [15 · Public/shared repos](15-sharing.md) — if you want to publish your own generalized
 framework (as this one is), how to do it without leaking anything.

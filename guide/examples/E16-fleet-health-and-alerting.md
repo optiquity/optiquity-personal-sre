@@ -1,6 +1,6 @@
 # E16 · Fleet health, alerting, and the update digest
 
-**Section E — fleet operations.** Back to the [catalog](../15-example-projects.md).
+**Section E — fleet operations.** Back to the [catalog](../16-example-projects.md).
 
 **What this shows:** giving your operator **eyes and a voice** — a battery of functional health
 checks across the fleet (with Gatus), a **weekly digest of what's behind** on every node, and
@@ -246,6 +246,6 @@ Deploy Gatus on the gateway per [`skeleton/monitoring/README.md`](../../skeleton
   Gatus is the up/down + alerting complement, not a replacement.
 - [09 · Permissions](../09-permissions.md) — why unattended, read-only probes are safe.
 - [12 · Multi-node](../12-multinode.md) — the dashboard is state-of-record; this is live health.
-- [13 · Setup](../13-setup.md) — where standing this up belongs in the onboarding path.
+- [14 · Setup](../14-setup.md) — where standing this up belongs in the onboarding path.
 - Governance [§ 03](../03-governance-rules.md) (Rule 1 = material actions need you; Rule 10 =
   reads are free) · secrets [§ 06](../06-secrets.md) (the daemon-read credential recipe).

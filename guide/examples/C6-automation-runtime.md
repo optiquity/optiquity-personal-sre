@@ -1,6 +1,6 @@
 # C6 · A self-hosted automation runtime
 
-**Section C — self-hosted apps over the private mesh.** Back to the [catalog](../15-example-projects.md).
+**Section C — self-hosted apps over the private mesh.** Back to the [catalog](../16-example-projects.md).
 
 **What this shows:** standing up a real self-hosted service — a **workflow/automation runtime**
 (n8n-style) — in a container, reachable **privately over the mesh by default** and **publicly only
@@ -109,4 +109,4 @@ it, and wire its data into your backup routine.
 
 **Related:** [08 · Networking](../08-networking.md) · [C7 · Container runtime + stack](C7-container-runtime-stack.md)
 · [E11 · Publishing a service safely](E11-publish-a-service.md) ·
-[B4 · Nightly backup daemon](B4-nightly-backup-daemon.md) · [catalog](../15-example-projects.md).
+[B4 · Nightly backup daemon](B4-nightly-backup-daemon.md) · [catalog](../16-example-projects.md).

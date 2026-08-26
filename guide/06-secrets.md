@@ -105,7 +105,8 @@ comments — copy and adapt. Verify the policy holds with a secret-scan before c
 For secrets a service or your shell needs at runtime (as opposed to a vault-read at the moment
 of use), the concrete setup:
 
-1. **Create a git-ignored env file.** Copy the skeleton's `env.example` to a real file — either
+1. **Create a git-ignored env file.** Copy the skeleton's [`env.example`](../skeleton/env.example)
+   to a real file — either
    `~/.env` (outside any repo) or a repo-local `.env` (the ignore templates already exclude
    `**/.env`). Fill in real values. **The filled file is never committed; the `env.example`
    with placeholders may be.**
@@ -172,7 +173,7 @@ Trust, but verify — make "no secrets in git" checkable, not assumed:
 - **A guard for shared repos.** If any repo is or may become public, add a **pre-commit hook
   and/or CI check** that *fails* on personal patterns and secret shapes — so a mistake is
   blocked mechanically, not caught by luck. (The framework's own public repo uses exactly this;
-  see [14 · Public/shared repos](14-sharing.md).)
+  see [15 · Public/shared repos](15-sharing.md).)
 - **Periodic history audit.** Occasionally scan the *history*, not just the working tree — a
   secret committed months ago won't show in `status`.
 

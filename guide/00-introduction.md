@@ -97,7 +97,7 @@ The load-bearing invariant: **zero secrets in git, ever** — enforced structura
 `skeleton/chezmoiignore.template`), wire your platform's secret store, and confirm a secret-scan
 of your repo finds nothing.
 → The full discipline + the `.env`/keychain recipes: [06 · Secrets](06-secrets.md). Sharing safely:
-[14 · Public/shared repos](14-sharing.md).
+[15 · Public/shared repos](15-sharing.md).
 
 ### Foundation 4 — Rules (how the operator stays grounded and knows when to ask)
 
@@ -160,9 +160,9 @@ projects need them* — never preemptively.
 2. [01 · Concepts](01-concepts.md) — the model + vocabulary in depth.
 3. [02 · The operator](02-operator.md) — how you actually work with the operator.
 4. [03 · Governance](03-governance-rules.md) — the rules that make it safe.
-5. Skim [04](04-structure.md)–[14](14-sharing.md) for the pieces you'll use; see
+5. Skim [04](04-structure.md)–[14](15-sharing.md) for the pieces you'll use; see
    [`_contents.md`](_contents.md) for the one-line index.
 6. Worked, end-to-end examples of the operator owning install *and* maintenance:
-   [15 · Example projects](15-example-projects.md).
+   [16 · Example projects](16-example-projects.md).
 7. Then your platform spoke (`platforms/<os>.md`) and a setup tier in
    [`GETTING-STARTED.md`](../GETTING-STARTED.md).

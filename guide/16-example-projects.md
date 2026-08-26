@@ -1,4 +1,4 @@
-# 15 · Example projects
+# 16 · Example projects
 
 Worked, end-to-end examples of the personal-SRE operator **owning a tool or service across its
 whole lifecycle — install *and* maintenance**, not just a one-time setup. Each shows the same

@@ -61,7 +61,7 @@ so from that point on it won't push, apply, delete, or create remote artifacts w
 explicit approval. You're not hoping it behaves; you've configured it to, and the permission
 layer backstops the configuration.
 
-This is why onboarding ([13 · Setup](13-setup.md)) puts the rules file in place **first**: every
+This is why onboarding ([14 · Setup](14-setup.md)) puts the rules file in place **first**: every
 later step happens under governance, including the operator's own setup work.
 
 ## Where the operator gets its "self"
@@ -85,7 +85,7 @@ a new session picks up exactly where the last left off by reading them.
 
 - **A new session is not a blank slate.** It reads the rules + registry and orients itself —
   which is how a fresh session resumes an in-progress project (this is what onboarding's
-  hand-off relies on: [13 · Setup](13-setup.md)).
+  hand-off relies on: [14 · Setup](14-setup.md)).
 - **You can run more than one CLI.** Claude Code is the reference; Codex and others map cleanly
   ([11 · Agents & skills](11-agents-skills.md) has the config-location table). Keep the rule
   *content* in sync across them so the operator behaves identically whichever you invoke.

@@ -1,6 +1,6 @@
 # B4 · A nightly backup daemon
 
-**Section B — scheduled services & backups.** Back to the [catalog](../15-example-projects.md).
+**Section B — scheduled services & backups.** Back to the [catalog](../16-example-projects.md).
 
 **What this shows:** a scheduled job that ships a database or directory to a **backup target over
 SSH** every night, with a **remote integrity check** and **loud failure** — where governance
@@ -110,4 +110,4 @@ to bootstrap it, then **do a verified first run** before you rely on it.
 
 **Related:** [Rule 4 — back up before apply](../03-governance-rules.md) ·
 [08 · Networking (SSH keys)](../08-networking.md) · [B5 · Network-mount keeper](B5-network-mount-keeper.md)
-· [platform spoke](../../platforms/macos.md) · [catalog](../15-example-projects.md).
+· [platform spoke](../../platforms/macos.md) · [catalog](../16-example-projects.md).

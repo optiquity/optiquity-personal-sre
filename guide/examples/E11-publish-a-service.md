@@ -1,6 +1,6 @@
 # E11 · Publishing a service safely
 
-**Section E — fleet operations.** Back to the [catalog](../15-example-projects.md).
+**Section E — fleet operations.** Back to the [catalog](../16-example-projects.md).
 
 **What this shows:** taking a local service and exposing it **private-first** (mesh-only), then
 **public only deliberately**, with **what's exposed and how to unpublish written down**. The
@@ -96,4 +96,4 @@ add "re-audit exposure" to your maintenance pass.
 
 **Related:** [08 · Networking](../08-networking.md) · [C6 · Automation runtime](C6-automation-runtime.md)
 · [C7 · Container runtime + stack](C7-container-runtime-stack.md) ·
-[E10 · Fleet-update pass](E10-fleet-update-pass.md) · [catalog](../15-example-projects.md).
+[E10 · Fleet-update pass](E10-fleet-update-pass.md) · [catalog](../16-example-projects.md).

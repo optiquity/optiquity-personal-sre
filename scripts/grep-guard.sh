@@ -26,7 +26,7 @@ ROOT="${1:-.}"
 EXCLUDES=(
   ':(exclude).git/**'
   ':(exclude)**/grep-guard.sh'
-  ':(exclude)**/14-sharing.md'
+  ':(exclude)**/15-sharing.md'
   ':(exclude)**/06-secrets.md'          # documents secret shapes by design
 )
 
@@ -76,7 +76,7 @@ scan() {
     # Not a repo: plain recursive grep, minus .git and the self/allowlisted docs.
     hits="$(grep "${flags[@]}" -r \
       --exclude-dir=.git \
-      --exclude=grep-guard.sh --exclude=14-sharing.md --exclude=06-secrets.md \
+      --exclude=grep-guard.sh --exclude=15-sharing.md --exclude=06-secrets.md \
       -e "$pat" "$ROOT" 2>/dev/null || true)"
   fi
   if [ -n "$hits" ]; then

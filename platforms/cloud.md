@@ -18,7 +18,7 @@ chezmoi. What's *different* on cloud:
 
 | Concept | Cloud twist |
 |---|---|
-| Provisioning ([13](../guide/13-setup.md)) | **cloud-init** / provider images / IaC (Terraform) instead of hand-setup |
+| Provisioning ([13](../guide/14-setup.md)) | **cloud-init** / provider images / IaC (Terraform) instead of hand-setup |
 | Secret store ([06](../guide/06-secrets.md)) | a **managed secret manager** (per provider) instead of a local keyring |
 | Private mesh ([08](../guide/08-networking.md)) | Tailscale still works great; cloud VPCs/security-groups are an *additional* layer |
 | Identity | cloud **IAM** roles/service accounts — often better than long-lived keys |

@@ -1,4 +1,4 @@
-# 14 · Public/shared repos — publishing without leaking
+# 15 · Public/shared repos — publishing without leaking
 
 Most adopters never need this section: your setup lives in your **private repo** and stays
 there. But if you want to **publish a generalized version of your framework** — as *this*
@@ -56,7 +56,8 @@ Human diligence isn't enough for a public repo — one slip is permanent
 ([06 · Secrets](06-secrets.md)). So enforce the exclusion list **mechanically** with a
 **grep-guard**: a script that scans the tree and **fails** if any forbidden pattern appears.
 
-The framework ships one (`skeleton/scripts/grep-guard`); it checks for:
+The framework ships one ([`scripts/grep-guard.sh`](../scripts/grep-guard.sh) — it guards this
+repo, so it lives at the root rather than in the skeleton); it checks for:
 
 - Path patterns: `/Users/`, `/home/<name>`-style user paths
 - Email patterns: anything matching a real address
@@ -69,7 +70,8 @@ Wire it in two places:
 
 1. **Pre-commit hook** in the public repo — every commit is scanned before it lands. A hit
    **blocks the commit**.
-2. **CI check** (a GitHub Action) — every push/PR is scanned server-side, so a bypassed local
+2. **CI check** (a GitHub Action — see [`skeleton/github/`](../skeleton/github/)) — every push/PR
+   is scanned server-side, so a bypassed local
    hook is still caught.
 
 The guard **fails closed**: if it can't decide, it flags. A false positive costs you a
@@ -113,4 +115,4 @@ what lets you share the work at all.
 ---
 
 *This is the last section of the master guide. For platform-specific commands, see the spokes
-(`platforms/`); for starter files, see `skeleton/`; to begin, see [13 · Setup](13-setup.md).*
+(`platforms/`); for starter files, see `skeleton/`; to begin, see [14 · Setup](14-setup.md).*

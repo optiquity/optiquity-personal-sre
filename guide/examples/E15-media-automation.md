@@ -1,6 +1,6 @@
 # E15 · Media automation for a self-hosted library (add-ons, not a second stack)
 
-**Section E — fleet operations.** Back to the [catalog](../15-example-projects.md).
+**Section E — fleet operations.** Back to the [catalog](../16-example-projects.md).
 
 **What this shows:** *enhancing* and *observing* a self-hosted media server (Plex / Jellyfin / Emby)
 by folding in **small, single-purpose pieces** — a **config-as-code collection/metadata manager**
