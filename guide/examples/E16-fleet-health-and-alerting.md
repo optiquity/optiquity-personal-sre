@@ -124,6 +124,24 @@ command | workflows active | test "$(…count active…)" -ge 1   # escape hatch
   `mount`), not the filesystem; for real hung-detection, go through a login shell
   (`ssh localhost 'ls <path>'`) as a `command` check.
 
+### 5. Install-method audit — catch "installed two ways"
+
+Over time a command ends up provided by two package managers — a manual shim shadowing a brew
+formula, an npm CLI vs a cask, a `pip` in `/usr/local` over the system one. Whichever wins the
+`$PATH` race decides what runs; upgrades then break in confusing ways. `fleet-install-audit` scans
+every `$PATH` executable per node (reads your `fleet-nodes.conf`, so it grows on its own) and flags
+any command backed by **2+ distinct real binaries via user methods** (brew / npm / pipx / manual).
+
+The whole trick is being **low-noise**: exclude intentional coexistences — **version managers**
+(nvm/pyenv/…), **app-bundled CLIs**, package-manager keg `libexec` — and dedup symlinks that point
+at one binary. A blunt "flag every command in 2+ dirs" drowns you in `python3`-style overrides;
+this rule surfaces only real duplicate installs.
+
+Two triggers: **after any install** (a launchd WatchPaths agent — or a Linux systemd `.path` unit —
+runs it `--local`, throttled, state-deduped) and **weekly** (folded into the `fleet-update-check`
+digest). It's the guard that keeps the "one install method per tool" discipline (§ 07) honest as
+the fleet grows.
+
 ## Bootstrap
 
 On the always-on node:
@@ -134,8 +152,9 @@ $EDITOR ~/.config/fleet-monitoring/mail.env           # SMTP_PASSWORD + from/to
 $EDITOR ~/.config/fleet-monitoring/fleet-nodes.conf   # your fleet (the digest)
 $EDITOR ~/.config/fleet-monitoring/local-checks.conf  # your local-only checks
 fleet-mail -s "test" --body "hello"                   # confirm mail
-fleet-update-check --dry-run                          # preview the digest
+fleet-update-check --dry-run                          # preview the digest (folds in the audit)
 fleet-local-check  --dry-run                          # preview the local probes
+fleet-install-audit --dry-run                         # preview the install-method audit
 ```
 
 Deploy Gatus on the gateway per [`skeleton/monitoring/README.md`](../../skeleton/monitoring/README.md) § Gatus.

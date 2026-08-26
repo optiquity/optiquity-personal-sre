@@ -18,14 +18,16 @@ BIN="$HOME/.local/bin"
 CFG="$HOME/.config/fleet-monitoring"
 LABEL="${FLEET_LABEL:-com.example.fleet-update-check}"
 LOCAL_LABEL="${FLEET_LOCAL_LABEL:-com.example.fleet-local-check}"
+AUDIT_LABEL="${FLEET_AUDIT_LABEL:-com.example.fleet-install-audit}"
 DO_TIMER=0
 [ "${1:-}" = "--with-timer" ] && DO_TIMER=1
 
 mkdir -p "$BIN" "$CFG"
-install -m 755 "$HERE/fleet-mail"          "$BIN/fleet-mail"
-install -m 755 "$HERE/fleet-update-check"  "$BIN/fleet-update-check"
-install -m 755 "$HERE/fleet-local-check"   "$BIN/fleet-local-check"
-echo "installed: $BIN/fleet-mail, $BIN/fleet-update-check, $BIN/fleet-local-check"
+install -m 755 "$HERE/fleet-mail"           "$BIN/fleet-mail"
+install -m 755 "$HERE/fleet-update-check"   "$BIN/fleet-update-check"
+install -m 755 "$HERE/fleet-local-check"    "$BIN/fleet-local-check"
+install -m 755 "$HERE/fleet-install-audit"  "$BIN/fleet-install-audit"
+echo "installed: fleet-mail, fleet-update-check, fleet-local-check, fleet-install-audit (in $BIN)"
 
 seed() {  # src dest mode — never overwrite a file you've already filled in
   if [ -e "$2" ]; then echo "kept existing: $2"; else install -m "$3" "$1" "$2"; echo "seeded:  $2  (edit me)"; fi
@@ -47,9 +49,10 @@ if [ "$DO_TIMER" = 1 ]; then
       }
       load_timer "$LABEL"       fleet-update-check.plist.template "weekly Mon 09:00"
       load_timer "$LOCAL_LABEL" fleet-local-check.plist.template  "every 15 min"
+      load_timer "$AUDIT_LABEL" fleet-install-audit.plist.template "WatchPaths, after any install"
       ;;
     *)
-      echo "timer: on Linux, wrap fleet-update-check (weekly) + fleet-local-check (~15 min) in systemd timers or cron (see README)."
+      echo "timer: on Linux, wrap fleet-update-check (weekly) + fleet-local-check (~15 min) in systemd timers or cron, and fleet-install-audit --local in a systemd .path unit watching your install dirs (see README)."
       ;;
   esac
 fi

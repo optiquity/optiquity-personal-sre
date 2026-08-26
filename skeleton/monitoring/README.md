@@ -20,6 +20,8 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 | `fleet-mail` | dependency-free SMTP mailer; reads `mail.env`; used by the digest + any script alert |
 | `fleet-update-check` | the digest; reads `fleet-nodes.conf`; notify-only; local + SSH nodes |
 | `fleet-local-check` | local-only probes Gatus can't reach; reads `local-checks.conf`; email on state change |
+| `fleet-install-audit` | generalized install-method conflict detector across nodes; email on state change |
+| `fleet-install-audit.plist.template` | after-install WatchPaths trigger (runs the audit `--local`) |
 | `fleet-nodes.conf.template` | your node inventory (`role | ssh-target | os | methods`) |
 | `local-checks.conf.template` | typed local checks (`service | mount | http | command`) |
 | `fleet-local-check.plist.template` | launchd timer for the local probe (every 15 min) |
@@ -92,6 +94,30 @@ Two gotchas worth internalizing (both cost real debugging):
   a guaranteed false alarm on a schedule. `fleet-local-check`'s `mount` type reads only the
   kernel mount table (reliable everywhere); for genuine hung-detection, use a `command` check
   through a login shell (`ssh localhost 'ls <path>'`).
+
+## Install-method audit (catch "installed two ways")
+
+The trap that bites over time: one command ends up provided by two package managers — a manual
+shim shadowing a brew formula, an npm CLI vs a cask, a `pip` in `/usr/local` over the system one.
+Whichever wins the `$PATH` race decides what runs, and upgrades silently break. `fleet-install-audit`
+scans every executable in each node's `$PATH` (it reads your `fleet-nodes.conf`, so it grows on its
+own) and flags any command backed by **2+ distinct real binaries via user methods** — the real
+conflict signal.
+
+It is deliberately **low-noise**: it excludes intentional coexistences — **version managers**
+(nvm/pyenv/rbenv/asdf/…), **app-bundled CLIs** (a container tool's own bin dir), and package-manager
+keg `libexec` — and dedups multiple symlinks that point at one binary. Benign system-vs-brew
+overrides (`python3` in `/usr/bin` and `/opt/homebrew/bin`) are **not** flagged. It also reports
+duplicate `$PATH` entries and self-updating (`auto_updates`) casks.
+
+```sh
+fleet-install-audit --dry-run     # print; --local audits just this host; drop --dry-run to email
+```
+
+Two intended triggers (both wired by bootstrap): **after any install** — the
+`fleet-install-audit.plist.template` WatchPaths agent runs it `--local` whenever an install dir
+changes (throttled, state-deduped); and **weekly** — `fleet-update-check` folds the audit into its
+digest email. On Linux, use a systemd `.path` unit watching your install dirs instead of WatchPaths.
 
 ## Secrets & privacy
 

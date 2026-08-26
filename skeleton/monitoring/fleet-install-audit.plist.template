@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- After-install trigger (macOS): run the install-method audit whenever an install dir changes.
+     WatchPaths fires on any add/remove in the listed dirs (a brew/npm/pipx/manual install), then
+     runs `fleet-install-audit --local` (this host, fast); ThrottleInterval caps it at once/5min so
+     a big upgrade can't spam it, and the tool state-dedups its email. Edit WatchPaths for YOUR
+     install locations. bootstrap-monitoring.sh substitutes __HOME__/__LABEL__ and loads it.
+     On Linux, use a systemd .path unit watching the same dirs instead (see README). -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>__LABEL__</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HOME__/.local/bin/fleet-install-audit</string>
+        <string>--local</string>
+    </array>
+    <key>WatchPaths</key>
+    <array>
+        <string>/opt/homebrew/bin</string>
+        <string>/opt/homebrew/Caskroom</string>
+        <string>__HOME__/.local/bin</string>
+        <string>/usr/local/bin</string>
+    </array>
+    <key>ThrottleInterval</key>
+    <integer>300</integer>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:__HOME__/.local/bin</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/tmp/fleet-install-audit.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/fleet-install-audit.err</string>
+</dict>
+</plist>

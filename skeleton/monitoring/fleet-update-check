@@ -140,14 +140,27 @@ def main():
               + ("Package indexes were refreshed.\n" if a.refresh else "Indexes NOT refreshed (run with --refresh for exact counts).\n"))
     digest = header + "\n" + "\n\n".join(blocks) + "\n"
 
+    # fold the generalized install-method audit into the weekly digest (if the tool is installed)
+    audit_conflict = False
+    audit = os.path.expanduser("~/.local/bin/fleet-install-audit")
+    if os.path.exists(audit):
+        try:
+            ar = subprocess.run([audit, "--dry-run"], capture_output=True, text=True, timeout=240)
+            audit_conflict = ar.returncode != 0
+            digest += "\n\n" + "=" * 56 + "\n" + (ar.stdout or "(no audit output)")
+        except Exception as e:
+            digest += f"\n\n(install-method audit failed to run: {e})\n"
+
     if a.dry_run:
         print(digest); return 0
-    if not (any_updates or any_errs or a.always):
-        print("fleet-update-check: everything current, no errors — no email sent.")
+    if not (any_updates or any_errs or audit_conflict or a.always):
+        print("fleet-update-check: everything current, no errors, no install conflicts — no email sent.")
         return 0
-    tag = "updates available" if any_updates else "check errors"
-    if any_errs and any_updates:
-        tag = "updates available + check errors"
+    tags = []
+    if any_updates: tags.append("updates available")
+    if audit_conflict: tags.append("install conflicts")
+    if any_errs: tags.append("check errors")
+    tag = " + ".join(tags) or "summary"
     subj = f"[fleet] update digest — {tag} ({stamp})"
     p = subprocess.run([a.mailer, "--subject", subj, "--body", digest])
     if p.returncode != 0:

@@ -1,0 +1,165 @@
+#!/usr/bin/env python3
+"""fleet-install-audit — detect install-method conflicts across the fleet, generalized.
+
+Scans what's ACTUALLY installed on each node (no hardcoded tool list, so it grows on its own)
+and flags the real "installed two ways" class — the trap where one command is provided by more
+than one package manager (a manual shim shadowing a brew formula, an npm CLI vs a cask, a pip in
+/usr/local shadowing the system one). Those cause silent version confusion and broken upgrades.
+
+SIGNAL (low-noise on purpose): flag a command only when it resolves to **2+ distinct real
+binaries** via *user* methods (brew / npm-global / pipx / manual ~/.local or /usr/local; dpkg vs
+manual on Linux). It EXCLUDES intentional coexistences — version managers (nvm/pyenv/rbenv/asdf/
+…), app-bundled CLIs (e.g. a container tool's own bin dir), and package-manager keg libexec — and
+dedups multiple symlinks that point at one binary. Benign system-vs-brew overrides aren't flagged.
+Also reports duplicate $PATH entries and self-updating casks (informational).
+
+Nodes come from the same $HOME/.config/fleet-monitoring/fleet-nodes.conf as fleet-update-check
+(role | ssh-target | os | methods — methods is ignored here). The audit logic is piped to each
+node's python3 over SSH, so nothing needs to be pre-installed remotely.
+
+Two intended triggers: after any install (a launchd WatchPaths / systemd .path unit runs it
+`--local`) and weekly (fleet-update-check folds it into the digest). Emails via fleet-mail,
+STATE-DEDUPED (only when a conflict appears or clears). Exit 0 clean · 1 conflicts.
+"""
+import argparse, json, os, subprocess, sys
+
+STATE = os.path.expanduser("~/.config/fleet-monitoring/install-audit.state")
+DEFAULT_CONFIG = os.path.expanduser("~/.config/fleet-monitoring/fleet-nodes.conf")
+MAILER = os.environ.get("FLEET_MAILER", os.path.expanduser("~/.local/bin/fleet-mail"))
+SSH = ["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes"]
+
+# self-contained audit that runs ON a node (portable py3); prints one JSON line
+NODE_AUDIT = r'''
+import os, json, subprocess
+from collections import defaultdict
+home = os.path.expanduser("~")
+raw = [d for d in os.environ.get("PATH", "").split(os.pathsep) if d]
+seen = set(); path_dups = []
+for d in raw:
+    if d in seen and d not in path_dups: path_dups.append(d)
+    seen.add(d)
+dirs = []; s2 = set()
+for d in raw:
+    if d not in s2 and os.path.isdir(d): s2.add(d); dirs.append(d)
+TOOLCHAIN = ("/.nvm/", "/.pyenv/", "/.rbenv/", "/.asdf/", "/.bun/", "/.cargo/", "/.rustup/",
+             "/.deno/", "/.orbstack/", "/.volta/", "/.fnm/", "/.rye/", "/.local/share/mise/")
+def meth(d):
+    if any(t in d + "/" for t in TOOLCHAIN) or d.startswith("/opt/homebrew/opt/"): return "toolchain"
+    if d.startswith("/opt/homebrew") or "/homebrew/" in d or "/Cellar/" in d: return "brew"
+    if "/pipx" in d: return "pipx"
+    if d in ("/usr/bin", "/bin", "/usr/sbin", "/sbin", "/usr/local/sbin"): return "system"
+    if "/snap" in d: return "snap"
+    if d.startswith(home) or d == "/usr/local/bin": return "manual"
+    return "system"
+prov = defaultdict(list)
+for d in dirs:
+    try: entries = os.listdir(d)
+    except OSError: continue
+    for f in entries:
+        p = os.path.join(d, f)
+        try:
+            if os.path.isdir(p) or not os.access(p, os.X_OK): continue
+        except OSError: continue
+        prov[f].append((d, meth(d), os.path.realpath(p)))
+USER = {"brew", "pipx", "manual", "snap"}
+shadows = []
+for cmd, ps in prov.items():
+    user_targets = set(rp for _, m, rp in ps if m in USER)   # DISTINCT real binaries
+    if len(user_targets) >= 2:
+        shadows.append({"cmd": cmd, "providers": [
+            {"dir": d, "method": m} for d, m, _ in ps if m in USER or m == "system"][:6]})
+out = {"path_dups": path_dups, "shadows": sorted(shadows, key=lambda s: s["cmd"])}
+brew = next((b for b in ("/opt/homebrew/bin/brew", "/usr/local/bin/brew") if os.path.exists(b)), None)
+if brew:
+    try:
+        doc = subprocess.run([brew, "doctor"], capture_output=True, text=True, timeout=90).stderr
+        out["brew_unlinked"] = [l.strip() for l in doc.splitlines()
+                                if "not symlinked" in l.lower() or ("could not" in l.lower() and "link" in l.lower())][:8]
+    except Exception: out["brew_unlinked"] = []
+    try:
+        casks = subprocess.run([brew, "list", "--cask"], capture_output=True, text=True, timeout=60).stdout.split()
+        au = [c for c in casks
+              if "auto_updates" in subprocess.run([brew, "info", "--cask", c], capture_output=True, text=True, timeout=30).stdout.lower()]
+        out["auto_updates_casks"] = au
+    except Exception: out["auto_updates_casks"] = []
+print(json.dumps(out))
+'''
+
+def load_nodes(path):
+    if not os.path.isfile(path):
+        sys.exit(f"fleet-install-audit: node config not found: {path}  (copy fleet-nodes.conf.template)")
+    nodes = []
+    for line in open(path):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = [p.strip() for p in line.split("|")]
+        if len(parts) < 3:
+            continue
+        nodes.append({"name": parts[0], "target": parts[1], "os": parts[2]})
+    return nodes
+
+def audit_node(node):
+    try:
+        if node["target"] == "local":
+            r = subprocess.run(["sh", "-lc", "python3 -"], input=NODE_AUDIT, capture_output=True, text=True, timeout=180)
+        else:
+            r = subprocess.run(SSH + [node["target"], "python3 -"], input=NODE_AUDIT, capture_output=True, text=True, timeout=180)
+        if r.returncode != 0 and not r.stdout:
+            return {"error": (r.stderr or "audit failed").strip()[:200]}
+        return json.loads(r.stdout.strip().splitlines()[-1])
+    except Exception as e:
+        return {"error": str(e)[:200]}
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", default=os.environ.get("FLEET_NODES", DEFAULT_CONFIG))
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--always", action="store_true")
+    ap.add_argument("--local", action="store_true", help="audit only this host (fast, for the after-install trigger)")
+    a = ap.parse_args()
+
+    nodes = load_nodes(a.config)
+    if a.local:
+        nodes = [n for n in nodes if n["target"] == "local"]
+    blocks, conflicts = [], []
+    for n in nodes:
+        if n["target"] != "local" and subprocess.run(SSH + [n["target"], "true"]).returncode != 0:
+            blocks.append(f"== {n['name']} — unreachable, skipped =="); continue
+        d = audit_node(n)
+        lines = []
+        if "error" in d:
+            lines.append(f"  audit error: {d['error']}"); conflicts.append(f"{n['name']}:error")
+        else:
+            for s in d.get("shadows", []):
+                lines.append(f"  SHADOW  {s['cmd']}  ({', '.join(p['method'] + ':' + p['dir'] for p in s['providers'])})")
+                conflicts.append(f"{n['name']}:{s['cmd']}")
+            for u in d.get("brew_unlinked", []):
+                lines.append(f"  BREW    {u}"); conflicts.append(f"{n['name']}:brew")
+            if d.get("path_dups"):
+                lines.append(f"  note: duplicate $PATH entries: {', '.join(d['path_dups'])}")
+            if d.get("auto_updates_casks"):
+                lines.append(f"  self-updating casks (leave alone, never --greedy): {', '.join(d['auto_updates_casks'])}")
+        head = "CONFLICTS" if any(l.strip().startswith(("SHADOW", "BREW", "audit error")) for l in lines) else "clean"
+        blocks.append(f"== {n['name']} ({n['os']}) — {head} ==\n" + ("\n".join(lines) if lines else "  (nothing installed twice)"))
+
+    conflicts = sorted(set(conflicts))
+    report = "Fleet install-method audit\n\n" + "\n\n".join(blocks) + "\n"
+    if a.dry_run:
+        print(report); print(f"\nconflicts: {conflicts or 'none'}"); return 1 if conflicts else 0
+
+    state_path = STATE.replace(".state", "-local.state") if a.local else STATE
+    try:
+        prev = set(json.load(open(state_path))) if os.path.exists(state_path) else set()
+    except Exception:
+        prev = set()
+    cur = set(conflicts)
+    os.makedirs(os.path.dirname(state_path), exist_ok=True)
+    json.dump(sorted(cur), open(state_path, "w"))
+    if cur != prev or a.always:
+        subj = f"[fleet] install-method conflicts — {len(cur)}" if cur else "[fleet] install-method audit — all clear"
+        subprocess.run([MAILER, "--subject", subj, "--body", report])
+    return 1 if conflicts else 0
+
+if __name__ == "__main__":
+    sys.exit(main())
