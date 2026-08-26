@@ -163,6 +163,37 @@ Sweep your published URLs after any such change; anything returning no response 
 restarted or recreated. Better still, **avoid the restart**: dashboard provisioners and config
 reload endpoints (e.g. a `POST /-/reload`) usually apply changes without touching the container.
 
+## Subject taxonomy — make the inbox filterable
+
+Alerts are only useful if you can triage them at a glance. Give every sender you control **one
+subject shape**:
+
+```
+[<YourTag>/<Kind>/<Source>] descriptive text
+```
+
+- **Kind** is the *triage* axis — what do I do with this?
+  `Alert` (broken, act now) · `Digest` (scheduled summary) · `Report` (a job finished, FYI)
+- **Source** is the subsystem — `Health`, `Installs`, `Updates`, or an app name.
+
+**Keep Kind and Source in separate slots.** "What kind of message" and "what it's about" are
+different axes; collapsing them into one (`Alert` next to `Plex` in the same position) makes every
+filter ambiguous. As a bonus, alphabetical sort puts `Alert` above `Digest`/`Report` — the order you
+want to read them in.
+
+Set your tag once; the tools read `FLEET_SUBJECT_PREFIX` (default `[Fleet`):
+
+```sh
+export FLEET_SUBJECT_PREFIX='[MyFleet'      # in the timer's env, or leave the default
+```
+
+**Expect your health-check tool to ignore all this.** Gatus, for example, **hardcodes its subject**
+(`[<group>/<name>] Alert triggered` / `... Alert resolved`) with no prefix setting — the only lever
+is what you name the group and endpoint. Don't contort the tool's UI to force cosmetic consistency:
+its subjects are already a usable `[area/endpoint]` hierarchy. Just write **two** filter rules
+instead of one — one matching your prefix, one matching the health checker's fixed phrasing — and
+confirm both with real test emails before you rely on them.
+
 ## Secrets & privacy
 
 Both `.env` files are **host-local secrets** — `chmod 600`, never committed (guide § 06). Version

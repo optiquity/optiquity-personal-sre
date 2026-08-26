@@ -114,11 +114,11 @@ def main():
 
     if transitions or a.always:
         if new_failures:
-            subj = f"[fleet] local checks — {len(failing)} failing"
+            subj = f"{SUBJECT_PREFIX}/Alert/Health] {len(failing)} failing — {', '.join(failing)[:60]}"
         elif failing:
-            subj = f"[fleet] local checks — {len(failing)} still failing (a check recovered)"
+            subj = f"{SUBJECT_PREFIX}/Alert/Health] {len(failing)} still failing — {', '.join(failing)[:60]}"
         else:
-            subj = "[fleet] local checks — all recovered"
+            subj = f"{SUBJECT_PREFIX}/Report/Health] all checks recovered"
         body = f"Local health checks on {os.uname().nodename}:\n\n{report}\n"
         if transitions:
             body += f"\nChanged this run: {', '.join(transitions)}\n"

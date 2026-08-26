@@ -175,6 +175,28 @@ container id) → **recreate** the sidecar, since a plain restart still points a
 your published URLs after any such change. Better: avoid the restart entirely — dashboard
 provisioners and config-reload endpoints usually apply changes without touching the container.
 
+### 7. Make the inbox filterable — one subject shape
+
+Alerts you can't triage at a glance become noise you archive unread. Give every sender **you
+control** one shape — `[<YourTag>/<Kind>/<Source>] text` — where **Kind** is the *triage* axis
+(`Alert` / `Digest` / `Report`) and **Source** is the subsystem. Keep them as **separate slots**:
+"what kind of message" and "what it's about" are different axes, and merging them makes filters
+ambiguous. Alphabetical sort then lists `Alert` above `Digest`/`Report`, which is the reading order
+you want.
+
+```
+[MyFleet/Alert/Health]    2 failing — media mount, bridge daemon
+[MyFleet/Digest/Updates]  updates available + container images (2026-01-05 09:00)
+[MyFleet/Report/Health]   all checks recovered
+```
+
+**Your health checker probably won't cooperate — that's fine.** Gatus hardcodes its subject
+(`[<group>/<name>] Alert triggered|resolved`); there's no prefix setting. Renaming its groups to
+force the prefix would pollute its dashboard to fix an email cosmetic. Better: accept its native
+format (already a clean `[area/endpoint]` hierarchy) and write **two** filter rules — one for your
+prefix, one for the checker's fixed phrasing. **Verify both with real test emails**; a filter you
+assumed works is a filter that silently drops alerts.
+
 ## Bootstrap
 
 On the always-on node:

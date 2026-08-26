@@ -174,7 +174,7 @@ def main():
     if audit_conflict: tags.append("install conflicts")
     if any_errs: tags.append("check errors")
     tag = " + ".join(tags) or "summary"
-    subj = f"[fleet] update digest — {tag} ({stamp})"
+    subj = f"{SUBJECT_PREFIX}/Digest/Updates] {tag} ({stamp})"
     p = subprocess.run([a.mailer, "--subject", subj, "--body", digest])
     if p.returncode != 0:
         sys.stderr.write("fleet-update-check: mailer failed to send the digest\n")

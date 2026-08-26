@@ -157,7 +157,8 @@ def main():
     os.makedirs(os.path.dirname(state_path), exist_ok=True)
     json.dump(sorted(cur), open(state_path, "w"))
     if cur != prev or a.always:
-        subj = f"[fleet] install-method conflicts — {len(cur)}" if cur else "[fleet] install-method audit — all clear"
+        subj = (f"{SUBJECT_PREFIX}/Alert/Installs] {len(cur)} conflict(s) — {', '.join(sorted(cur))[:60]}"
+                if cur else f"{SUBJECT_PREFIX}/Report/Installs] audit all clear")
         subprocess.run([MAILER, "--subject", subj, "--body", report])
     return 1 if conflicts else 0
 
