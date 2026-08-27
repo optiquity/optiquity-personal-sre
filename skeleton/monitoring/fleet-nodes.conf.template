@@ -6,13 +6,14 @@
 #     role         a label for the digest (your choice: always-on, laptop, gateway, nas, ...)
 #     ssh-target   "local" for the node this runs on, else an SSH host/alias (key auth)
 #     os           macos | linux | windows | synology   (chooses shell + manual hint)
-#     methods      comma list: brew, npm, softwareupdate (macos); apt (linux); manual
+#     methods      comma list: brew, npm, softwareupdate (macos); apt (linux);
+#                  uvtool, pipx (Python tool installers — a common blind spot); manual
 #
 # The node running the checker is usually the always-on host, listed as "local".
 # Remote nodes are reached over SSH (BatchMode/key auth); unreachable ones are noted, not fatal.
 # Use "manual" for anything without a safe non-interactive updater (Windows winget, NAS DSM).
 
-always-on | local           | macos    | brew,npm,softwareupdate
+always-on | local           | macos    | brew,npm,softwareupdate,uvtool,pipx
 laptop    | <laptop-host>   | macos    | brew,npm,softwareupdate
 gateway   | <gateway-host>  | linux    | apt
 windows   | <windows-host>  | windows  | manual
