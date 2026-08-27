@@ -1,6 +1,6 @@
 # A1 · A diagram/doc toolchain
 
-**Section A — install-and-keep-current tools.** Back to the [catalog](../16-example-projects.md).
+**Section A — install-and-keep-current tools.** Back to the [catalog](../17-example-projects.md).
 
 **What this shows:** the core **installer pattern** — the operator installs a small CLI toolchain
 symmetrically across nodes via an *idempotent, role-aware* script the config manager runs on
@@ -111,4 +111,4 @@ the gated apply. Then fold its updates into your periodic maintenance pass.
 
 **Related:** [07 · Tools & requirements](../07-tools-requirements.md) ·
 [05 · chezmoi](../05-chezmoi.md) · [A3 · npm-global CLI](A3-npm-global-cli.md) ·
-[E10 · Fleet-update pass](E10-fleet-update-pass.md) · [catalog](../16-example-projects.md).
+[E10 · Fleet-update pass](E10-fleet-update-pass.md) · [catalog](../17-example-projects.md).

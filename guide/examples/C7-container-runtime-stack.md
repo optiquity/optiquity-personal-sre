@@ -1,6 +1,6 @@
 # C7 · A container runtime + app stack
 
-**Section C — self-hosted apps over the private mesh.** Back to the [catalog](../16-example-projects.md).
+**Section C — self-hosted apps over the private mesh.** Back to the [catalog](../17-example-projects.md).
 
 **What this shows:** installing a **container runtime** and bringing up a small **app stack**
 reachable over the mesh — the container *foundation* under [C6](C6-automation-runtime.md), plus a
@@ -102,4 +102,4 @@ its volumes into backups + its images into your update pass.
 
 **Related:** [05 · chezmoi (roles)](../05-chezmoi.md) · [08 · Networking](../08-networking.md) ·
 [C6 · Automation runtime](C6-automation-runtime.md) · [A3 · one install method](A3-npm-global-cli.md)
-· [catalog](../16-example-projects.md).
+· [catalog](../17-example-projects.md).

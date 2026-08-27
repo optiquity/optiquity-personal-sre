@@ -15,9 +15,9 @@ where the *why* lives; this table is just the map back.
 | `mcp/` | MCP server configs — each one a scoped capability grant. | [10 · MCP](../guide/10-mcp.md) |
 | `skills/` | Two worked `SKILL.md` examples (a vault read, a browser login). | [11 · Agents & skills](../guide/11-agents-skills.md) |
 | `installers/` | The idempotent, role-aware install-script pattern. | [07 · Tools & requirements](../guide/07-tools-requirements.md) |
-| `monitoring/` | **Ready-to-run**: health-check config + email alerting, a local probe, an update digest, install-conflict and stale-image checks, and the timers to schedule them. Has its own [README](monitoring/README.md). | [13 · Monitoring](../guide/13-monitoring.md) |
+| `monitoring/` | **Ready-to-run**: health-check config + email alerting, a local probe, an update digest, install-conflict and stale-image checks, and the timers to schedule them. Has its own [README](monitoring/README.md). | [14 · Monitoring](../guide/14-monitoring.md) |
 | `onboarding/` | The seed for a brand-new personal-SRE repo (registry, playbook, first docs). | [04 · Structure](../guide/04-structure.md) |
-| `github/` | CI workflow — runs the secret-scan on every push, so the never-leak rule is enforced by a machine. | [15 · Public/shared repos](../guide/15-sharing.md) |
+| `github/` | CI workflow — runs the secret-scan on every push, so the never-leak rule is enforced by a machine. | [16 · Public/shared repos](../guide/16-sharing.md) |
 | `chezmoi.toml.example` | Config-manager settings: role/node data the templates branch on. | [05 · chezmoi](../guide/05-chezmoi.md) |
 | `chezmoiignore.template` | What the config manager must never apply to a machine. | [05 · chezmoi](../guide/05-chezmoi.md) |
 | `gitignore.template` | The allowlist-shaped ignore file — the structural half of zero-secrets-in-git. | [06 · Secrets](../guide/06-secrets.md) |

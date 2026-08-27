@@ -22,7 +22,7 @@ via the config manager; never edit a machine directly.
 
 ## Rules (locked behavioral guardrails)
 
-Re-read these before every commit (Rule 12).
+Re-read these before every commit (Rule 6).
 
 1. **No destructive or material action without explicit approval.** Requires approval:
    applying config to any node (`chezmoi apply`), deleting/overwriting files not in a

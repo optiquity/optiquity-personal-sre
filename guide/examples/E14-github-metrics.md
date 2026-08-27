@@ -1,6 +1,6 @@
 # E14 · GitHub-as-a-service metrics (a maintained exporter, not a bundled stack)
 
-**Section E — fleet operations.** Back to the [catalog](../16-example-projects.md).
+**Section E — fleet operations.** Back to the [catalog](../17-example-projects.md).
 
 **What this shows:** folding **GitHub repository metrics** (stars, forks, watchers, open issues/PRs,
 size) into the metrics stack you *already* run ([E13](E13-fleet-metrics-stack.md)) — with a

@@ -1,6 +1,6 @@
 # A3 · An npm-global CLI (avoiding the self-update trap)
 
-**Section A — install-and-keep-current tools.** Back to the [catalog](../16-example-projects.md).
+**Section A — install-and-keep-current tools.** Back to the [catalog](../17-example-projects.md).
 
 **What this shows:** a CLI whose *own* updater targets **one** package manager, so installing it a
 *second* way (or letting it self-update alongside a package-manager copy) spawns a **duplicate**
@@ -109,4 +109,4 @@ second copy, add the `typeset -U path PATH` line to your managed shell config, a
 
 **Related:** [07 · Tools & requirements](../07-tools-requirements.md) ·
 [A1 · Diagram/doc toolchain](A1-diagram-doc-toolchain.md) ·
-[E10 · Fleet-update pass](E10-fleet-update-pass.md) · [catalog](../16-example-projects.md).
+[E10 · Fleet-update pass](E10-fleet-update-pass.md) · [catalog](../17-example-projects.md).

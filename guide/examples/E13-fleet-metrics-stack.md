@@ -1,6 +1,6 @@
 # E13 · A fleet metrics stack (exporters → Prometheus + Grafana)
 
-**Section E — fleet operations.** Back to the [catalog](../16-example-projects.md).
+**Section E — fleet operations.** Back to the [catalog](../17-example-projects.md).
 
 **What this shows:** turning "I have no real idea how my machines are doing" into a **live, historical
 fleet view** — a lightweight **exporter on every node**, one **central node** that stores + graphs
@@ -131,4 +131,4 @@ it powers a machine down.
 alerting complement to these graphs) · [E14 · GitHub metrics](E14-github-metrics.md) ·
 [E12 · Dedicated mesh gateway](E12-dedicated-mesh-gateway.md) ·
 [E11 · Publish a service](E11-publish-a-service.md) ·
-[08 · Networking](../08-networking.md) · [catalog](../16-example-projects.md).
+[08 · Networking](../08-networking.md) · [catalog](../17-example-projects.md).

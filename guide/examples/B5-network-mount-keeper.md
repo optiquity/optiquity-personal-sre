@@ -1,6 +1,6 @@
 # B5 · A network-mount keeper
 
-**Section B — scheduled services & backups.** Back to the [catalog](../16-example-projects.md).
+**Section B — scheduled services & backups.** Back to the [catalog](../17-example-projects.md).
 
 **What this shows:** a small **always-on / passive scheduled job** that keeps a network volume
 (NFS/SMB) mounted and re-mounts it if it drops — the minimal shape of "a service the operator
@@ -96,4 +96,4 @@ the mount, note that dependency so the ordering is clear.
 
 **Related:** [08 · Networking](../08-networking.md) · [06 · Secrets](../06-secrets.md) ·
 [B4 · Nightly backup daemon](B4-nightly-backup-daemon.md) · [platform spoke](../../platforms/macos.md)
-· [catalog](../16-example-projects.md).
+· [catalog](../17-example-projects.md).

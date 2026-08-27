@@ -127,7 +127,7 @@ Same discipline as everywhere else:
 - Each skill's **guardrails are reviewed** — especially destructive-action confirmations and
   credential handling.
 - **Personal skills stay private; generic skills can be shared** — the same scrub discipline
-  that governs the whole public/private split ([14 · Sharing](15-sharing.md)).
+  that governs the whole public/private split ([16 · Sharing](16-sharing.md)).
 
-Next: [12 · Multi-node operations](12-multinode.md) — the advanced layer for coordinating an
-operator across several nodes at once.
+Next: [12 · Repo comprehension](12-repo-comprehension.md) — giving the operator a queryable
+model of your codebase instead of making it grep.

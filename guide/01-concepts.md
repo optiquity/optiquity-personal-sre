@@ -110,7 +110,7 @@ You do not adopt everything at once. The framework has a **hard core** and **opt
   digest of what's fallen behind, delivered by mail ([E16](examples/E16-fleet-health-and-alerting.md)).
 
 A complete requirements matrix (hard/optional × single/multi-node) is in
-[14 · Setup](14-setup.md). The point here: **a working adoption can be one machine with four
+[15 · Setup](15-setup.md). The point here: **a working adoption can be one machine with four
 tools.** Everything else is opt-in.
 
 ## Vocabulary (used throughout)
@@ -146,7 +146,7 @@ tools.** Everything else is opt-in.
   the equivalent of this on my platform?"* — install commands, service managers, secret
   stores, paths. They **don't** re-explain concepts; they map them.
 - **The skeleton** (`skeleton/`) is the generic starter files you copy and fill.
-- **Setup** ([14 · Setup](14-setup.md)) ties it together into a step-by-step (or automated)
+- **Setup** ([15 · Setup](15-setup.md)) ties it together into a step-by-step (or automated)
   onboarding.
 
 Next: [02 · The operator](02-operator.md) — how you actually work with the AI operator (the

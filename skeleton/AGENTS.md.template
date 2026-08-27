@@ -7,7 +7,7 @@ for the reasoning and `CLAUDE.md.template` for the fully-annotated version.
 
 > If you run Claude Code, use `CLAUDE.md.template` instead. Running both CLIs? Keep the rule
 > *content* in sync between the two files (or generate both from one source via the config
-> manager) so the operator behaves the same whichever CLI you use — that's Rule 5 (symmetry)
+> manager) so the operator behaves the same whichever CLI you use — that's Rule 7 (symmetry)
 > applied to your own tooling.
 
 ## Repo purpose

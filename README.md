@@ -127,7 +127,7 @@ see `guide/09-permissions.md`) · a **backup target** (governance Rule 4 require
 · a container runtime · an automation runtime · the multi-node coordination layer.
 
 Full detail + matrix in [`GETTING-STARTED.md`](GETTING-STARTED.md), `guide/07-tools-requirements.md`,
-and `guide/14-setup.md`.
+and `guide/15-setup.md`.
 
 ## Repository layout
 
@@ -157,14 +157,14 @@ bootstrap.sh    # Tier-2 onboarding (creates YOUR repo; --help for options)
 3. `guide/02-operator.md` — how you actually work with the AI operator.
 4. `guide/03-governance-rules.md` — the rules that make handing ops to an AI safe.
 5. Skim `guide/04`–`14` for the pieces you'll use (`guide/_contents.md` is the one-line index).
-6. `guide/16-example-projects.md` — worked, end-to-end examples of owning install + maintenance.
+6. `guide/17-example-projects.md` — worked, end-to-end examples of owning install + maintenance.
 7. Your platform spoke, then a setup tier above.
 
 ## A note on safety & sharing
 
 The framework's own disciplines are load-bearing: **zero secrets in git**
 (`guide/06-secrets.md`) and — because this is a public repo — **zero personal info**
-(`guide/15-sharing.md`), enforced by the `scripts/grep-guard` (pre-commit + CI). If you publish
+(`guide/16-sharing.md`), enforced by the `scripts/grep-guard` (pre-commit + CI). If you publish
 your own generalized version, use the same guard: derive-don't-copy, and let a fail-closed
 scanner be the backstop.
 

@@ -173,7 +173,7 @@ Trust, but verify — make "no secrets in git" checkable, not assumed:
 - **A guard for shared repos.** If any repo is or may become public, add a **pre-commit hook
   and/or CI check** that *fails* on personal patterns and secret shapes — so a mistake is
   blocked mechanically, not caught by luck. (The framework's own public repo uses exactly this;
-  see [15 · Public/shared repos](15-sharing.md).)
+  see [16 · Public/shared repos](16-sharing.md).)
 - **Periodic history audit.** Occasionally scan the *history*, not just the working tree — a
   secret committed months ago won't show in `status`.
 

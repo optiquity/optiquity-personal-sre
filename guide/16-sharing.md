@@ -1,4 +1,4 @@
-# 15 · Public/shared repos — publishing without leaking
+# 16 · Public/shared repos — publishing without leaking
 
 Most adopters never need this section: your setup lives in your **private repo** and stays
 there. But if you want to **publish a generalized version of your framework** — as *this*
@@ -115,4 +115,4 @@ what lets you share the work at all.
 ---
 
 *This is the last section of the master guide. For platform-specific commands, see the spokes
-(`platforms/`); for starter files, see `skeleton/`; to begin, see [14 · Setup](14-setup.md).*
+(`platforms/`); for starter files, see `skeleton/`; to begin, see [15 · Setup](15-setup.md).*
