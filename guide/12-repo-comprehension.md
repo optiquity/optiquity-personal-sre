@@ -79,6 +79,9 @@ The committed footprint is deliberately tiny — that's what makes this cheap to
 Everything else — the tool itself, the built index — is per-machine and per-clone, installed by
 your normal tooling path ([07 · Tools & requirements](07-tools-requirements.md)).
 
+Starter files for exactly this footprint — an annotated exclusion template and an idempotent
+enablement script — are in [`../skeleton/repo-index/`](../skeleton/repo-index/).
+
 ## Feeding content, not just answers
 
 There's a second payoff that isn't obvious until you try it: **an index is a grounding source for

@@ -144,7 +144,8 @@ skeleton/       # generic starter files you copy + fill (all placeholders, no se
   CLAUDE.md.template · AGENTS.md.template · chezmoi.toml.example · *ignore templates ·
   env.example · settings/ (3 permission presets) · mcp/ · installers/ ·
   skills/ (2 examples) · onboarding/ (repo seed) · github/ ·
-  monitoring/ (health checks, alert mail, update digest — ready to run)
+  monitoring/ (health checks, alert mail, update digest — ready to run) ·
+  repo-index/ (make a repo legible to the operator)
 scripts/        # grep-guard (the never-leak backstop) + pre-commit hook
 GETTING-STARTED.md # ▶ the front door: intro + requirements + step-by-step
 bootstrap.sh    # Tier-2 onboarding (creates YOUR repo; --help for options)
