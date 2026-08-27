@@ -54,6 +54,19 @@ the guard blocks the write **forever**, and (being non-blocking) tells no one. S
 never updates again after an upgrade. Fix: one forced rebuild to reset the baseline, then normal
 operation resumes. Check your tool's force flag/env var.
 
+## Not every repo should get a hook
+
+The advice above assumes a code repo, where refreshing the index is a cheap structural rebuild.
+**On a prose-heavy repo it can be destructive**: if your index carries a semantic layer (concepts
+derived by a model, not just symbols scraped from files), the cheap refresh may overwrite it with
+heading-level nodes and silently discard the interpretation. A real case: 154 curated concept nodes
+replaced by 638 structural ones by a single routine refresh.
+
+So before automating anything, answer one question: **does the refresh path I'm about to put in a
+hook preserve the layer I care about?** If it doesn't, the correct configuration is **no hook** —
+refresh deliberately instead, and write the exception down in that repo's rules file so the next
+person (or operator) doesn't "fix" the missing hook.
+
 ## Privacy
 
 An index is a derived artifact that an assistant reads and that may be fed to a hosted service.

@@ -64,6 +64,16 @@ every future write **permanently**, and (being non-blocking) tells nobody. The s
 that simply never updates again after an upgrade. One forced rebuild resets the baseline. Check
 your tool's force flag before you need it.
 
+**A docs repo and a code repo want different treatment.** This one is easy to miss because the
+tooling doesn't warn you. On a code repo, the routine "refresh the index" operation is a
+*structural* rebuild — cheap, deterministic, safe to run on every commit. On a repo that is mostly
+prose, the same command can **replace a curated semantic index with raw heading-level nodes**,
+discarding the interpreted layer that made it useful, and it will look like it succeeded. If your
+index has a semantic/LLM-derived layer, find out which refresh path preserves it *before*
+automating anything — and if the answer is "the cheap one doesn't", then a commit hook is actively
+harmful there and the right setting is no hook at all. Per-repo guidance should say which kind of
+repo it was written for.
+
 **Exclude what shouldn't be read.** Secrets-adjacent paths, vendored dependencies, build output,
 archives. This is a *privacy* decision as much as a signal-quality one — an index is a derived
 artifact that can end up somewhere you didn't intend.
