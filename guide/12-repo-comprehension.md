@@ -51,6 +51,19 @@ same tool** — an exclusion file written for one minor version can silently cha
 after an upgrade. Re-read the rules when you upgrade, and treat the ignore file as config that
 needs review, not set-and-forget.
 
+**A refresh that fails is invisible.** Refresh hooks are written to be *non-blocking* — they must
+never fail your commit or push — so a broken one looks identical to a working one. Check the
+index's age against the repo's, not just that the hook is installed: if "commits since the index
+was last written" keeps climbing, the refresh is dead. A hook that writes its own status line
+turns this into a one-glance check; without one, the index file's mtime is the tell.
+
+**After upgrading the indexer, re-baseline once.** Indexers commonly refuse to overwrite an index
+that has *fewer* entries than the stored one — a sensible guard against a half-built index. But an
+upgrade that changes ignore semantics *legitimately* shrinks the index, so the guard then blocks
+every future write **permanently**, and (being non-blocking) tells nobody. The symptom is an index
+that simply never updates again after an upgrade. One forced rebuild resets the baseline. Check
+your tool's force flag before you need it.
+
 **Exclude what shouldn't be read.** Secrets-adjacent paths, vendored dependencies, build output,
 archives. This is a *privacy* decision as much as a signal-quality one — an index is a derived
 artifact that can end up somewhere you didn't intend.
