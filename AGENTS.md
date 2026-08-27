@@ -63,11 +63,22 @@ Editing one when you meant the other is the easiest mistake to make here.
 
 This repo carries a `.graphifyignore`, so it can be indexed by a repo-comprehension tool
 (see [12 · Repo comprehension](guide/12-repo-comprehension.md)). If an index has been built in your
-clone — the output directory is gitignored, so check rather than assume — **prefer querying it over
+clone — `graphify-out/` is gitignored, so **check rather than assume** — **prefer querying it over
 grepping**: it answers structural questions ("what links to this chapter", "where is this concept
 explained") far more cheaply than reading files.
 
 If no index exists, just work normally; nothing here depends on it.
+
+**There is deliberately NO refresh hook on this repo, and that is not an oversight.** This repo is
+~90% prose (50 markdown chapters + templates against a handful of scripts). On a prose-heavy repo
+the cheap *structural* refresh can replace a curated semantic index — concept-level nodes — with
+raw heading-level nodes, and it looks like it succeeded. So the index here is refreshed
+**deliberately**, via the graphify skill's `/graphify . --update`, not automatically on commit.
+
+**Do not "fix" the missing hook.** If you are tempted to add one, read
+[12 · Repo comprehension](guide/12-repo-comprehension.md) § the docs-vs-code distinction first, and
+[`skeleton/repo-index/README.md`](skeleton/repo-index/README.md) § "Not every repo should get a
+hook". The rule of thumb: a hook is right for a code repo, wrong for this one.
 
 ## Style
 
@@ -77,5 +88,5 @@ valuable content here and the reason someone reads this instead of a vendor tuto
 
 ## If you also run Claude Code
 
-There is deliberately no `CLAUDE.md` at this repo root; this file is the single source. Read it
-either way.
+`CLAUDE.md` at this repo root points here rather than duplicating these rules — two files that must
+be kept in sync is a bug waiting to happen. **This file is the single source.**
