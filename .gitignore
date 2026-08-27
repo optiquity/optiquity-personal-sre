@@ -1,0 +1,27 @@
+# .gitignore — this repo.
+#
+# This is a REFERENCE repo: docs, templates, and scripts, no application code and
+# no secrets by construction (scripts/grep-guard.sh enforces that). The list is
+# therefore short. The richer, allowlist-shaped file this framework recommends for
+# YOUR repo is skeleton/gitignore.template — that one is the teaching artifact;
+# this one just keeps local noise out.
+
+# Repo index output — derived, large, churns every build. Never commit.
+graphify-out/
+
+# Editor / OS noise
+.DS_Store
+._*
+*.swp
+.idea/
+.vscode/
+
+# Python bytecode (the scripts here are bash, but contributors run tooling)
+__pycache__/
+*.py[cod]
+
+# Local, never-committed secrets — belt and braces; grep-guard is the real gate.
+.env
+.env.*
+*.pem
+*.key

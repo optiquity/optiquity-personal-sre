@@ -59,6 +59,16 @@ Editing one when you meant the other is the easiest mistake to make here.
 7. **Say what is verified.** These docs describe real, working setups. If something is untested
    or aspirational, mark it (`⛏ TODO`, "expand before relying on") rather than asserting it.
 
+## Repo index
+
+This repo carries a `.graphifyignore`, so it can be indexed by a repo-comprehension tool
+(see [12 · Repo comprehension](guide/12-repo-comprehension.md)). If an index has been built in your
+clone — the output directory is gitignored, so check rather than assume — **prefer querying it over
+grepping**: it answers structural questions ("what links to this chapter", "where is this concept
+explained") far more cheaply than reading files.
+
+If no index exists, just work normally; nothing here depends on it.
+
 ## Style
 
 Plain, direct prose. Concrete over abstract. Tables for comparisons, short code blocks for
