@@ -198,6 +198,55 @@ format (already a clean `[area/endpoint]` hierarchy) and write **two** filter ru
 prefix, one for the checker's fixed phrasing. **Verify both with real test emails**; a filter you
 assumed works is a filter that silently drops alerts.
 
+### 8. Coverage probes — the check that lies most convincingly
+
+Everything above answers *"is it working now?"*. A long backlog needs *"how much is actually done?"*,
+and the naive version of that check is the most dangerous thing in this chapter.
+
+**The failure.** A watcher reported a multi-week media-analysis job **complete**. It had checked
+whether the relevant tool was running and declared success when the process exited. Actual
+coverage: **0.15%**. The tool it watched never performed that work at all — the analysis came from
+a different subsystem on a different trigger. It had been reporting success for weeks, and surfaced
+only when a human used the system and hit the missing result.
+
+**Worse, the same alert claimed two things and one was true.** It also reported thumbnail
+generation complete — and thumbnails genuinely *were* at 99%. The verifiable half made the
+fabricated half credible; nobody questions a message that's half right. **If a probe reports on two
+artifacts, count both, or claim only the one you count.**
+
+So for anything batch:
+
+```
+count the artifact the work produces   →  rows, files, records — not the process
+report done/total as a percentage      →  a boolean can silently mean zero; a percentage can't
+two phases:
+  below target  →  milestones, plus "no progress for N hours" as the terminal signal
+  at target     →  silent (a plateau is correct), alert only on sustained regression
+--print mode    →  compute and report, mutate nothing
+```
+
+That "no progress for N hours" is not a nicety — a multi-week sweep has **no clean end event**, so
+absence of progress is the only honest completion signal. Report the number beside it and the same
+alert covers both "finished" and "died at 12%", with neither able to impersonate the other.
+
+**Then check what's actually capping it.** Two things distorted every estimate in that case:
+
+- **The maintenance window.** The sweep wasn't running continuously — the platform killed it at the
+  window's end hour nightly. Four hours a day instead of twenty-four is the difference between ~11
+  days and ~2 months, and nothing announced it. Completion timestamps clustered at a wall-clock
+  hour are the tell. See § 14 for the pattern, including why a *manual* trigger often escapes the
+  window's start but not its end — and why the daily nudge that exploits that should
+  **retire itself** once the backlog clears.
+- **The remote store, not the local box.** The client sat at 3.6% CPU and 32% of its link, which
+  read as idle capacity begging for more concurrency. The NAS said otherwise: 42% I/O wait, 278 ms
+  read latency. More readers on a saturated array multiplies seeks and *reduces* throughput. See
+  § 08 for isolating which layer is actually binding before you tune anything.
+
+**Both bugs found in this section were found by testing, not review.** The state-file handling had
+a path where corrupt input killed the probe mid-run *while still exiting 0* — the same silent
+success it was written to eliminate, one layer down. Exercise every branch of a probe against
+synthetic inputs, and make its state path overridable so you can.
+
 ## Bootstrap
 
 On the always-on node:

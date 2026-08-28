@@ -228,6 +228,28 @@ Write these instead as **coverage probes**:
 - **Never assert what you don't measure.** If the probe reports on two artifacts, count both. A
   half-true alert is worse than a false one: the verifiable half makes the fabricated half credible.
 
+## If you automate around a maintenance window, make the job retire itself
+
+Platform background work (reindex, analysis, compaction) usually runs inside a **maintenance
+window**, which caps its runtime — a backlog needing 240 hours finishes in ten days if run
+continuously and **two months** in a four-hour nightly window. See guide **§ 14 (Background work
+has a window)** for how to spot it; a manual trigger often bypasses the window's *start* but not
+its *end*, which is what makes one daily nudge effective.
+
+That nudge is **scaffolding for a one-off backlog, not a permanent fixture.** Once the backlog
+clears, the platform's own schedule handles new work and the extra timer is residue nobody
+remembers the reason for. Build the exit in:
+
+- **Two completion tests** — target reached, *or* a full cycle produced nothing new (backlogs have
+  unreachable floors; without this it loops against one forever).
+- **Never retire on error** — if it can't measure, stay installed and exit loudly. "Can't tell" is
+  not "finished."
+- **Say goodbye** — email which condition fired and what covers the work now, or its disappearance
+  looks like a failure.
+- **Keep it out of your monitoring.** The probe that *detects* the stall should not be the thing
+  that *fixes* it — that turns a notify-only layer into one that mutates. Measuring and acting are
+  different jobs; keep them in different files.
+
 ## Secrets & privacy
 
 Both `.env` files are **host-local secrets** — `chmod 600`, never committed (guide § 06). Version

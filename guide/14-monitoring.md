@@ -158,6 +158,57 @@ If you keep a status dashboard ([04 · Structure](04-structure.md)), be clear ab
 Both are worth having. Neither substitutes for the other. A dated snapshot that *looks* like
 health is worse than no dashboard, because it invites you to trust it.
 
+## Background work has a window, and the window is not the schedule
+
+Most platforms run their heavy background jobs — reindexing, analysis, thumbnailing, compaction —
+inside a **maintenance window**, so they don't compete with real use. That window is a *cap on
+runtime*, and it's easy to miss because nothing reports it: the job simply stops, and the next day
+it starts again.
+
+The failure mode is arithmetic. A backlog that needs 240 hours of processing finishes in ten days
+if the job runs continuously — and in **two months** if it only runs a four-hour nightly window.
+Same throughput, same hardware, a 6× difference in delivery, and nothing anywhere states which one
+you're getting. A real case: a sweep believed to be running continuously was being killed at the
+window's end hour every night, discovered only because a human noticed it had gone quiet.
+
+Two things to establish before trusting any ETA for a long backlog:
+
+- **Confirm the actual runtime, don't assume it.** Look at *when* work stops, not just that it
+  progresses. Completion timestamps clustered at a wall-clock hour are the tell — a job whose last
+  output lands at the same time every night is window-bound, not finished.
+- **Check whether a manual trigger has the same bounds.** Often it doesn't: a hand-started job may
+  run immediately regardless of the window's *start*, yet still be killed at its *end*. That
+  asymmetry is what makes a single daily nudge worthwhile, and it's worth testing directly rather
+  than reasoning about — trigger one outside the window and watch whether work begins.
+
+**Settings that sound relevant frequently aren't.** In that case a "process new items as soon as
+they arrive" option was read as "run continuously"; it actually governed only how *newly added*
+items were handled and had no bearing on whether a backlog sweep respected the window. Adjacent
+naming is not documentation — verify what a setting gates by observing behaviour.
+
+## Scaffolding should retire itself
+
+If you automate around a limit like that, the automation is usually for a **one-off backlog**, not
+a permanent condition. Once the backlog clears, the platform's normal schedule handles ongoing work
+and the extra job is pure residue — a timer firing forever for a reason nobody remembers, which is
+how a fleet accumulates cron jobs no one dares delete.
+
+So build the exit condition in from the start. A self-retiring job needs three things:
+
+- **Two ways to be done**, because "done" has two shapes: the target is reached, *or* a full cycle
+  produced **nothing new**. The second matters — a backlog often has an unreachable floor (items
+  that can't be processed at all), and without that test the job loops against it forever.
+- **A refusal to retire on error.** If it can't measure, it must stay installed and exit loudly.
+  *Can't tell* is not *finished*, and a job that removes itself on a transient failure is worse
+  than one that never retires.
+- **A parting message** saying which condition fired and what now covers the work — otherwise its
+  disappearance is indistinguishable from it having broken.
+
+Keep it **separate from your monitoring**. It's tempting to let the probe that detects the stall
+also fix it, but that turns a notify-only layer into one that mutates, and you lose the guarantee
+that your monitoring is safe to run anywhere. Measuring and acting are different jobs; keep them in
+different files.
+
 ## What to run
 
 The framework ships this as a working module — a mailer, a health-check config with email
