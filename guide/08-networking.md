@@ -109,6 +109,50 @@ knowing before you conclude "the node is too slow":
   crypto-bound; low CPU = it's the path/RTT), and check direct-vs-relay. More often the limit is
   your upstream or the target RTT, not the box.
 
+## Slow work: isolate the layer before you tune anything
+
+The bullet above generalises past exit nodes. When a long job runs slower than you expect, the
+instinct is to tune the machine you're sitting on — it's the one you can see, and its idle CPU
+looks like wasted capacity. That instinct is usually wrong, and acting on it costs restarts and
+downtime for no gain.
+
+There are at least **three** layers, and a slow job feels identical from the console whichever one
+is binding:
+
+| Layer | How to measure it | What the answer means |
+|---|---|---|
+| **Local CPU** | per-**process** CPU, not system total | a worker pegged near 100% of a core is compute-bound and single-threaded — concurrency helps |
+| **The link** | interface bytes/sec vs the negotiated rate | near the ceiling = bandwidth-bound; well under = look elsewhere |
+| **Remote storage** | on the *server*: I/O wait %, read latency, load split | high wait + high latency = the store is the limit, and **concurrency makes it worse** |
+
+That last row is the one people skip, because it means logging into the other machine.
+
+**A worker at partial CPU is waiting — the whole question is what for.** A transcoder pinned at
+~40% of one core is not "using 40% of the CPU"; it is idle 60% of the time waiting on input.
+Low CPU alone doesn't tell you whether that's link latency, remote disk, or a lock. Measure each.
+
+A real case: a multi-week analysis job, client at **3.6% of 14 cores**, link at **32% of gigabit**,
+single-stream reads at **36 MB/s**. Everything visible locally screamed "add concurrency" — three
+separate times. Then the NAS was checked: **42% I/O wait, 278 ms average read latency**, load
+almost entirely I/O rather than CPU. The array was already saturated. Raising the client's job
+count would have put six concurrent readers on spinning disks and multiplied random seeks —
+*reducing* throughput, on hardware that had failed this exact way before.
+
+**On rotational storage, concurrency is not free.** More readers means more seeking, and past a
+low threshold aggregate throughput falls rather than rises. The client's idle CPU is not headroom
+when the work is I/O-bound on something else entirely.
+
+Two habits that make this diagnosis honest:
+
+- **Count every stage of the pipeline.** Work often flows through several processes — fetch, decode,
+  analyse. If your process counter matches only one stage's name, you'll conclude the wrong thing
+  about concurrency and never see the stage that's actually slow. Enumerate with `ps` and read what
+  is really running before trusting a `pgrep` pattern.
+- **Distrust rate estimates from short windows.** Throughput on heterogeneous work swings with the
+  size of each item. Successive five-minute samples can yield wildly different projections that are
+  each internally consistent and all wrong. Sample across a long window, say the range rather than a
+  point estimate, and don't re-quote a new ETA with confidence every time the number moves.
+
 ## SSH with keys — the access layer
 
 On top of the mesh, **SSH is how the operator administers remote nodes** and how config is
