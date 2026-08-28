@@ -200,6 +200,34 @@ its subjects are already a usable `[area/endpoint]` hierarchy. Just write **two*
 instead of one — one matching your prefix, one matching the health checker's fixed phrasing — and
 confirm both with real test emails before you rely on them.
 
+## Coverage probes — for batch work, count the artifact
+
+The probes above answer *"is it working right now?"*. Long-running batch work needs a different
+question: *"how much of it is actually done?"* — and the naive version of that check is the most
+dangerous probe you can write. See guide **§ 14 (Liveness is not completion)** for the full case.
+
+The failure: a watcher that tests whether the job's process is running, and reports success when it
+exits. A process exits on success, on failure, on being killed, and when it had nothing queued —
+the exit distinguishes none of them. Worse, it may not even be the process doing the work. One such
+probe reported "generation complete" for weeks at **0.15%** actual coverage.
+
+Write these instead as **coverage probes**:
+
+- **Count the artifact**, not the process — the rows, files, or records the work actually produces.
+  If you can't name the artifact, you can't write the probe.
+- **Report `done / total` as a percentage.** A percentage cannot silently mean zero the way a
+  boolean can. `complete: true` is a claim; `41,802 of 71,623 (58.4%)` is a measurement.
+- **Two phases, so it stays useful after the backlog clears.** While below target, report milestones
+  and treat *no progress for N hours* as the terminal signal (a multi-week sweep has no clean end
+  event, and this one alert covers both "finished" and "died early" — the percentage says which).
+  At or above target, go silent: a plateau is correct. The lasting signal is then **regression** —
+  coverage falling and staying down past a grace window, meaning newly added work has stopped being
+  processed. The grace window is what keeps normal add-then-catch-up quiet.
+- **Give it a no-side-effect mode** (`--print`) that computes and prints without mailing or writing
+  state, so you can check on demand without perturbing the alerting.
+- **Never assert what you don't measure.** If the probe reports on two artifacts, count both. A
+  half-true alert is worse than a false one: the verifiable half makes the fabricated half credible.
+
 ## Secrets & privacy
 
 Both `.env` files are **host-local secrets** — `chmod 600`, never committed (guide § 06). Version

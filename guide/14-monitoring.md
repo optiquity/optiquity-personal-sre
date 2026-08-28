@@ -35,12 +35,52 @@ AND it answered within a sane time
 That last clause matters more than it looks: a service degrading toward death usually gets slow
 before it stops. A latency ceiling catches it while you can still act.
 
+## Liveness is not completion
+
+The rule above has a batch-job twin, and it is the one that will fool you. For a *service*, "up but
+broken" is the trap. For a *job*, the trap is **"the process exited, therefore the work is done."**
+
+It isn't. A process exits when it is finished, when it fails, when it is killed, when it never had
+anything queued, and when it was the wrong process entirely. Only one of those is success, and the
+exit tells you nothing about which.
+
+A real case. A long analysis pass was believed complete because a watcher checked whether the
+relevant tool was running and emailed "generation complete" when it stopped. The work was **0.15%
+done**. The tool being watched never performed that work at all — the analysis came from a
+different subsystem entirely, on a different trigger. The probe was measuring an unrelated process
+with a plausible name, and it had been reporting success for weeks. It surfaced only when a human
+used the system and hit the missing result.
+
+So for anything batch, long-running, or queue-driven:
+
+**Count the artifact the work produces.** Not the process, not the trigger, not the log line saying
+it started. If the job writes rows, count rows. If it writes files, count files. Then express it as
+**coverage** — `done / total`, a percentage — because a percentage cannot silently mean zero the way
+a boolean can. `complete: true` is a claim; `41,802 of 71,623 (58.4%)` is a measurement.
+
+**A percentage also gives you the completion signal a long job otherwise lacks.** A multi-week sweep
+has no clean end event, so the honest terminal signal is *absence of progress*: coverage stopped
+advancing for N hours. Report the number alongside it and let the reader distinguish "finished" from
+"died at 12%" — the same alert covers both, and neither can masquerade as the other.
+
+**Never let a probe assert something it doesn't measure.** That same false alert claimed *two*
+things — and the other one was true. The verifiable half made the fabricated half credible; nobody
+questioned a message that was half right. If a probe reports on two artifacts, it must count both,
+or claim only the one it counts.
+
+**Watch for this shape in your own probes:** any check whose evidence is a process, a PID, a lock
+file, a "started" log line, or a job's exit code, standing in for output that was never inspected.
+Ask what would happen if the work silently produced nothing — if the probe still reports success,
+it is measuring the wrong thing.
+
 ## Some things a central checker cannot see
 
 A remote prober reaches anything on the network. Three important things aren't on the network:
 
 - **A service with no listening port** — an outbound bridge, an agent, a queue worker. Nothing to
-  probe; the right check is "is the process actually running?"
+  probe; the right check is "is the process actually running?" — but that answers whether a service
+  is **up**, never whether a **job finished**. See *Liveness is not completion* above before reusing
+  it on batch work.
 - **Local state** — a mount, a disk filling up, a batch job's last exit code.
 - **The monitor itself.** If your health checker dies, it does not alert you that it died. Some
   *other* node has to cross-ping it.
