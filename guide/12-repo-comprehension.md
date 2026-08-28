@@ -74,6 +74,13 @@ automating anything — and if the answer is "the cheap one doesn't", then a com
 harmful there and the right setting is no hook at all. Per-repo guidance should say which kind of
 repo it was written for.
 
+**The semantic pass has a model dial — turn it down.** If indexing runs through an AI CLI it likely
+defaults to the largest model, but the work is structured extraction into a fixed shape, not
+open-ended reasoning. A mid-tier model is the right default; save the top tier for a prose-heavy
+repo where concept quality is the point. That knob is also your escape hatch when a usage limit
+stops a build — indexers cache per file, so switching model and re-running resumes rather than
+restarting.
+
 **Exclude what shouldn't be read.** Secrets-adjacent paths, vendored dependencies, build output,
 archives. This is a *privacy* decision as much as a signal-quality one — an index is a derived
 artifact that can end up somewhere you didn't intend.

@@ -54,6 +54,30 @@ the guard blocks the write **forever**, and (being non-blocking) tells no one. S
 never updates again after an upgrade. Fix: one forced rebuild to reset the baseline, then normal
 operation resumes. Check your tool's force flag/env var.
 
+## Choosing the model for the semantic pass
+
+If your indexer's semantic pass runs through an AI CLI, **it probably defaults to the biggest
+model available** — which is usually overkill for what this work actually is: structured extraction
+into a fixed JSON shape, not open-ended reasoning. Find the knob and turn it down.
+
+**Default to a mid-tier model** (e.g. Sonnet-class). Reserve the top-tier one for a prose-heavy
+repo where the *quality of the concepts* is the whole point, and use the cheapest tier for bulk
+re-runs on code-heavy repos. The difference compounds fast when you index several repos.
+
+Two things worth knowing before you need them:
+
+- **Model selection is the escape hatch when a usage limit bites.** A build that dies with
+  "you've reached your <model> limit" is a *usage* failure, not a tool failure. Indexers cache
+  per-file, so switching model and re-running **resumes** rather than starting over.
+- **Selecting a model is not the same as selecting a backend.** Some subcommands need the backend
+  named explicitly and will otherwise skip their LLM step *quietly* — you get a heuristic fallback
+  and a line of output that's easy to miss. Read the output, don't assume the expensive step ran.
+
+**Community naming is a good place to spend nothing.** Many indexers name clusters by their
+most-connected node before falling back to an LLM. On a well-structured repo those hub-derived
+names are often *better* than generated ones — a community whose hub is "06 · Secrets" is exactly
+"the secrets cluster". Look at the free output before paying to relabel it.
+
 ## Not every repo should get a hook
 
 The advice above assumes a code repo, where refreshing the index is a cheap structural rebuild.
