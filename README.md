@@ -18,6 +18,19 @@ adapt: a governance model, a repo structure, a config-management flow, a permiss
 the glue (networking, secrets, MCP, skills) that ties them together. You bring the accounts and
 machines; the framework gives you the operating system for running them.
 
+## How does a Personal SRE work?
+
+Using a chat in the Claude Code CLI or a similar system, your customized private repo that you
+bootstrap from this one will help install foundational open source software to help maintain 
+and monitor the health of a single machine or a whole fleet of different machines over a
+network or the Internet. It will handle app updates, system health monitoring, system
+optimization, agentic workflows, and more all while maintaining privacy and security of your
+secrets and keys. While= you do have to give your **Personal SRE** advanced permissions for
+many features, there are rules and checks in place that require it to ask you for the final go
+ahead when making big or sensitive changes. Ultimately, you decide how much control you want to
+give it. You may want to start conservatively, but after a while you'll find it quite safe to
+allow it to do more.
+
 > **Status:** the concepts (the guide), the starter files (the skeleton), and the platform maps
 > are complete for macOS, partial for Windows, stubbed for Linux/Cloud — and grow over time.
 > See the maturity banners in `platforms/`.
