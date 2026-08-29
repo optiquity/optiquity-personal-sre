@@ -94,6 +94,43 @@ to where, the schedule, the retention, and — importantly — the **"first real
 - **Re-verify after changes.** If you move the target, rotate the SSH key, or change the source,
   do a manual run and re-confirm — a backup that broke months ago is the worst kind.
 
+### 5. Never store the key beside the data it protects
+
+If the thing you are backing up is **encrypted at rest** — an automation platform's stored
+credentials, a password manager's vault, an app's secret store — its key is usually a separate
+small file. **Do not back that key up into the same directory as the encrypted data.** Co-locating
+lock and key defeats the encryption entirely: anyone who reaches the backup target has both halves.
+
+Put the key in your vault instead, and **write the consequence down where the person restoring will
+read it** — in the script header, in capitals. Because without the key, a restore produces working
+application data and credentials that cannot be decrypted, and **that looks exactly like a
+successful restore** until the first thing tries to authenticate. A restore that fails loudly is
+recoverable; one that appears to succeed is not.
+
+The corollary: **a restore test that only checks the data is half a test.** Confirm the key is
+recoverable from the vault too, or you have verified the half that was never at risk.
+
+## Which services need one — and how you find the ones you missed
+
+The hard part isn't writing the script. It's noticing that something **needs** one.
+
+Backups tend to get added the way this example describes: someone notices a service holds something
+irreplaceable, and builds it a daemon. That works exactly as far as attention reaches. In one real
+fleet the media server got a carefully-built backup daemon because it was obviously precious — while
+the **automation platform**, holding every workflow *and* every stored credential, had **no
+automated backup at all**. The only copies in existence were two made by hand, 32 days apart. Nobody
+decided that; nobody was asked.
+
+So make it a rule rather than a habit, and state it in the general form:
+
+> **Before a service holding non-reproducible data is relied on, it must be registered with the
+> update checker, version-pinned, backed up on a schedule, and restore-tested at least once.**
+
+Then ask the question the rule implies, out loud, for everything already running: *what does this
+hold that I cannot rebuild?* Config regenerates from your repo. Container images re-pull. But
+workflow definitions, credential stores, accumulated history, and anything a person authored by hand
+do not — and those are rarely the services that look important.
+
 ## What you learn from this example
 
 - A scheduled job's **stripped environment** (minimal PATH, no agent) and the **network-mount
@@ -101,6 +138,10 @@ to where, the schedule, the retention, and — importantly — the **"first real
 - **Verify-then-publish + loud failure** is what separates a backup from a false sense of security.
 - **The bootstrap is gated; the verification is the real "done"** — install *and* proof, both
   tracked.
+- **"The file exists" is not a backup; "it restored" is.** And a restore test that skips the
+  decryption key verifies only the half that was never at risk.
+- **The backup you don't have is the one nobody decided against** — coverage is a rule to apply,
+  not a judgement to make service by service.
 
 ## Adapt it
 

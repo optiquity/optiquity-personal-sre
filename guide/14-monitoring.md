@@ -51,6 +51,28 @@ different subsystem entirely, on a different trigger. The probe was measuring an
 with a plausible name, and it had been reporting success for weeks. It surfaced only when a human
 used the system and hit the missing result.
 
+**A second instance, with a different mechanism — worth recognising because the first fix does not
+catch it.** An automation platform ran a media-conversion job every 30 seconds and recorded
+**2,256 consecutive successful executions** while converting nothing at all. Its status was not
+lying about a *process*: the workflow genuinely ran, genuinely completed, and genuinely took the
+correct branch — its own failure branch, which filed each item in a `failed/` directory exactly as
+designed. Detection was never broken. **The runner's status means "the workflow ran", never "the
+work succeeded"**, and nothing watched the directory where the failures piled up.
+
+Two things made it invisible for weeks rather than minutes:
+
+- **The tool failed soft.** The encoder printed "preset import failed", *continued anyway*, then
+  exited non-zero for what looked like an unrelated reason. A tool that degrades instead of stopping
+  converts a small mistake into an undiagnosable one.
+- **The reason was only ever in memory.** The error existed solely in the execution record, which
+  the platform prunes after about a day. By the time anyone looked, the evidence had aged out.
+  **Write the failure reason to disk** — next to the artifact that failed — or you will be
+  diagnosing from absence.
+
+*(The trigger, for the record: a directory renamed `Presets` → `PRESETS`. The share was
+case-sensitive; the automation was not updated. A case-only rename is invisible in every listing you
+would naturally reach for, and is worth grepping your automation for before you make one.)*
+
 So for anything batch, long-running, or queue-driven:
 
 **Count the artifact the work produces.** Not the process, not the trigger, not the log line saying

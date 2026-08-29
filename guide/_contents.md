@@ -20,7 +20,7 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 | 11 | [Agents & skills](11-agents-skills.md) | Subagents + the `SKILL.md` pattern; the multi-CLI config-location map. |
 | 12 | [Repo comprehension](12-repo-comprehension.md) | Making your codebase legible to the operator: packing vs indexing, staleness, and grounding. |
 | 13 | [Multi-node](13-multinode.md) | The advanced layer: remote apply, session mobility, the fleet view. |
-| 14 | [Monitoring](14-monitoring.md) | Knowing it works and hearing when it doesn't: health checks, coverage probes for batch work, maintenance windows, self-retiring scaffolding, alerting, and the update digest. |
+| 14 | [Monitoring](14-monitoring.md) | Knowing it works and hearing when it doesn't: health checks, coverage probes for batch work (why a runner's "success" isn't the work's), maintenance windows, self-retiring scaffolding, alerting, and the update digest. |
 | 15 | [Setup](15-setup.md) | The onboarding journey — the three tiers and what they share. |
 | 16 | [Public/shared repos](16-sharing.md) | Publishing a scrubbed framework: derive-don't-copy + the grep-guard. |
 | 17 | [Example projects](17-example-projects.md) | A catalog of worked, end-to-end examples of the operator owning install + maintenance. |
