@@ -7,11 +7,39 @@
 #     ssh-target   "local" for the node this runs on, else an SSH host/alias (key auth)
 #     os           macos | linux | windows | synology   (chooses shell + manual hint)
 #     methods      comma list: brew, npm, softwareupdate (macos); apt (linux);
-#                  uvtool, pipx (Python tool installers — a common blind spot); manual
+#                  uvtool, pipx (Python tool installers — a common blind spot);
+#                  pipuser, gem, cargo, gobin, deno, nodeversion, vscode, snap,
+#                  flatpak, pnpm, yarn; manual; not-audited
+#
+#                  Prefix with ! to EXCLUDE a method you deliberately don't check
+#                  (e.g. !gem for a vendor-shipped system Ruby, !vscode for an
+#                  editor that auto-updates its own extensions). Excluded methods
+#                  are still discovered and COUNTED in the digest — an exclusion
+#                  that disappears from the report is indistinguishable from a
+#                  gap in coverage, which is how blind spots start.
+#
+#                  The checker reconciles this list against what is ACTUALLY
+#                  installed and reports anything present-but-undeclared. That is
+#                  the point: a hand-maintained list only ever contains what
+#                  someone remembered to add.
 #
 # The node running the checker is usually the always-on host, listed as "local".
 # Remote nodes are reached over SSH (BatchMode/key auth); unreachable ones are noted, not fatal.
-# Use "manual" for anything without a safe non-interactive updater (Windows winget, NAS DSM).
+# Use "manual" for anything without a safe non-interactive updater — but RETEST that
+# belief before you write it down, and prefer "not-audited" when nobody has actually
+# looked. The distinction matters more than it sounds: "manual" reads as a decision
+# someone made, so nobody revisits it, and a node can sit for years accumulating
+# updates while the digest cheerfully reports the fleet as fine.
+#
+# Two premises worth checking, because both are commonly wrong:
+#   · "needs an elevated session" is usually true of INSTALLING and false of
+#     DETECTING. Windows `winget list --disable-interactivity` reports available
+#     upgrades fine over SSH; only the install needs elevation. (It cannot refresh
+#     its source index unprivileged, so results are cached — say so in the digest.)
+#   · a CLI that looks absent may just not be on the non-interactive PATH.
+#     Synology's `synopkg` lives under /usr/syno/bin/ and is easily missed.
+#     Prefer its per-package read-only query; some "check everything" subcommands
+#     will also ACT on what they find.
 
 always-on | local           | macos    | brew,npm,softwareupdate,uvtool,pipx
 laptop    | <laptop-host>   | macos    | brew,npm,softwareupdate

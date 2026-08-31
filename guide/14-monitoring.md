@@ -168,6 +168,75 @@ manager:
   next to a cask. Whichever wins the `$PATH` race decides what runs, and upgrades break
   confusingly. This is detectable: flag any command backed by two *different* real binaries.
 
+### The enumeration blind spot, and why patching it one case at a time fails
+
+Those two are not a list. They are the first two instances of a pattern that will keep recurring:
+**a class of installed thing that nothing enumerates.** Expect it in at least four shapes:
+
+| Shape | Example |
+|---|---|
+| A whole **install method** unchecked | containers · language-version tools · binaries dropped into `/usr/local/bin` |
+| An **instance** of a checked method unregistered | a second compose stack the image checker was never pointed at |
+| **Unreadable input** to a working checker | tags with a variant (`5.13-apache`, `mysql-v2.19.0`) that the parser silently skips |
+| A whole **host** unchecked | a machine marked "manual" years ago and never revisited |
+
+The last one is the expensive one, and the easiest to acquire. A host gets labelled *manual* because
+some early attempt failed; the label then reads as a decision rather than an absence, and nobody
+retests it. Retest the premise — the reason is often narrower than the label. "Needs an elevated
+session" is usually true of **installing** and false of **detecting**, and those get conflated. A CLI
+believed absent may just not be on the non-interactive `PATH`.
+
+Each of these is tempting to fix with one more special case. Don't: the next one is already waiting,
+and a special case can be added *to the very tool built to close the previous three*.
+
+**The general fix is reconciliation.** Invert the question — instead of "check the things on my
+list", ask *"what is installed here that nothing is watching?"*
+
+```
+   DISCOVERY  (probe each host: which install methods actually hold packages?)
+        │
+        ├── present + registered as checked    → fine
+        ├── present + registered as excluded   → COUNTED in the digest, never silent
+        └── present + NOT REGISTERED           → reported as a finding   ← the point
+```
+
+Both halves are load-bearing. **A registry alone has the identical blind spot** — it only ever
+contains what someone remembered to add. **Discovery alone is noise** — it can't know that a
+system-vendored Ruby is deliberately untracked. Skip methods with **zero** installs, or the report
+cries wolf about every tool you have but don't use.
+
+Two rules keep this honest as it grows:
+
+- **Never mark something "checked" before its check exists.** A registry that claims coverage it
+  doesn't have manufactures precisely the false confidence it was built to remove. Verify **both**
+  directions: that the check finds a real update, *and* that deregistering the thing makes it report
+  as unregistered. One direction proves nothing.
+- **Exclusions must stay visible.** An exclude list whose entries vanish from the report becomes the
+  next blind spot. Give every exclusion a reason that stands on its own, print an
+  `excluded (N)` count, and support a revisit date so "not now" can't silently become "never".
+
+### Three outcomes, never two
+
+Every check must distinguish **clean**, **could-not-run**, and **unregistered**. Collapsing the first
+two is the most common bug in this kind of tooling: a command that errors produces no output, and no
+output renders exactly like "nothing to report".
+
+Concretely: say *"index not refreshed"* rather than implying an exact count; report an unreadable
+version as `UNREADABLE`, never as "current"; and if a discovery pass finds items that are all
+registered, say *"3 found, all registered"* — not *"nothing found"*, which is a different and false
+claim.
+
+### Don't let the report train you to ignore it
+
+A row that can never be cleared is worse than no row. Two ways to create one:
+
+- **Comparing a floating tag against a pinned resolution.** `3.14-alpine` *resolves to* `3.14.7`;
+  reporting an "update" to the image already running produces a permanent, unfixable line.
+- **Re-proposing something already declined.** A decline is a durable answer. Record it, and
+  re-surface it only when the facts change or a revisit date arrives.
+
+Either one teaches the reader to skim the one report where real updates appear.
+
 ## A dashboard is not a monitor
 
 If you keep a status dashboard ([04 · Structure](04-structure.md)), be clear about the division:

@@ -86,6 +86,15 @@ forgotten work ([Rule: no undocumented deferral](../03-governance-rules.md)).
 - **Watch for the platform gotchas** — some updates can't be driven headless (e.g. an OS package
   manager that needs an elevated interactive session; a NAS that updates via its own UI) — note
   those as "do at the machine," don't pretend they're automatable.
+- **But separate "can't be automated" from "we never checked."** Write down *which half* is
+  blocked: **installing** frequently needs an elevated session while **detecting** does not, and
+  conflating them silently drops a whole node out of your inventory. Label an unassessed node
+  `not-audited`, never `manual` — "manual" reads as a decision someone made, so nobody retests it,
+  and the node accrues updates for years while the digest reports the fleet as fine. Re-test the
+  premise each pass; a CLI you believed absent may simply not be on the non-interactive `PATH`.
+- **Detection commands must be genuinely read-only.** Check the help text before scheduling one:
+  some "check for updates" subcommands will also *apply* them according to a stored preference,
+  which turns an unattended inventory into an unattended upgrade.
 
 ## What you learn from this example
 

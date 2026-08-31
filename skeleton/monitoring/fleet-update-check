@@ -25,7 +25,7 @@ updates OR errors; silent when all-current (--always forces, --dry-run prints in
 
 Exit: 0 ok · 1 the digest email failed to send · 2 config error
 """
-import argparse, os, shlex, subprocess, sys, datetime
+import argparse, os, re, shlex, subprocess, sys, datetime
 
 SSH = ["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes"]
 DEFAULT_CONFIG = os.path.expanduser("~/.config/fleet-monitoring/fleet-nodes.conf")
@@ -66,6 +66,77 @@ def run_on(node, cmd, timeout=300):
     if node["target"] == "local":
         return sh(shell.split() + [cmd], timeout)
     return sh(SSH + [node["target"], f"{shell} {shlex.quote(cmd)}"], timeout)
+
+# ── Coverage reconciliation ──────────────────────────────────────────────────
+# How to detect that an install method is PRESENT AND HOLDING PACKAGES on a node.
+# Presence alone is not a gap: a tool installed with nothing installed *into* it
+# needs no checker, and reporting it would be noise that teaches you to skim.
+#
+# This exists because the alternative — a hand-maintained list of things to check
+# — has a permanent blind spot: it only ever contains what someone remembered to
+# add. Every "we forgot to check X" gets fixed by adding one more special case,
+# and the next one is already waiting. Reconciliation asks the question the other
+# way round: what is installed here that nothing is watching?
+#
+# Adding a method is ONE line here plus the method name in fleet-nodes.conf.
+METHOD_PROBES = {
+    "brew":      'command -v brew >/dev/null && brew list --formula 2>/dev/null | wc -l || echo 0',
+    "npm":       'command -v npm >/dev/null && npm ls -g --depth=0 2>/dev/null | tail -n +2 | grep -c . || echo 0',
+    "pnpm":      'command -v pnpm >/dev/null && pnpm ls -g --depth=0 2>/dev/null | grep -cE "^[a-z@]" || echo 0',
+    "yarn":      'command -v yarn >/dev/null && yarn global list 2>/dev/null | grep -c "info " || echo 0',
+    "pipx":      'command -v pipx >/dev/null && pipx list --short 2>/dev/null | grep -c . || echo 0',
+    "uvtool":    'command -v uv >/dev/null && uv tool list 2>/dev/null | grep -cE "^[a-z]" || echo 0',
+    "pipuser":   'command -v pip3 >/dev/null && pip3 list --user 2>/dev/null | tail -n +3 | grep -c . || echo 0',
+    "gem":       'command -v gem >/dev/null && gem list --no-versions 2>/dev/null | grep -c . || echo 0',
+    "cargo":     'ls ~/.cargo/bin 2>/dev/null | grep -c . || echo 0',
+    "gobin":     'ls ~/go/bin 2>/dev/null | grep -c . || echo 0',
+    "deno":      'ls ~/.deno/bin 2>/dev/null | grep -c . || echo 0',
+    "nodeversion": 'ls ~/.nvm/versions/node 2>/dev/null | grep -c . || echo 0',
+    "vscode":    'command -v code >/dev/null && code --list-extensions 2>/dev/null | grep -c . || echo 0',
+    "apt":       'command -v apt >/dev/null && echo 1 || echo 0',
+    "snap":      'command -v snap >/dev/null && snap list 2>/dev/null | tail -n +2 | grep -c . || echo 0',
+    "flatpak":   'command -v flatpak >/dev/null && flatpak list 2>/dev/null | grep -c . || echo 0',
+}
+
+# Methods a node may legitimately hold without a checker. Declare them in
+# fleet-nodes.conf as `!name` (e.g. `!gem`) so they are EXCLUDED-BUT-COUNTED
+# rather than silently absent — an exclusion that vanishes from the report is
+# indistinguishable from a gap in coverage.
+
+
+def reconcile_node(node):
+    """Report install methods that hold packages but are not declared for this node.
+
+    Returns (lines, count, errs). A finding here is not an error — it means
+    something is installed that nothing is watching.
+    """
+    declared = {m.lstrip("!") for m in node["methods"]}
+    excluded = {m.lstrip("!") for m in node["methods"] if m.startswith("!")}
+
+    probe = "; ".join(f'printf "%s=" {shlex.quote(m)}; ({c})' for m, c in METHOD_PROBES.items())
+    rc, out, err = run_on(node, probe, timeout=180)
+    if rc != 0 and not out.strip():
+        return [], 0, [f"method discovery failed ({err.strip()[:80] or 'no output'})"]
+
+    lines, count = [], 0
+    for m in METHOD_PROBES:
+        match = re.search(rf"{re.escape(m)}=(\d+)", out)
+        if not match:
+            continue
+        n = int(match.group(1))
+        if n == 0:
+            continue                       # installed nothing -> not a gap
+        if m in excluded:
+            continue                       # counted below, not silent
+        if m not in declared:
+            lines.append(f"  UNDECLARED  {m} ({n} installed) — nothing checks this")
+            count += 1
+    if excluded:
+        lines.append(f"  excluded ({len(excluded)}): {', '.join(sorted(excluded))}")
+    if not count and not excluded:
+        lines.append("  every install method in use is declared")
+    return lines, count, []
+
 
 def check_node(node, refresh):
     """Return (lines, count, errors) for one node across its methods."""
@@ -156,6 +227,27 @@ def main():
         body += [f"  {e}  ⚠" for e in errs] + lines
         blocks.append("\n".join(body))
         summary.append(f"{node['role']} {cnt if cnt else ('ERR' if errs else 'ok')}")
+
+    # Coverage reconciliation — what is installed that nothing is watching.
+    # Deliberately a separate pass: the per-node blocks above answer "is anything
+    # I check out of date", which is a different and much weaker question.
+    rec_lines, rec_count, rec_errs = [], 0, []
+    for node in nodes:
+        l, c, e = reconcile_node(node)
+        if l or e:
+            rec_lines.append(f"  {node['role']} ({node['os']}):")
+            rec_lines += [f"  {x}" for x in l] + [f"    {x}  ⚠" for x in e]
+        rec_count += c
+        rec_errs += e
+    any_updates = any_updates or rec_count > 0
+    any_errs = any_errs or bool(rec_errs)
+    tag = f"{rec_count} undeclared" if rec_count else ("ERROR" if rec_errs else "current")
+    blocks.append("\n".join([f"== Update coverage (reconciliation) — {tag} ==",
+                             "  Declared methods vs what is actually installed. An UNDECLARED entry",
+                             "  means something is installed that no checker covers — add it to",
+                             "  fleet-nodes.conf (as `name` to check it, or `!name` to exclude it",
+                             "  with intent; excluded entries stay counted, never silent)."] + rec_lines))
+    summary.append(f"coverage {rec_count if rec_count else ('ERR' if rec_errs else 'ok')}")
 
     stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     header = (f"Fleet update digest — {stamp}\n"

@@ -108,6 +108,33 @@ is only acceptable because they are strictly read-only and **notify-only**: they
 raise alarms, they never mutate a node. Anything that would *change* a node comes back through
 Rule 1 and waits for you. See [E16](examples/E16-fleet-health-and-alerting.md).
 
+### 11. Updates are proposed by the operator, decided by you
+No tool, package, image, or binary is upgraded without your explicit per-update approval. But the
+operator is expected to **raise** them: staying silent about a known-available update is a failure,
+not caution. You should never have to discover what is stale.
+
+A proposal has to carry enough to decide **without further research**: what it is and where it runs ·
+current → available version · why it matters (security, capability, or merely currency) · what could
+break, including irreversible migrations · whether a backup exists and has been *restore-tested* ·
+the rollback, and whether rollback is actually possible.
+
+**"Available" means verified, not assumed.** A version claim comes with the source that produced it
+and the *version of the tool that read it* — a stale validator or a floating tag can manufacture a
+difference that doesn't exist.
+
+**Exclusions are registered, reasoned, and visible.** Self-updating software, a deliberately frozen
+version, a declined proposal, an unused tool awaiting removal — each recorded with its reason, and a
+revisit date where the decision is time-bound. Excluded items are still discovered and **counted**,
+because an exclusion that disappears from view is indistinguishable from a gap in coverage.
+
+**A denial is a durable answer**, not an invitation to re-ask next week. Re-propose only when the
+facts change or a revisit date arrives.
+
+**Why:** the naive version of this rule is "don't touch anything unless asked", which is safe and
+quietly corrosive — it makes *your attention* the only thing standing between the fleet and years of
+accumulated drift. Moving the burden of noticing onto the operator while keeping the decision with
+you gets the safety without the rot. See [14 · Monitoring](14-monitoring.md) for the detection side.
+
 ## Encoding the rules: the rules file
 
 The operator reads a **rules file** at the repo root — for Claude Code this is `CLAUDE.md`;

@@ -24,7 +24,7 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 | File | What |
 |---|---|
 | `fleet-mail` | dependency-free SMTP mailer; reads `mail.env`; used by the digest + any script alert |
-| `fleet-update-check` | the digest; reads `fleet-nodes.conf`; notify-only; local + SSH nodes |
+| `fleet-update-check` | the digest; reads `fleet-nodes.conf`; notify-only; local + SSH nodes. Also **reconciles** declared install methods against what is actually installed, and reports anything present-but-undeclared — a hand-maintained list only ever contains what someone remembered to add |
 | `fleet-local-check` | local-only probes Gatus can't reach; reads `local-checks.conf`; email on state change |
 | `fleet-install-audit` | generalized install-method conflict detector across nodes; email on state change |
 | `fleet-container-check` | pinned container images with a newer upstream release (read-only; folded into the digest) |

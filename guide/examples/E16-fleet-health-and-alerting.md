@@ -22,6 +22,13 @@ You have services and nodes doing real work. Two blind spots hurt:
 2. **"What's fallen behind?"** — packages and tools drift out of date, but auto-updating
    everything is how an always-on node breaks mid-task. You want to *know* what's behind and
    decide, not be surprised.
+3. **"What isn't being checked at all?"** — the quiet one, and the one that bites hardest. A
+   digest reporting "all current" answers only for the things it knows to look at. Whole install
+   methods, and whole *nodes*, drop out of coverage without any signal: a machine marked
+   "manual" once, a language-version manager nobody enumerated, a binary dropped into
+   `/usr/local/bin`. The checker therefore reconciles what is **declared** against what is
+   **actually installed**, and reports anything present-but-undeclared — see
+   [14 · Monitoring](../14-monitoring.md).
 
 And when either goes wrong, you want to **find out by email**, not by stumbling on it.
 

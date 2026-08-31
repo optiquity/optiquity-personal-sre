@@ -114,6 +114,12 @@ Updates are a project, not a reflex:
 The principle: **a node's tooling changes when you decide it does**, and every change is
 visible — never a surprise from a background auto-upgrade.
 
+**"Deliberate" is about the decision, not the discovery.** It does *not* mean the operator waits to
+be asked. Under [principle 11](03-governance-rules.md), the operator is expected to bring you the
+available updates, with enough detail to decide; you approve, decline, or defer. Keeping the decision
+while offloading the noticing is the whole trade — the alternative makes your attention the only
+thing between the fleet and years of quiet drift.
+
 **Automate the *noticing*, not the upgrading.** The posture above only works if you actually know
 what's behind — otherwise "deliberate" quietly becomes "never". The framework ships that half:
 a scheduled job inventories every node by install method and **emails you a digest**, upgrading
@@ -125,6 +131,14 @@ it also covers, both of which this chapter warns about but can't catch by hand:
 - **Version-pinned container images are invisible to every package manager.** Pinning is correct
   for an appliance, but nothing tells you the pin is stale — you find out from a banner inside the
   app, if ever. `fleet-container-check` asks the registry instead.
+
+Treat those two as **examples, not the list**. Both are instances of one recurring pattern — a class
+of installed thing that nothing enumerates — and it also arrives as language-version managers,
+hand-placed binaries, and *entire hosts* that were marked "manual" once and never retested. Patching
+it case by case never converges; the fix is to reconcile **discovery against a registry** so anything
+present-but-unregistered reports itself. See
+[14 · Monitoring → the enumeration blind spot](14-monitoring.md) for the mechanism and the two rules
+that keep it honest.
 
 Worked end-to-end in [E16 · Health, alerting & the update digest](examples/E16-fleet-health-and-alerting.md);
 the human runbook it feeds is [E10 · A deliberate fleet-update pass](examples/E10-fleet-update-pass.md).
