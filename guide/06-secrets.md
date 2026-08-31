@@ -145,6 +145,47 @@ High-value or interactive secrets still belong in the **vault/keychain** (read j
 the helper pattern below), not a flat env file — an env file is for convenience vars and things
 a service reads at startup.
 
+## Credentials that live on a node
+
+Vaults cover secrets *you* fetch. A different problem is the credential a **node** needs to hold — the
+token its config manager uses to pull, the key a backup job authenticates with. Nobody is at the
+keyboard when those are used, so "prompt the human" is not an option.
+
+**Where it goes matters more than people assume.** Most guides reach for the credential helper that
+writes a **plaintext file**, because it is the one that always works. Prefer a store that encrypts
+against the user account — but expect the *good* option to be the one that breaks first in automation:
+an OS credential vault typically needs an **interactive logon session**, so it fails outright when
+reached over SSH or from a service context. The usual middle ground is a file-backed store that still
+uses OS-level encryption. Reach for plaintext last, deliberately, and write down why.
+
+**Getting the secret onto the node without spreading it.** Type it at a **hidden prompt on the machine
+itself** and pipe it into the credential store on **stdin** — never as a command-line argument, where
+any process listing can read it, and never pasted into a chat, ticket or terminal that is being
+recorded. An assistant helping you set this up should never need to see the value.
+
+**Scope it to the job.** A node that only ever *pulls* needs read-only access to one repository. If
+that machine is later compromised, the blast radius is a token that can read one repo — not one that
+can push to everything.
+
+### Assume it will expire, and make that loud
+
+This is the part that bites, because the failure is **silent by construction**. When a config-pull
+token expires:
+
+- the node still has its last-fetched copy;
+- it keeps applying that copy perfectly;
+- every health check stays green;
+- and it quietly stops receiving changes — for months, if nothing is watching.
+
+Nothing breaks. The node simply stops moving, which looks identical to a node with nothing to do.
+Per-node credentials **will** expire; treat that as a scheduled certainty rather than an incident, and
+have each node report **two** things into your digest: whether it can still authenticate, and **how
+old its fetched source is**. The second matters independently — auth can succeed while a sync job has
+been failing for other reasons.
+
+The same shape applies to any long-lived credential an unattended job depends on: a backup target, a
+registry, an API key. If its expiry produces no signal, you have built a clock that stops silently.
+
 ## The vault-read helper pattern
 
 For automation that needs credentials (the operator logging into a service, a skill fetching a

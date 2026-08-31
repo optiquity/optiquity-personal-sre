@@ -164,8 +164,28 @@ encoded as governance rules:
 
 Prefer a **manual pull+apply** you drive over a fully automatic background sync, at least
 until you trust the setup — automatic apply removes the human from the one step that changes
-live state. If you do automate it, keep it to a plain pull+apply (no force), and know that a
-locally-modified file will need a one-time manual reconcile.
+live state.
+
+### If you do automate the apply
+
+A scheduled sync is reasonable once the setup is proven, and it needs three things the manual
+workflow gets for free:
+
+- **Force non-interactivity explicitly.** This is the one that will actually break you. Config
+  managers *prompt* when a managed file was changed by something other than themselves —
+  *"has changed since I last wrote it: diff / overwrite / skip / quit?"* With nobody to answer, the
+  job does not fail; it **waits forever**, and typically holds the tool's **state lock** while it
+  does, so every later invocation blocks too. The schedule then re-fires and wedges again. Pass the
+  explicit no-terminal flag rather than trusting the tool to notice there is no terminal.
+- **Decide the conflict policy up front, and log it.** *"Plain apply, reconcile by hand later"*
+  sounds careful but is what produces the hang above. Since the model is **machines are derived,
+  never authored**, letting the source win is consistent — but **record every overwrite**, because a
+  hand-edit on a node is an anomaly worth seeing rather than erasing silently.
+- **Verify what landed, not just that it landed.** Unreviewed changes now reach every node within one
+  interval, and a script with a syntax error is written to disk perfectly happily — it fails only when
+  something *runs* it, which may be days later and far from the cause. Syntax-check what you applied
+  and surface failures where you will read them. *"The file was written"* is not *"the file works"* —
+  the same distinction as *"the process ran"* versus *"the work happened"* ([14 · Monitoring](14-monitoring.md)).
 
 ## Handling drift
 

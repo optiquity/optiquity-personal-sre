@@ -12,7 +12,7 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 | 03 | [Governance rules](03-governance-rules.md) | The rules the operator obeys, and *when it must stop and ask*. |
 | 04 | [Structure](04-structure.md) | Projects, the registry, the status taxonomy, the optional dashboard, and the operator's `PLAYBOOK.md`. |
 | 05 | [chezmoi](05-chezmoi.md) | Config as source of truth: the dev-clone → prod-source → pull+apply flow, by role — and partitioning the source when one node runs a different OS. |
-| 06 | [Secrets](06-secrets.md) | Zero-secrets-in-git: allowlist ignore files, vault/keychain, the `.env` recipe. |
+| 06 | [Secrets](06-secrets.md) | Zero-secrets-in-git: allowlist ignore files, vault/keychain, the `.env` recipe. Plus credentials that live on a node, and why their expiry is silent by construction. |
 | 07 | [Tools & requirements](07-tools-requirements.md) | Hard vs optional tools + the idempotent, role-aware installer pattern. |
 | 08 | [Networking](08-networking.md) | Private mesh (Tailscale) + key-only SSH, the access-edge graph, subnet-router / exit-node gateways (+ their traps), and isolating which layer is actually slow. |
 | 09 | [Permissions](09-permissions.md) | The two permission layers: CLI auto-approve presets + session rules. |
