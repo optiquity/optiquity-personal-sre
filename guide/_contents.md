@@ -11,7 +11,7 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 | 02 | [The operator](02-operator.md) | How you actually work with the AI operator — the propose→approve→act rhythm. |
 | 03 | [Governance rules](03-governance-rules.md) | The rules the operator obeys, and *when it must stop and ask*. |
 | 04 | [Structure](04-structure.md) | Projects, the registry, the status taxonomy, the optional dashboard, and the operator's `PLAYBOOK.md`. |
-| 05 | [chezmoi](05-chezmoi.md) | Config as source of truth: the dev-clone → prod-source → pull+apply flow, by role. |
+| 05 | [chezmoi](05-chezmoi.md) | Config as source of truth: the dev-clone → prod-source → pull+apply flow, by role — and partitioning the source when one node runs a different OS. |
 | 06 | [Secrets](06-secrets.md) | Zero-secrets-in-git: allowlist ignore files, vault/keychain, the `.env` recipe. |
 | 07 | [Tools & requirements](07-tools-requirements.md) | Hard vs optional tools + the idempotent, role-aware installer pattern. |
 | 08 | [Networking](08-networking.md) | Private mesh (Tailscale) + key-only SSH, the access-edge graph, subnet-router / exit-node gateways (+ their traps), and isolating which layer is actually slow. |
@@ -19,7 +19,7 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 | 10 | [MCP](10-mcp.md) | External capabilities (GitHub, filesystem, …) — each a scoped capability grant. |
 | 11 | [Agents & skills](11-agents-skills.md) | Subagents + the `SKILL.md` pattern; the multi-CLI config-location map. |
 | 12 | [Repo comprehension](12-repo-comprehension.md) | Making your codebase legible to the operator: packing vs indexing, staleness, and grounding. |
-| 13 | [Multi-node](13-multinode.md) | The advanced layer: remote apply, session mobility, the fleet view. |
+| 13 | [Multi-node](13-multinode.md) | The advanced layer: remote apply, session mobility, the fleet view — and the node that isn't like the others. |
 | 14 | [Monitoring](14-monitoring.md) | Knowing it works and hearing when it doesn't: health checks, coverage probes for batch work (why a runner's "success" isn't the work's), maintenance windows, self-retiring scaffolding, alerting, and the update digest. |
 | 15 | [Setup](15-setup.md) | The onboarding journey — the three tiers and what they share. |
 | 16 | [Public/shared repos](16-sharing.md) | Publishing a scrubbed framework: derive-don't-copy + the grep-guard. |

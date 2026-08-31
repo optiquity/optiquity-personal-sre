@@ -84,6 +84,50 @@ This is [Rule 7](03-governance-rules.md) (default to symmetry) made mechanical: 
 same render, by construction. Divergence has to be *written as a role condition*, which forces
 it to justify itself.
 
+## When a node runs a different OS
+
+Roles carry you a long way, but they assume every node can *render the same tree*. Add one node on a
+different operating system and that assumption breaks hard: a source repo grown on macOS or Linux is
+usually **overwhelmingly** that OS — shell rc files, dotfile directories, scripts in `~/.local/bin` —
+and pointing the config manager at it from the odd node out will cheerfully try to create all of it
+there.
+
+The failure is not subtle, but it *is* easy to walk into, because nothing warns you. The manager has
+no idea those files are meaningless on the new platform.
+
+**Partition the source explicitly, and make it default-deny in both directions:**
+
+```
+{{- if eq .chezmoi.os "windows" }}
+*                    # ignore everything…
+!Scripts             # …except the paths that are for this OS
+!Scripts/**
+{{- else }}
+Scripts              # and elsewhere, ignore those
+Scripts/**
+{{- end }}
+```
+
+Two properties matter more than the syntax:
+
+- **Both branches are explicit.** A partition that only guards the new OS leaves the original nodes
+  quietly picking up files meant for the newcomer. Say what each side ignores.
+- **The majority OS keeps its exact previous behaviour.** This is the bit to verify rather than
+  assume: capture the managed-file list *before* the change, and diff it after. If the list and its
+  pending changes are byte-identical, the partition is inert for existing nodes — which is the only
+  evidence that matters, because a mistake here breaks machines that were working fine.
+
+**Expect the per-node data file to need attention too.** Templates that reference a variable — a role,
+a hostname, a flag — fail on any node where that variable was never defined, and the error surfaces
+as a template failure long before anything is applied. The new node needs its own data file with the
+same keys the others have, even where the values differ.
+
+**A caution on scope.** Partitioning the source is a change to a file *every* node depends on, so it
+earns a deliberate pass of its own — not a rider on unrelated work. It is also worth asking whether
+the odd node needs the config manager at all: if it runs two scripts and a service, version-controlling
+those files may be the whole requirement, and wiring up full config management is effort spent on a
+capability nobody asked for.
+
 ## What the config manager should manage
 
 - **Dotfiles** — shell config, editor config, CLI configs, the AI-operator's config/rules.

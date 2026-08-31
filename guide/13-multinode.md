@@ -81,6 +81,76 @@ a different job, answered by health checks + alerting — see
 [E16](examples/E16-fleet-health-and-alerting.md). Run both: the dashboard for what you decided,
 the checker for what is actually true this minute.
 
+## The node that isn't like the others
+
+Most fleets end up with one. A different OS, a different role, a machine that got added for one job
+and never fitted the pattern. It is worth naming, because the odd node fails in a characteristic way:
+**not loudly, but by quietly dropping out of everything.**
+
+### "It can't be automated" is usually two claims, and only one is true
+
+The most expensive label you can put on a node is *manual*. It reads as a decision someone made after
+investigating — so nobody investigates again — when it usually records a single failed attempt years
+earlier. A node marked manual stops appearing in coverage, stops being counted, and accrues work
+indefinitely while the fleet reports itself healthy.
+
+Almost always, the underlying claim conflates two different things:
+
+| | Typically needs privilege / interactivity | Typically does not |
+|---|---|---|
+| **Installing** an update | ✅ | |
+| **Detecting** what is available | | ✅ |
+
+Windows' `winget` will list available upgrades over a plain SSH session; only applying them wants an
+elevated interactive context. A NAS package manager may exist but simply not be on the non-interactive
+`PATH`. Test the narrow claim before you write down the broad one — and when a node genuinely has not
+been assessed, label it **`not-audited`, never `manual`**, so the distinction between *"we decided"*
+and *"nobody looked"* survives.
+
+### Cached results are fine; pretending they are fresh is not
+
+Detection often works but degrades without privilege — an index that cannot refresh, a source list
+that is a day old. That is usually still worth having. Say so in the output (*"from cache; refreshing
+the index needs elevation"*) exactly as you would for an unrefreshed package index. The failure mode
+is not the staleness; it is a report that reads as authoritative when it is not.
+
+### Quoting across an OS boundary will bite you
+
+Sending a command from one platform's shell, through SSH, into another platform's shell means the
+string passes through two or three quoting regimes. Anything containing backslashes, nested quotes or
+path separators will eventually be mangled — and the failure is often *silent*, producing empty output
+that looks exactly like "nothing to report".
+
+**Ship a script file to the node and invoke that.** It removes the entire class of bug, and it makes
+the remote logic reviewable and version-controllable instead of buried in an escaped one-liner. Have
+it emit trivially parseable output (`KEY=value` lines) so the caller needs no cleverness.
+
+The same reasoning applies to the probe itself: prefer a command that exists everywhere. A reachability
+check that runs `true` will report a Windows node as unreachable forever, because `true` is not a
+command there — while your interactive SSH to it works perfectly.
+
+### Credentials, not capability, are usually the real blocker
+
+Config management, private repositories and package registries all assume the node can authenticate.
+The odd node often cannot: it has no key, no token, no credential helper. That is a **decision about
+where secrets live**, not a technical gap — and it belongs with the person who owns the risk, not
+quietly solved by whoever hits it first. Do the work that does not need it, then stop and ask.
+
+### Workloads that assume a human are the real fragility
+
+A background job that depends on someone being logged in is a latent outage on any node, but it is
+most common on the odd one — a desktop-oriented machine pressed into service. Two questions decide it:
+
+- **Does the workload need a graphical session?** GUI applications can fail to start with no desktop
+  present, and fail *silently* — no crash, no log line, nothing to grep for.
+- **Does anything establish the prerequisites at boot?** A VPN client that keeps a tunnel alive once
+  connected does not necessarily *connect* one unattended. Persistence and initiation are different
+  capabilities, and it is easy to verify the first and assume the second.
+
+The test that matters is the one that reproduces production: **log out, or reboot.** Any check run
+while someone is signed in proves only that the job works *alongside* a session — never *without* one.
+That distinction is invisible until the machine restarts on its own at 2am.
+
 ## Keeping multi-node sane
 
 The failure mode of multi-node is **divergence you didn't notice** — a tweak on one node, a

@@ -110,6 +110,27 @@ A remote prober reaches anything on the network. Three important things aren't o
 So expect **two tiers**: a central checker for everything reachable, and a small local probe on
 each node that matters, covering what the central one structurally can't.
 
+## The services that survive are the ones that mislead you
+
+Worth stating plainly, because it decides *what* to check. When a node half-fails, the components most
+likely to still be running are the **infrastructure** ones — the SSH daemon, the mesh VPN client, the
+remote-access agent. They are services proper: they start at boot, they need no session, they have
+nothing to do with the work.
+
+So they stay green. The machine answers, resolves, and accepts connections while the thing it exists
+to do is not running at all. Every "is the host up?" check agrees that everything is fine, and the
+better your access tooling, the more convincing the illusion.
+
+Check the **work**, and prefer a signal that a merely-running process cannot produce:
+
+- Not "the service listens" but "it returns the expected content".
+- Not "the queue manager is up" but "the queue is non-empty" — an application that restarted without
+  its state will happily serve an empty one, and a process check passes every time.
+- Not "the tunnel is connected" but "traffic is actually flowing through it on the port we expect".
+
+The rule of thumb: if a check would pass on a freshly-installed copy of the application with none of
+your data, it is testing the wrapper rather than the work.
+
 ## Alert out-of-band from what you're watching
 
 Your alerting must not depend on the stack it monitors. If notifications route through the
