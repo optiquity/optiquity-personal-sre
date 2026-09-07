@@ -209,6 +209,11 @@ With the mesh + SSH in place, the operator (under the governance rules) can:
 
 ## Publishing a service (when you mean to)
 
+> **Going public on a real domain?** That is a bigger job than this section — it involves a DNS
+> migration that can take your email with it. See
+> **[E17 · Hosting public websites from one box](examples/E17-public-websites.md)** for the full
+> sequence, gates and traps. This section covers the stance and the mesh-hostname case.
+
 Sometimes a node's service *should* be reachable — a dashboard on your phone, a webhook a
 third party calls. The framework's stance:
 

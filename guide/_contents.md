@@ -28,7 +28,9 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 **Worked examples** — [`examples/`](examples/), catalogued in [15](17-example-projects.md): the
 A/B/C/D/E series, each an end-to-end project the operator owns. Several ship starter files in
 [`../skeleton/`](../skeleton/) — notably **[E16 · Health, alerting & the update digest](examples/E16-fleet-health-and-alerting.md)**,
-whose tools live in [`../skeleton/monitoring/`](../skeleton/monitoring/).
+whose tools live in [`../skeleton/monitoring/`](../skeleton/monitoring/), and
+**[E17 · Hosting public websites from one box](examples/E17-public-websites.md)** — going public
+without opening a port, and the DNS migration that can take your email with it.
 
 **Starter files** — [`../skeleton/`](../skeleton/) is the parts bin: templates and ready-to-run
 modules, each explained by the chapter it belongs to. Its

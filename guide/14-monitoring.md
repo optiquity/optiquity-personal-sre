@@ -321,6 +321,34 @@ also fix it, but that turns a notify-only layer into one that mutates, and you l
 that your monitoring is safe to run anywhere. Measuring and acting are different jobs; keep them in
 different files.
 
+## A backup you have not restored is a hypothesis
+
+Backups are monitoring's blind spot: the job reports success, the file appears, the size looks
+plausible — and none of that is evidence you can get your data back. *"It runs in a container" is not
+a backup. "The backup file exists" is not a restore test.*
+
+**Prove it, once, deliberately:**
+
+1. **Fetch the archive from the remote target**, not a local copy. A test that reads a file the origin
+   machine still has proves nothing about the offsite one — which is the copy that matters.
+2. **Verify the archive before trusting it** — integrity check, and a structural count (tables,
+   entries) compared against production *before* restoring anything.
+3. **Restore into a scratch target**, never over production.
+4. **Compare counts and content.** A restore can produce the right number of empty rows. Check that
+   real values came back, not just that the schema did.
+5. **Clean up**, and confirm production is still serving.
+
+⚠ **A verification step that cannot distinguish "bad file" from "no file" is worse than none.** If the
+fetch fails and the integrity check then runs against a path that does not exist, it reports
+corruption — an alarming failure for a boring cause. Check existence first, then integrity.
+
+⚠ **Transfer tooling is not uniform.** Appliance-class targets (NAS units, embedded devices) often
+accept `ssh` but not `scp`/`sftp`. Use whatever the backup job itself uses; if the job can write
+there, that path works.
+
+**Record the result with a date.** "Restore-tested" with no date decays into a claim nobody can
+check — and the next person has to redo it anyway to find out.
+
 ## What to run
 
 The framework ships this as a working module — a mailer, a health-check config with email

@@ -104,6 +104,14 @@ exposure creep in.
   upgrades nothing. Ships reusable tools + a bootstrap hook in
   [`skeleton/monitoring/`](../skeleton/monitoring/). The observe/alert complement to E13's metrics
   and the automation of E10's inventory.
+- **[E17 · Hosting public websites from one box](examples/E17-public-websites.md)** —
+  serve **public sites on real domains** from one always-on node **without opening an inbound port**,
+  using an outbound tunnel. Covers the part that actually carries risk — the **DNS migration, where
+  you break your own email** — plus the order of operations for going public and the several ways it
+  fails **silently**: client-side integrations that only resolve on your mesh, a **CDN caching 404s**
+  for hours after the origin is fixed, an **admin panel exposed** as a side effect of proxying a path,
+  and monitoring that stays green because it watches the wrong hostname. **Built and verified**, traps
+  included.
 
 ---
 
