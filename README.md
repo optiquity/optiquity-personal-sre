@@ -188,5 +188,11 @@ Apache-2.0 — see `LICENSE`.
 
 ---
 
+Built and maintained by [David Shane](https://optiquity.com/about/) at
+[Optiquity, Inc.](https://optiquity.com) — applied AI strategy, software products,
+and value-market intelligence.
+
+---
+
 *Contributions especially welcome on the Windows/Linux/Cloud spokes and the per-provider cloud
 sections — the hub carries the concepts; the spokes just need the platform specifics filled in.*
