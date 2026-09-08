@@ -175,6 +175,49 @@ Rules the operator can quietly skip aren't rules. Reinforce them structurally:
 The goal is **defense in depth**: judgment (these rules) + capability limits (permissions) +
 structural exclusion (ignore files). No single layer has to be perfect.
 
+### 12. One plan, one owner — when more than one session is working
+
+The moment two AI sessions collaborate on anything — a website with a platform side and a content
+side, a migration with an infra half and an app half — three failure modes appear that do not exist
+with one session. All three are cheap to prevent and expensive to discover.
+
+**Each session owns exactly one repo for writes.** Reads are free everywhere (principle 10), but a
+session never writes to another's repo. Crossing that line is a **hand-off**, not an edit: state what
+you want changed and let the owner change it. A session that owns infrastructure does not author
+content, and vice versa — even when it would be faster, and even when asked.
+
+**Exactly one document is canonical.** Not "the two copies are kept in sync" — *one* file, and every
+other mention of it is a pointer. This sounds like bookkeeping until it isn't:
+
+> Two sessions independently drafted the same coordination plan and reconciled it by message. The
+> copies diverged within a day. One task ID named **two different tasks** in the two copies — the
+> operator reads one, acts, and does the wrong thing. Two of the operator's own actions existed in
+> only one copy, and one of those was the **only measurement** of whether the project's headline goal
+> had worked. Both copies looked authoritative and current.
+
+**A derived copy does not fix this.** A copy marked "derived" still drifts; it drifts with a label on
+it. The only structure that cannot diverge is one holding no content. Make the second location a
+*pointer* — no IDs, no numbers, nothing to go stale.
+
+**Changes are requested, not made — including to your own tasks.** If the plan says a session owns
+task P4 and that session discovers P4 is unnecessary, it does not edit the plan. It asks the plan's
+owner to strike it. Otherwise you are back to two writers and the divergence returns by a different
+route.
+
+Three supporting rules make this work in practice:
+
+- **IDs are permanent.** A retired task keeps its number, struck through, never reused. Renumbering
+  is how two documents stop describing the same work.
+- **A revision number, and derived copies state which revision they were built from.** Different
+  revision means rebuild before acting.
+- **Disagreement blocks until the operator rules.** Two sessions negotiating indefinitely is worse
+  than either answer.
+
+**Why this is a governance rule and not a style preference:** every other principle here protects the
+operator from a *change*. This one protects them from **two plausible accounts of reality**, which is
+harder to notice and harder to recover from. A wrong plan gets corrected; two half-right plans get
+averaged in someone's head.
+
 ## Adapting the rules to your risk tolerance
 
 The principles are the skeleton; the strictness is yours to set:

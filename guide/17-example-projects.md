@@ -112,6 +112,13 @@ exposure creep in.
   for hours after the origin is fixed, an **admin panel exposed** as a side effect of proxying a path,
   and monitoring that stays green because it watches the wrong hostname. **Built and verified**, traps
   included.
+- **[E18 · Search and answer-engine visibility](examples/E18-search-and-answer-engines.md)** —
+  make a self-hosted site **findable by search engines and AI assistants**, as a maintained property
+  rather than a one-off audit. The decision that matters: **training crawlers and retrieval crawlers
+  are different** — blocking the first costs nothing, blocking the second removes you from AI answers
+  — and the split is **per-vendor**. Plus the silent failures: a **CDN writing your `robots.txt`**, a
+  CDN **caching it for hours** after you fix it, **nested sitemap indexes** that are invalid, and a
+  served-surface checker that was wrong three times in the same ways the surface can be wrong.
 
 ---
 

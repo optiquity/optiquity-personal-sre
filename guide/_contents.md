@@ -31,6 +31,8 @@ A/B/C/D/E series, each an end-to-end project the operator owns. Several ship sta
 whose tools live in [`../skeleton/monitoring/`](../skeleton/monitoring/), and
 **[E17 · Hosting public websites from one box](examples/E17-public-websites.md)** — going public
 without opening a port, and the DNS migration that can take your email with it.
+**[E18 · Search and answer-engine visibility](examples/E18-search-and-answer-engines.md)** —
+being found by search engines and AI assistants, and the ways that fails silently.
 
 **Starter files** — [`../skeleton/`](../skeleton/) is the parts bin: templates and ready-to-run
 modules, each explained by the chapter it belongs to. Its
