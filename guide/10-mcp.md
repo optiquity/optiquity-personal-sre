@@ -108,5 +108,28 @@ Like permissions and SSH edges, the enabled-server set should be **legible and r
 Prune enabled servers you no longer use. Capability accretes; a periodic review keeps the
 operator's reach matched to actual need.
 
+## MCP is agent-to-tool — but it is also how agents reach each other
+
+A framing worth getting right, because the obvious reading is half wrong.
+
+**MCP connects an agent to tools and data. A2A connects agents to each other.** That distinction is
+correct and worth keeping — it is the most common mix-up in agent architecture. But it is easy to
+take one step too far and conclude MCP is irrelevant to agent-to-agent work. It is not:
+
+- **As a transport**, MCP is indeed the wrong tool for worker-to-worker messaging.
+- **As the client adapter**, it is the right one and often the only practical one — because *your
+  agents already speak it*. Whatever message bus you adopt or build is reached **through** MCP, with
+  messaging modelled as tools (`send`, `inbox`, `join`).
+
+⚠ **The real MCP limitation is different, and it bites:** there is **no reliable server-to-client
+push** for CLI agents. An MCP tool call is a pull. Every serious agent-messaging implementation
+solves this by parking an idle agent on a **long-poll** endpoint rather than polling on a timer.
+
+Before building any of this, check whether your coding agent ships **native cross-session
+messaging** — several now do, at zero infrastructure cost, for same-vendor sessions. See
+[13 · Multi-node](13-multinode.md) and
+**[E19 · Agents that talk to each other](examples/E19-agents-that-talk-to-each-other.md)**, which
+also covers the permission boundary that a message channel opens.
+
 Next: [11 · Agents & skills](11-agents-skills.md) — subagents and the SKILL.md pattern that let
 the operator take on packaged, repeatable capabilities.

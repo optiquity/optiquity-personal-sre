@@ -122,6 +122,15 @@ exposure creep in.
   CDN **caching it for hours** after you fix it, **nested sitemap indexes** that are invalid, and a
   served-surface checker that was wrong three times in the same ways the surface can be wrong.
 
+- **[E19 · Agents that talk to each other](examples/E19-agents-that-talk-to-each-other.md)** —
+  let the AI sessions owning different repos **message each other directly** instead of routing every
+  question through you. The decision that matters: a message channel between agents is also an
+  **escalation path**, because permission boundaries are per-session — so "ask the other agent to do
+  it" bypasses your approval unless a rule closes it. Plus the naming convention that turns out to be
+  the **addressing scheme** (session lists rarely report which machine a session is on), a
+  conversation log so decisions survive the session that made them, and why a peer's confident
+  measurement is a **claim, not a fact**.
+
 ---
 
 ## Using these examples

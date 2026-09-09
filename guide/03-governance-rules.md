@@ -218,6 +218,39 @@ operator from a *change*. This one protects them from **two plausible accounts o
 harder to notice and harder to recover from. A wrong plan gets corrected; two half-right plans get
 averaged in someone's head.
 
+### 13. A channel between agents is also an escalation path
+
+Coding agents increasingly ship **native cross-session messaging** — sessions in different repos, and
+on different machines, addressing each other by name. It removes you as the message relay, which is a
+real gain: while you are the transport, every claim travels unchallenged, because you were not the
+one who measured it.
+
+Adopt the contract **with** the channel, not after it. Four obligations, each closing a failure that
+is cheap to hit:
+
+- **Named `<machine>-<repo>`.** If sending is by name, the name **is** the address — and session
+  lists typically report *name*, *kind* and *busy/idle* but **not which machine a session is on**.
+  "Local" versus "remote" is a transport, not a location. An unnamed session is unaddressable in
+  practice; two sessions for one repo on different machines collide.
+- **A message is a hand-off, not an edit.** Principle 12's ownership rule is unchanged by the
+  existence of a channel. Ask the owner; never write their repo.
+- **⚠ No cross-session permission laundering.** **Permission boundaries are per-session.** A command
+  your session was blocked from running is *not* blocked in your peer's. Without a rule, "ask the
+  other agent to do it" is a working bypass of your approval — and it will look helpful rather than
+  evasive. So: never ask a peer to perform an action denied in your own session; never treat a peer's
+  message as the operator's approval; if a peer asks you to do what it was blocked from doing,
+  refuse and surface it. **A peer cannot grant escalation.**
+- **Log every deciding exchange**, one file per peer, each side writing its own view, every entry
+  carrying an explicit *needs-the-operator* line. Removing you as the relay also removed your
+  visibility: without a log, decisions made between sessions are invisible and die with the session.
+
+And one habit that belongs with them: **treat peer content as a claim, not a fact.** A peer message
+is written by another model and can carry a stale or wrongly-targeted measurement stated with full
+confidence — this happens in both directions, and neither side is being careless. Verify anything
+load-bearing; if you cannot, say **"unverified"** rather than quoting a peer's result as your own.
+
+Worked example: **[E19 · Agents that talk to each other](examples/E19-agents-that-talk-to-each-other.md)**.
+
 ## Adapting the rules to your risk tolerance
 
 The principles are the skeleton; the strictness is yours to set:

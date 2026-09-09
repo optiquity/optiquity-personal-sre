@@ -33,6 +33,8 @@ whose tools live in [`../skeleton/monitoring/`](../skeleton/monitoring/), and
 without opening a port, and the DNS migration that can take your email with it.
 **[E18 · Search and answer-engine visibility](examples/E18-search-and-answer-engines.md)** —
 being found by search engines and AI assistants, and the ways that fails silently.
+**[E19 · Agents that talk to each other](examples/E19-agents-that-talk-to-each-other.md)** —
+cross-session messaging between the agents that own your repos, and the permission boundary it opens.
 
 **Starter files** — [`../skeleton/`](../skeleton/) is the parts bin: templates and ready-to-run
 modules, each explained by the chapter it belongs to. Its

@@ -102,6 +102,26 @@ the registry says *what state* a thing is in, the playbook says *how to do or fi
 `guide/04-structure.md` → "The playbook" for the pattern, and `skeleton/onboarding/PLAYBOOK.md` for a
 starter.
 
+## When you run more than one repo — agents that talk to each other
+
+Once you have a second repo, you have a second AI session, and they need each other. Without a
+channel **you become the transport**, copying questions between terminals — which is slow, and
+quietly removes the only party who can challenge a claim, since you weren't the one who measured it.
+
+Many coding agents now ship **native cross-session messaging**: sessions in different repos, on
+different machines, addressing each other by name. Check before you build anything.
+
+⚠ **Adopt the governance with the channel, not after it.** A message channel between agents is also
+an **escalation path** — permission boundaries are per-session, so a command *your* session was
+blocked from running is not blocked in your peer's, and "ask the other agent to do it" becomes a
+working bypass of your approval unless a rule forbids it. Three more obligations come with it: name
+sessions `<machine>-<repo>` (session lists rarely report the host, so **the name is the address**),
+treat a peer's confident measurement as a **claim, not a fact**, and keep a per-peer conversation log
+so decisions stay visible to you and survive the session that made them.
+
+→ **[E19 · Agents that talk to each other](guide/examples/E19-agents-that-talk-to-each-other.md)** ·
+principle 13 in [03 · Governance](guide/03-governance-rules.md) · [13 · Multi-node](guide/13-multinode.md)
+
 ## The dashboard (optional)
 
 For a system of any size, an optional **status dashboard** turns your project registry + node

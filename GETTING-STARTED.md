@@ -191,5 +191,23 @@ You're done when:
 - If you set up alerting: **a deliberately-failed check actually emails you.** Green endpoints
   prove the checks run; only an induced failure proves the *alerting* does.
 
+## If you'll run more than one repo — do this before the second session exists
+
+The moment a second repo gets its own AI session, the two need to talk, and it is much easier to set
+the convention now than to retrofit it:
+
+1. **Name every session `<machine>-<repo>`.** Session lists typically report *name*, *kind* and
+   *busy/idle* but **not which machine a session is on** — so the name is the address and the only
+   machine identifier you get.
+2. **Add the peer-messaging rule to your rules file** before enabling any channel — it is already in
+   `skeleton/CLAUDE.md.template` (rule 12) and `skeleton/AGENTS.md.template`. The load-bearing part
+   is **no cross-session permission laundering**: permission boundaries are per-session, so without
+   the rule, "ask the other agent to do it" bypasses your approval.
+3. **Create `docs/peer-conversations/`.** One file per peer, each side writing its own view, every
+   entry ending in an explicit *needs-the-operator* line — otherwise decisions made between your
+   sessions are invisible to you and die with the session that made them.
+
+→ **[E19 · Agents that talk to each other](guide/examples/E19-agents-that-talk-to-each-other.md)**
+
 Full reference: the `guide/` sections (the *why*) and your platform spoke in `platforms/` (the
 *how*).

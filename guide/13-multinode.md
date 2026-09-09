@@ -63,9 +63,24 @@ are **options**, not requirements — adopt the ones that fit:
   other's changes to a shared repo (so two sessions don't clobber each other). Earns its keep
   only when 2+ live sessions target the same repo at once; overkill otherwise.
 
+- **Peer messaging** — the operator sessions that own *different repos* message each other
+  directly, instead of you copying questions between terminals. Increasingly this is **native** to
+  the coding agent, so check before building. It is the one pattern here that pays off immediately
+  with only two repos, because without it **you are the transport** — and that quietly removes the
+  only party who can challenge a claim, since you were not the one who measured it.
+
 Each is a distinct capability with its own tooling; the framework describes the patterns and
 their trade-offs rather than mandating one. Most setups need none of them at first — a single
 operator on the `workstation`, occasionally reaching other nodes, is plenty.
+
+> **⚠ Peer messaging arrives with a permission problem, and it is not obvious.** Permission
+> boundaries are **per-session**: a command your session was blocked from running is not blocked in
+> your peer's. So "ask the other agent to do it" is a working bypass of your approval unless a rule
+> forbids it. Adopt the contract before you adopt the channel —
+> [03 · Governance](03-governance-rules.md) carries the rule; **[E19 · Agents that talk to each
+> other](examples/E19-agents-that-talk-to-each-other.md)** is the worked example, including the
+> naming convention that turns out to be the addressing scheme and the conversation log that keeps
+> decisions visible to you.
 
 ## A fleet view
 
