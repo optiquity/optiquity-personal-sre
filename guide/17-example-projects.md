@@ -52,7 +52,9 @@ mesh — the [08 · Networking](08-networking.md) publish-a-service discipline, 
 
 - **[C6 · A self-hosted automation runtime](examples/C6-automation-runtime.md)** — stand up a
   workflow/automation service (n8n-style) in a container, reachable **privately** over the mesh by
-  default, **publicly** only when a specific webhook needs it. Owning a real service end-to-end.
+  default, **publicly** only when a specific webhook needs it. Owning a real service end-to-end —
+  including the part where a committed workflow export **is not a deployment**, and the shell traps
+  hiding inside workflow steps.
 - **[C7 · A container runtime + app stack](examples/C7-container-runtime-stack.md)** — install a
   container runtime and bring up an app stack reachable over the mesh; the container half of
   self-hosting, plus per-host run-mode divergence (always-on `server` vs on-demand `workstation`).

@@ -95,6 +95,13 @@ file, a "started" log line, or a job's exit code, standing in for output that wa
 Ask what would happen if the work silently produced nothing — if the probe still reports success,
 it is measuring the wrong thing.
 
+The same question applies to a **deployment**, not just a job: if your change never reached the
+running system, would anything say so? A committed file, a green build, and an editor showing the
+new version are all evidence about copies. **Verify from the record of what ran** — and make sure
+the marker you verify with exists only in the new version, or a superseded version carrying the same
+string will report the change as already live. See
+[C6 · Automation runtime](examples/C6-automation-runtime.md) for the worked case.
+
 ## Some things a central checker cannot see
 
 A remote prober reaches anything on the network. Three important things aren't on the network:
