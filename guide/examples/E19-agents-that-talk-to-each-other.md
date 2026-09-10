@@ -51,6 +51,14 @@ This is not a label. If sending is by name, then the name **is** the address, an
 - Two sessions for the same repo on **different machines collide** on the bare name, forcing every
   sender to disambiguate by an opaque reference id.
 
+⚠ **Subagents are not sessions — do not mistake one for naming drift.** A busy session that spawns a
+subagent may surface it in the peer list under a name of the *spawner's* choosing, for the subagent's
+lifetime only. It will not match `<machine>-<repo>` and does not need to: it is not independently
+addressable and it disappears when it finishes. *(The author of this guide reported exactly such a
+name as a convention violation, then found only four real sessions existed and the extra entry was a
+subagent of one of them. A claim reported as a finding — the failure obligation (e) warns about,
+committed while documenting obligation (e).)*
+
 Make it a rule in your governance file, not a habit. Habits drift; this one drifted within a day.
 
 ## Step 2 — the contract, five obligations
@@ -90,6 +98,14 @@ Neither side was careless. Both reported a real measurement **of the wrong thing
 load-bearing before acting on it; if you cannot, the word is **"unverified"** — never quote a peer's
 result as your own finding.
 
+⚠ **Adopting the contract is a proposal to the operator, not a peer instruction.** The first session
+asked to adopt this refused to paste the rules block into its own governance file on a peer's
+say-so — correctly, because obligation (c) forbids treating a peer message as the operator's
+approval, and adopting *that* rule by violating it is self-defeating. It surfaced the block to its
+operator instead and logged it as outstanding. **The rule was sound; the adoption path routed around
+it.** A ready-to-use standard with the corrected path is in
+[`skeleton/peer-messaging/PEER-MESSAGING.md`](../../skeleton/peer-messaging/PEER-MESSAGING.md).
+
 ## Step 3 — the conversation log
 
 **One file per peer, in each repo: `docs/peer-conversations/<peer-name>.md`. Each side writes its own
@@ -100,8 +116,9 @@ vouch for it.
 a log, decisions made between sessions are invisible to them and **die with the session that made
 them**.
 
-Append after any exchange that decides something, changes something, or needs the operator — not
-every message; routine acknowledgements are noise.
+**The bar:** an exchange that **changed shipped output, produced a finding, or needs the operator.**
+Not every message; routine acknowledgements are noise. In a content-heavy repo this excludes most
+traffic, and that is correct — expect to log a minority of exchanges.
 
 ```markdown
 ## <date> — <subject>

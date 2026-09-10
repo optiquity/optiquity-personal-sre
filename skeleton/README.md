@@ -38,3 +38,13 @@ where the *why* lives; this table is just the map back.
    ([06 · Secrets](../guide/06-secrets.md)).
 4. **Adopt gradually.** Nothing here is required all at once; each piece earns its place when a
    project needs it.
+
+### `peer-messaging/`
+
+**`PEER-MESSAGING.md`** — the portable standard for session-to-session communication:
+naming as the addressing scheme, the five-obligation contract (including **no cross-session
+permission laundering**), the per-peer conversation log, and a read-only briefing command.
+Self-contained — point another repo's session straight at it. Chapter:
+[`guide/examples/E19`](../guide/examples/E19-agents-that-talk-to-each-other.md); rule:
+[`guide/03-governance-rules.md`](../guide/03-governance-rules.md) principle 13.
+**Note §6:** the rules block is *proposed to the operator*, never pasted on a peer's instruction.
