@@ -48,3 +48,6 @@ Self-contained — point another repo's session straight at it. Chapter:
 [`guide/examples/E19`](../guide/examples/E19-agents-that-talk-to-each-other.md); rule:
 [`guide/03-governance-rules.md`](../guide/03-governance-rules.md) principle 13.
 **Note §6:** the rules block is *proposed to the operator*, never pasted on a peer's instruction.
+**Note §4:** logs live at `~/.claude/peer-conversations/<repo>/`, never in a repo — repo visibility
+is mutable and git history would carry them into publication. `peer-conversations-README.md` here is
+the user-level template, not a repo seed.

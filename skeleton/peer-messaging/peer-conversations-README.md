@@ -1,18 +1,23 @@
-# docs/peer-conversations/
+# ~/.claude/peer-conversations/ — template
 
-One file per peer session this repo has talked to, named for the peer
-(`<machine>-<repo>.md`). **Each side writes its own view** — these are not shared transcripts,
-because each session can only vouch for its own half.
+Copy to `~/.claude/peer-conversations/README.md` on each machine. **Not seeded into any repo** — the
+whole point is that these logs never live in one.
 
-Standard: `<framework-dir>/skeleton/peer-messaging/PEER-MESSAGING.md` · rule: see this repo's
-rules file.
+    ~/.claude/peer-conversations/<your-repo>/<peer-name>.md
 
-**What to log — the bar:** an exchange that **changed shipped output, produced a finding, or needs
-the operator.** Not every message; routine acknowledgements are noise. Expect to log a minority of
-exchanges.
+`<your-repo>` is the repo of the session doing the logging; every session on the machine shares this
+tree, so that segment keeps them apart. **Write only inside your own subtree** — reading a peer's is
+fine and useful for the §0 check, writing into one is a cross-repo write by another name.
 
-Every entry ends with a **`Needs <operator>:`** line, even when the answer is "nothing" — that is
-the field they scan, and a read-only briefing command collects them across all peers.
+**Why user level:** repo visibility is mutable. A private repo that later goes public carries its
+whole conversation history with it, and deleting the files then does not help because git history
+keeps them. One location also removes the need to check whether a repo is published before knowing
+where to log. **Durability is your home-directory backup — verify it actually covers this path.**
+
+**What to log:** an exchange that changed shipped output, produced a finding, or needs the operator.
+Not every message. Every entry ends with a **`Needs <operator>:`** line even when the answer is
+"nothing", and is **closed with its evidence** once resolved — a stale open item is a false
+outstanding.
 
 ```markdown
 ## <date> — <subject>
@@ -24,3 +29,5 @@ the field they scan, and a read-only briefing command collects them across all p
 **Corrections in flight:** <anything either side got wrong and fixed>
 **Needs <operator>:** <a decision, or "nothing">
 ```
+
+Standard: `skeleton/peer-messaging/PEER-MESSAGING.md`

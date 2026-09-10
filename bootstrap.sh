@@ -208,16 +208,11 @@ if [ "$REPO_READY" = 1 ] && [ -d "$TARGET_DIR/.git" ]; then
     sed -e "s|<repo-name>|$REPO_NAME|g" -e "s|<role>|$ROLE|g" -e "s|<framework-dir>|$FRAMEWORK_DIR|g" \
         "$FRAMEWORK_DIR/skeleton/onboarding/onboarding-PLAN.md" > "$TARGET_DIR/docs/onboarding/PLAN.md"
   fi
-  # Peer-conversation log folder — seeded even for a single-repo start, because the
-  # convention is far easier to adopt before a second session exists than to retrofit
-  # (see skeleton/peer-messaging/PEER-MESSAGING.md and guide/examples/E19).
-  mkdir -p "$TARGET_DIR/docs/peer-conversations"
-  if [ -f "$FRAMEWORK_DIR/skeleton/peer-messaging/peer-conversations-README.md" ]; then
-    sed -e "s|<framework-dir>|$FRAMEWORK_DIR|g" \
-        "$FRAMEWORK_DIR/skeleton/peer-messaging/peer-conversations-README.md" \
-        > "$TARGET_DIR/docs/peer-conversations/README.md"
-  fi
-  info "✓ Seeded (uncommitted): CLAUDE.md, PROJECTS.md, PLAYBOOK.md, docs/onboarding/PLAN.md, docs/peer-conversations/"
+  # NOTE: peer-conversation logs are deliberately NOT seeded into the repo. They live at
+  # user level (~/.claude/peer-conversations/<repo>/), because putting them in the repo keys
+  # the rule on repo visibility -- which is mutable, and git history would carry the log into
+  # publication. See skeleton/peer-messaging/PEER-MESSAGING.md §4.
+  info "✓ Seeded (uncommitted): CLAUDE.md, PROJECTS.md, PLAYBOOK.md, docs/onboarding/PLAN.md"
   info "  Review + your first commit happen in the next step, under your approval."
 fi
 

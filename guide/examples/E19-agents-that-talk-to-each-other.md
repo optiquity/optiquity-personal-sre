@@ -125,9 +125,16 @@ it.** A ready-to-use standard with the corrected path is in
 
 ## Step 3 — the conversation log
 
-**One file per peer, in each repo: `docs/peer-conversations/<peer-name>.md`. Each side writes its own
-view.** Deliberately not a shared transcript — two half-views, each authored by the side that can
-vouch for it.
+**One file per peer, at USER level: `~/.claude/peer-conversations/<your-repo>/<peer-name>.md`. Each
+side writes its own view.** Deliberately not a shared transcript — two half-views, each authored by
+the side that can vouch for it.
+
+⚠ **Not in the repo, and the reason generalises.** Putting it in the repo keys the rule on **repo
+visibility, which is mutable** — a private repo that later goes public carries its whole conversation
+history with it, and deleting the files then does not help because **git history keeps them**. It also
+forces every session to check whether its repo is published before it knows where to log. One
+user-level location removes the check, the second mechanism, and the latent leak at once. You trade
+git history for your home-directory backup — verify that backup covers it.
 
 **Why it exists:** removing the operator as the transport also removes their **visibility**. Without
 a log, decisions made between sessions are invisible to them and **die with the session that made
@@ -149,6 +156,12 @@ traffic, and that is correct — expect to log a minority of exchanges.
 ```
 
 **The `Needs <operator>` line is mandatory, even when it is "nothing."** It is the field they scan.
+
+⚠ **One public-repo consideration remains, for the rules block only.** If your rules file is
+framework-owned and ships downstream, putting the block there pushes your operator's conventions onto
+every downstream user — a peer name meaningless to them, a path that does not exist on their machine,
+an operator who is not theirs. Use a **user-level** rules file instead. The log needs no such
+exception: §4's user-level location already makes the question moot.
 
 ## Step 4 — a read-only briefing command
 
