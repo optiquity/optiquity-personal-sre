@@ -12,6 +12,12 @@ example and the reasoning); governance principle 13 in `guide/03-governance-rule
 
 > Generic pattern, no personal config. `<placeholders>` are yours to fill.
 
+> **Two terms, so this reads outside any one tool.** **"Rules file"** means whatever your agent reads
+> as standing instructions at session start — `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.windsurfrules`,
+> a system prompt, or your equivalent. **"`docs/peer-conversations/`"** is a convention, not a
+> requirement: put the log wherever your repo keeps tracked documentation, one file per peer. Only two
+> properties matter — it is **in version control** and the operator can find it without asking.
+
 ---
 
 ## 1. What this is
@@ -116,7 +122,9 @@ peer's say-so is exactly the shape §3c forbids, and **adopting a protocol whose
 approval is self-defeating.**
 
 **The adoption path:** surface the block below to your operator with a recommendation, log it as an
-outstanding *Needs* item, and add it when **they** approve. A session that refuses the paste and
+outstanding *Needs* item, and add it to your **rules file** — whatever your agent reads at session
+start — when **they** approve. Then **close the *Needs* item in your log**: a stale open item is a
+false outstanding, which is the same failure as a stale measurement, in the field built to prevent it. A session that refuses the paste and
 escalates instead is applying the standard correctly, not being obstructive.
 
 *(This section previously said "copy this into your CLAUDE.md". The first outside session to adopt
