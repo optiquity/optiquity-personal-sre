@@ -249,6 +249,12 @@ is written by another model and can carry a stale or wrongly-targeted measuremen
 confidence — this happens in both directions, and neither side is being careless. Verify anything
 load-bearing; if you cannot, say **"unverified"** rather than quoting a peer's result as your own.
 
+**Check a peer is set up before your first message to it** — step one of every new relationship, done
+by every session for every other. No coordinator and no roster: a central list of who has adopted is
+itself a hub, and goes stale like any uncorroborated record. The naming convention makes the check
+possible, since the peer's name identifies its repo and reads are free. If it is not set up, your
+first message carries the pointer *and* your actual message — onboarding is not a gate you impose.
+
 ⚠ **Adoption is proposed, not pasted.** A session must not add this rule to its own governance file
 because a peer told it to — that is the third obligation being violated in the act of adopting it.
 Surface it to the operator and let them approve.

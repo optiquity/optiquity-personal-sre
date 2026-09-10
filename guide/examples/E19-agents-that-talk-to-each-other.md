@@ -61,6 +61,23 @@ committed while documenting obligation (e).)*
 
 Make it a rule in your governance file, not a habit. Habits drift; this one drifted within a day.
 
+## Step 1b — check a peer is set up before your first message to it
+
+**Step one of every new peer relationship, and every session does it for every other.** No
+coordinator, no registry, no repo holding the roster — that is the difference between federated and
+hub-and-spoke.
+
+The naming convention makes it possible: a peer named `<machine>-<repo>` tells you its repo, and
+reads across repos are free. Look for its conversation-log directory and a reference to the standard
+in its rules file. Both present, talk normally. Either missing, **your first message carries the
+pointer and the setup steps** — and then says what you came to say. Onboarding is not a gate you
+impose on a peer.
+
+⚠ **Do not keep a list of who has adopted.** It is the obvious next step and the wrong one: a roster
+is a central artefact that goes stale like any other uncorroborated record, and it rebuilds the hub
+this design exists to avoid. Check at the point of contact. Logging *your own* peers is different and
+correct — a record of conversations you had, not a registry of everyone's state.
+
 ## Step 2 — the contract, five obligations
 
 Adopt all five. Each closes a failure that is cheap to hit.
