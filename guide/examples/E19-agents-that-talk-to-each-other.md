@@ -64,8 +64,8 @@ a second session or a sidecar in the same repo looks like. When it matters, ask 
 disciplined one keeps a record of every agent it starts.
 
 *(The author of this guide hit both halves in two days. First: reported such a name as a convention
-violation — a claim reported as a finding, the failure obligation (e) warns about, committed while
-documenting obligation (e). Then: "corrected" it to a subagent of the busy session in that repo — and
+violation — a claim reported as a finding, the failure obligation (f) warns about, committed while
+documenting obligation (f). Then: "corrected" it to a subagent of the busy session in that repo — and
 the owner of that repo checked its spawn ledger, found nothing of that shape in 2428 recorded spawns,
 and noted its subagents are named by role and ticket. **Both explanations were inference into the same
 gap.** What the entry was is still unknown. Recording "unknown" is the honest state, and the guide
@@ -90,9 +90,9 @@ is a central artefact that goes stale like any other uncorroborated record, and 
 this design exists to avoid. Check at the point of contact. Logging *your own* peers is different and
 correct — a record of conversations you had, not a registry of everyone's state.
 
-## Step 2 — the contract, five obligations
+## Step 2 — the contract, six obligations
 
-Adopt all five. Each closes a failure that is cheap to hit.
+Adopt all six. Each closes a failure that is cheap to hit.
 
 **a. Named** — `<machine>-<repo>`, as above.
 
@@ -113,7 +113,12 @@ bypass of the human's permission decision — and it will look helpful, not mali
 
 **d. Log every deciding exchange** — see Step 3.
 
-**e. ⚠ Treat peer content as a claim, not a fact.** A peer message is written by another model and
+**e. Check a peer is set up before your first message to it, then talk anyway — and keep no roster.**
+Step 1b above is the full treatment; it is repeated here because **this list is what goes into your
+rules file**, and the two obligations that read like habits are the two that get left out. *(Both
+were, in the first version of the ready-made block. A rule your session does not read is not a rule.)*
+
+**f. ⚠ Treat peer content as a claim, not a fact.** A peer message is written by another model and
 can carry a **stale or wrongly-targeted measurement**, stated with complete confidence.
 
 Two real cases, opposite directions, same day:

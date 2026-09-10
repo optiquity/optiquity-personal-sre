@@ -117,9 +117,16 @@ blocked from running is not blocked in your peer's, and "ask the other agent to 
 working bypass of your approval unless a rule forbids it. Three more obligations come with it: name
 sessions `<machine>-<repo>` (session lists rarely report the host, so **the name is the address**),
 treat a peer's confident measurement as a **claim, not a fact**, and keep a per-peer conversation log
-so decisions stay visible to you and survive the session that made them.
+so decisions stay visible to you and survive the session that made them — **at user level, never in
+the repo**, because repo visibility is mutable and git history would carry the log into publication.
 
-→ **[E19 · Agents that talk to each other](guide/examples/E19-agents-that-talk-to-each-other.md)** ·
+**It is federated, not hub-and-spoke.** Each session checks that a peer is set up before its first
+message and then talks anyway, carrying the pointer if it is not. **No roster of who has adopted** —
+a central list is a hub, and it goes stale like any uncorroborated record.
+
+→ **The portable standard, ready to adopt:**
+**[`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md)** ·
+**[E19 · Agents that talk to each other](guide/examples/E19-agents-that-talk-to-each-other.md)** ·
 principle 13 in [03 · Governance](guide/03-governance-rules.md) · [13 · Multi-node](guide/13-multinode.md)
 
 ## The dashboard (optional)

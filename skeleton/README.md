@@ -42,7 +42,7 @@ where the *why* lives; this table is just the map back.
 ### `peer-messaging/`
 
 **`PEER-MESSAGING.md`** — the portable standard for session-to-session communication:
-naming as the addressing scheme, the five-obligation contract (including **no cross-session
+naming as the addressing scheme, the six-obligation contract (including **no cross-session
 permission laundering**), the per-peer conversation log, and a read-only briefing command.
 Self-contained — point another repo's session straight at it. Chapter:
 [`guide/examples/E19`](../guide/examples/E19-agents-that-talk-to-each-other.md); rule:
@@ -51,3 +51,5 @@ Self-contained — point another repo's session straight at it. Chapter:
 **Note §4:** logs live at `~/.claude/peer-conversations/<repo>/`, never in a repo — repo visibility
 is mutable and git history would carry them into publication. `peer-conversations-README.md` here is
 the user-level template, not a repo seed.
+**Note §0:** the design is **federated, not hub-and-spoke** — every session checks a peer is set up
+before its first message and then talks anyway, and **nobody keeps a roster of who has adopted**.

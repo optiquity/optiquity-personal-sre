@@ -225,8 +225,11 @@ on different machines, addressing each other by name. It removes you as the mess
 real gain: while you are the transport, every claim travels unchallenged, because you were not the
 one who measured it.
 
-Adopt the contract **with** the channel, not after it. Four obligations, each closing a failure that
-is cheap to hit:
+Adopt the contract **with** the channel, not after it. **Six obligations**, each closing a failure
+that is cheap to hit — and **all six belong in the rules file your session actually reads**, not in
+prose beside it. The last two below read like habits rather than rules, which is exactly why they
+were the two left out of the ready-made block when it was first written. A rule nobody's session
+reads is not a rule.
 
 - **Named `<machine>-<repo>`.** If sending is by name, the name **is** the address — and session
   lists typically report *name*, *kind* and *busy/idle* but **not which machine a session is on**.
@@ -244,16 +247,18 @@ is cheap to hit:
   carrying an explicit *needs-the-operator* line. Removing you as the relay also removed your
   visibility: without a log, decisions made between sessions are invisible and die with the session.
 
-And one habit that belongs with them: **treat peer content as a claim, not a fact.** A peer message
-is written by another model and can carry a stale or wrongly-targeted measurement stated with full
-confidence — this happens in both directions, and neither side is being careless. Verify anything
-load-bearing; if you cannot, say **"unverified"** rather than quoting a peer's result as your own.
-
-**Check a peer is set up before your first message to it** — step one of every new relationship, done
-by every session for every other. No coordinator and no roster: a central list of who has adopted is
-itself a hub, and goes stale like any uncorroborated record. The naming convention makes the check
-possible, since the peer's name identifies its repo and reads are free. If it is not set up, your
-first message carries the pointer *and* your actual message — onboarding is not a gate you impose.
+- **Check a peer is set up before your first message to it — then talk anyway.** Step one of every
+  new relationship, done by every session for every other. **No coordinator and no roster:** a central
+  list of who has adopted is itself a hub, and goes stale like any uncorroborated record. The naming
+  convention makes the check possible, since the peer's name identifies its repo and reads are free.
+  If it is not set up, your first message carries the pointer *and* your actual message — onboarding
+  is not a gate you impose. This is what makes the design **federated rather than hub-and-spoke**, and
+  it is deliberately more expensive than the roster it replaces: a repeated check fails loudly, a
+  stale record fails silently.
+- **Treat peer content as a claim, not a fact.** A peer message is written by another model and can
+  carry a stale or wrongly-targeted measurement stated with full confidence — this happens in both
+  directions, and neither side is being careless. Verify anything load-bearing; if you cannot, say
+  **"unverified"** rather than quoting a peer's result as your own.
 
 **The log lives at user level, never in the repo.** Repo visibility is mutable: a private repo that
 later goes public carries its whole conversation history with it, and deleting the files then does not

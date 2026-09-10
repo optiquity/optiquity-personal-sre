@@ -200,14 +200,21 @@ the convention now than to retrofit it:
    *busy/idle* but **not which machine a session is on** — so the name is the address and the only
    machine identifier you get.
 2. **Add the peer-messaging rule to your rules file** before enabling any channel — it is already in
-   `skeleton/CLAUDE.md.template` (rule 12) and `skeleton/AGENTS.md.template`. The load-bearing part
-   is **no cross-session permission laundering**: permission boundaries are per-session, so without
-   the rule, "ask the other agent to do it" bypasses your approval.
+   `skeleton/CLAUDE.md.template` (rule 12) and `skeleton/AGENTS.md.template`, and the full standard
+   with a ready-to-use block is
+   [`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md). The
+   load-bearing part is **no cross-session permission laundering**: permission boundaries are
+   per-session, so without the rule, "ask the other agent to do it" bypasses your approval.
 3. **Log every deciding exchange** at `~/.claude/peer-conversations/<repo>/<peer>.md` — **user
    level, not in the repo**, one file per peer, each side writing its own view, every entry ending
    in an explicit *needs-the-operator* line. Otherwise decisions made between your sessions are
    invisible to you and die with the session that made them. There is nothing to create in the
    repo; keeping it out means the rule does not depend on whether that repo is ever published.
+4. **Have each session check a peer is set up before its first message — then talk anyway.** Every
+   session does it for every other; there is no coordinator. **Do not keep a list of who has
+   adopted** — a roster is a central artefact that goes stale like any uncorroborated record, and it
+   rebuilds the hub this avoids. If a peer is not set up, the first message carries the pointer *and*
+   what you came to say; onboarding is not a gate one session imposes on another.
 
 → **[E19 · Agents that talk to each other](guide/examples/E19-agents-that-talk-to-each-other.md)**
 
