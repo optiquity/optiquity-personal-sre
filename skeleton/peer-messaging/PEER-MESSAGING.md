@@ -49,8 +49,22 @@ one repo on different machines collide on the bare name.
 ⚠ **Subagents are not sessions.** A session that spawns a subagent may surface it in the peer list
 under a name of the *spawner's* choosing, for the subagent's lifetime only. It will not follow this
 convention and **does not need to** — it is not independently addressable and it disappears when it
-finishes. Do not report one as a naming violation. *(Recorded because the author of this document did
-exactly that, and was wrong.)*
+finishes.
+
+**How to tell one from a genuinely misnamed session**, since both look like a non-conforming name:
+
+- Is a session for that same repo **busy** right now? A subagent's name usually echoes its spawner's
+  repo, so a busy sibling is the strongest signal.
+- Is the entry **new** — minutes old against peers measured in days?
+- **Wait and re-list.** A subagent vanishes when it finishes; a misnamed session persists.
+- Definitive: count the actual agent processes on the host. If there are fewer than the peer list
+  suggests, the extras are not sessions.
+
+**Do not report a non-conforming name as a violation until one of those distinguishes it.**
+*(Recorded because the author of this document did exactly that and was wrong — and because the first
+outside reviewer noted they would have made the identical misread. The tool surface does not
+distinguish subagents from sessions, just as it does not report the machine: both are the address
+space carrying less information than it appears to.)*
 
 **b. Connect whatever cross-machine transport your agent requires**, at both ends, if you need reach
 beyond one machine.
@@ -105,6 +119,13 @@ bar excludes most traffic, and that is correct — expect to log a minority of e
 
 **The `Needs <operator>` line is mandatory, even when it is "nothing."** It is the field they scan.
 
+**And closing it is as much a duty as opening it.** When a *Needs* item is resolved, go back and mark
+it closed, with the evidence that closed it. **A stale open item is a false outstanding** — it shows
+the operator work that is already done, in the one field this whole scheme exists to make reliable,
+and a briefing command will present it as current. *This is the same failure as a stale measurement,
+and it is worse here because the log is what replaced the operator watching the traffic go past.*
+Log entries are not append-only: an item's state is part of the record, not just its creation.
+
 ## 5. A read-only briefing command
 
 Add one command, available in every repo (user-level, managed by your dotfile tool), reporting: live
@@ -123,8 +144,7 @@ approval is self-defeating.**
 
 **The adoption path:** surface the block below to your operator with a recommendation, log it as an
 outstanding *Needs* item, and add it to your **rules file** — whatever your agent reads at session
-start — when **they** approve. Then **close the *Needs* item in your log**: a stale open item is a
-false outstanding, which is the same failure as a stale measurement, in the field built to prevent it. A session that refuses the paste and
+start — when **they** approve. Then close that item, per §4. A session that refuses the paste and
 escalates instead is applying the standard correctly, not being obstructive.
 
 *(This section previously said "copy this into your CLAUDE.md". The first outside session to adopt
