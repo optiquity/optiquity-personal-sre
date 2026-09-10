@@ -51,13 +51,25 @@ This is not a label. If sending is by name, then the name **is** the address, an
 - Two sessions for the same repo on **different machines collide** on the bare name, forcing every
   sender to disambiguate by an opaque reference id.
 
-⚠ **Subagents are not sessions — do not mistake one for naming drift.** A busy session that spawns a
-subagent may surface it in the peer list under a name of the *spawner's* choosing, for the subagent's
-lifetime only. It will not match `<machine>-<repo>` and does not need to: it is not independently
-addressable and it disappears when it finishes. *(The author of this guide reported exactly such a
-name as a convention violation, then found only four real sessions existed and the extra entry was a
-subagent of one of them. A claim reported as a finding — the failure obligation (e) warns about,
-committed while documenting obligation (e).)*
+⚠ **Subagents are not sessions — but do not reach for that explanation either.** A session that
+spawns a subagent may surface it in the peer list under a name of the *spawner's* choosing, for the
+subagent's lifetime only. It will not match `<machine>-<repo>` and does not need to.
+
+**The trap is symmetric, and the second half is the expensive one.** Reporting a non-conforming name
+as a convention violation is embarrassing. Dismissing one as "probably a subagent" hides a **real
+participant** — a live session nobody onboards, holding decisions nobody logs. So test *positively*
+for a spawn: a subagent's name typically encodes a role and a work item, not a directory. **A
+repo-derived name with a numeric suffix is not evidence of a subagent** — that is also precisely what
+a second session or a sidecar in the same repo looks like. When it matters, ask the spawner; a
+disciplined one keeps a record of every agent it starts.
+
+*(The author of this guide hit both halves in two days. First: reported such a name as a convention
+violation — a claim reported as a finding, the failure obligation (e) warns about, committed while
+documenting obligation (e). Then: "corrected" it to a subagent of the busy session in that repo — and
+the owner of that repo checked its spawn ledger, found nothing of that shape in 2428 recorded spawns,
+and noted its subagents are named by role and ticket. **Both explanations were inference into the same
+gap.** What the entry was is still unknown. Recording "unknown" is the honest state, and the guide
+says so rather than picking the tidier story.)*
 
 Make it a rule in your governance file, not a habit. Habits drift; this one drifted within a day.
 

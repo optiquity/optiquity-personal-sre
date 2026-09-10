@@ -203,9 +203,11 @@ the convention now than to retrofit it:
    `skeleton/CLAUDE.md.template` (rule 12) and `skeleton/AGENTS.md.template`. The load-bearing part
    is **no cross-session permission laundering**: permission boundaries are per-session, so without
    the rule, "ask the other agent to do it" bypasses your approval.
-3. **Create `docs/peer-conversations/`.** One file per peer, each side writing its own view, every
-   entry ending in an explicit *needs-the-operator* line — otherwise decisions made between your
-   sessions are invisible to you and die with the session that made them.
+3. **Log every deciding exchange** at `~/.claude/peer-conversations/<repo>/<peer>.md` — **user
+   level, not in the repo**, one file per peer, each side writing its own view, every entry ending
+   in an explicit *needs-the-operator* line. Otherwise decisions made between your sessions are
+   invisible to you and die with the session that made them. There is nothing to create in the
+   repo; keeping it out means the rule does not depend on whether that repo is ever published.
 
 → **[E19 · Agents that talk to each other](guide/examples/E19-agents-that-talk-to-each-other.md)**
 
