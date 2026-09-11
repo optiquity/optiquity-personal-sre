@@ -217,25 +217,28 @@ if [ "$REPO_READY" = 1 ] && [ -d "$TARGET_DIR/.git" ]; then
   # repo can bootstrap from it without reaching the source.
   # See skeleton/peer-messaging/PEER-MESSAGING.md §2c, §2e and §4.
   if [ -f "$FRAMEWORK_DIR/skeleton/peer-messaging/PEER-MESSAGING.md" ]; then
-    mkdir -p "$TARGET_DIR/docs/peer-conversations"
+    # TWO directories, and the split is load-bearing (PEER-MESSAGING.md §2 steps 3+5):
+    #   docs/peer-messaging/    the standard -- TRACKED, because it is what a peer
+    #                           bootstraps from; an untracked copy does not travel
+    #                           with a clone and fails silently.
+    #   docs/peer-conversations/ the logs -- IGNORED as a whole directory.
+    mkdir -p "$TARGET_DIR/docs/peer-messaging" "$TARGET_DIR/docs/peer-conversations"
     cp "$FRAMEWORK_DIR/skeleton/peer-messaging/PEER-MESSAGING.md" \
-       "$TARGET_DIR/docs/peer-conversations/PEER-MESSAGING.md"
+       "$TARGET_DIR/docs/peer-messaging/PEER-MESSAGING.md"
     [ -f "$FRAMEWORK_DIR/skeleton/peer-messaging/peer-conversations-README.md" ] && \
       cp "$FRAMEWORK_DIR/skeleton/peer-messaging/peer-conversations-README.md" \
-         "$TARGET_DIR/docs/peer-conversations/README.md"
-    # Ignore the LOGS, not the standard or the README -- those two are meant to be tracked,
-    # since they are what a peer bootstraps from. Idempotent: never append twice.
-    if ! grep -qxF 'docs/peer-conversations/*.md' "$TARGET_DIR/.gitignore" 2>/dev/null; then
+         "$TARGET_DIR/docs/peer-messaging/LOGS-README.md"
+    # Idempotent: never append twice.
+    if ! grep -qxF 'docs/peer-conversations/' "$TARGET_DIR/.gitignore" 2>/dev/null; then
       {
         printf '\n# Peer-conversation logs: one file per peer, GITIGNORED BY DEFAULT.\n'
         printf '# A repo can become public and git history keeps what you committed.\n'
-        printf '# Track them deliberately (remove these lines) or not at all.\n'
-        printf 'docs/peer-conversations/*.md\n'
-        printf '!docs/peer-conversations/PEER-MESSAGING.md\n'
-        printf '!docs/peer-conversations/README.md\n'
+        printf '# Track them deliberately (remove this line) or not at all.\n'
+        printf '# The STANDARD is not here -- it is tracked at docs/peer-messaging/.\n'
+        printf 'docs/peer-conversations/\n'
       } >> "$TARGET_DIR/.gitignore"
     fi
-    info "✓ Peer messaging seeded: standard + docs/peer-conversations/ (logs gitignored)"
+    info "✓ Peer messaging seeded: docs/peer-messaging/ (tracked) + docs/peer-conversations/ (ignored)"
   fi
   info "✓ Seeded (uncommitted): CLAUDE.md, PROJECTS.md, PLAYBOOK.md, docs/onboarding/PLAN.md"
   info "  Review + your first commit happen in the next step, under your approval."

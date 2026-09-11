@@ -1,7 +1,7 @@
 # docs/peer-conversations/ — template
 
-Copy to `docs/peer-conversations/README.md` in **your own repo**, and add the directory to
-`.gitignore`. One file per peer, named for the peer session.
+Copy to `docs/peer-messaging/LOGS-README.md` in **your own repo** (tracked, alongside the standard),
+and add `docs/peer-conversations/` to `.gitignore`. One file per peer, named for the peer session.
 
     docs/peer-conversations/<peer-name>.md
 
@@ -29,5 +29,7 @@ outstanding.
 **Needs <operator>:** <a decision, or "nothing">
 ```
 
-Standard: `PEER-MESSAGING.md` beside this file. **Copy that into your repo too** — a repo holding the
-standard is a propagation node, so the next repo can bootstrap from you.
+**The standard is NOT in this directory** — it lives at `docs/peer-messaging/PEER-MESSAGING.md` and is
+**tracked**, while this directory is **ignored**. Keeping them apart is deliberate: a propagation copy
+inside an ignored directory does not travel with a clone, so no peer could bootstrap from you, and
+nothing would report it.

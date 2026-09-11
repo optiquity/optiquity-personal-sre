@@ -217,7 +217,7 @@ the convention now than to retrofit it:
    `docs/peer-conversations/`. That copy makes the repo a **propagation node**: the next one can
    bootstrap from it without reaching the source. With no clone to hand, fetch just that file:
    ```sh
-   curl -fsSL -o docs/peer-conversations/PEER-MESSAGING.md \
+   curl -fsSL -o docs/peer-messaging/PEER-MESSAGING.md \
      https://raw.githubusercontent.com/optiquity/optiquity-personal-sre/main/skeleton/peer-messaging/PEER-MESSAGING.md
    ```
    **The first repo to adopt and the hundredth do exactly this** — the first simply has no peer to
