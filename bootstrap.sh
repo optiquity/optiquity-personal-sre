@@ -208,11 +208,35 @@ if [ "$REPO_READY" = 1 ] && [ -d "$TARGET_DIR/.git" ]; then
     sed -e "s|<repo-name>|$REPO_NAME|g" -e "s|<role>|$ROLE|g" -e "s|<framework-dir>|$FRAMEWORK_DIR|g" \
         "$FRAMEWORK_DIR/skeleton/onboarding/onboarding-PLAN.md" > "$TARGET_DIR/docs/onboarding/PLAN.md"
   fi
-  # NOTE: peer-conversation logs live in docs/peer-conversations/ in THIS repo and are
-  # GITIGNORED by default -- a repo's visibility can change and git history keeps whatever
-  # you committed, so they stay out of history unless the operator decides otherwise.
-  # The ignore entry is written at setup so no session has to remember it.
-  # See skeleton/peer-messaging/PEER-MESSAGING.md §4.
+  # Peer messaging: seed the standard, the log directory, and the ignore entry.
+  # Logs live in docs/peer-conversations/ in THIS repo and are GITIGNORED BY DEFAULT --
+  # a repo's visibility can change and git history keeps whatever you committed, so they
+  # stay out of history unless the operator decides otherwise. The ignore entry is written
+  # HERE, at setup, so no session has to remember it.
+  # Holding a copy of the standard is what makes this repo a propagation node: the next
+  # repo can bootstrap from it without reaching the source.
+  # See skeleton/peer-messaging/PEER-MESSAGING.md §2c, §2e and §4.
+  if [ -f "$FRAMEWORK_DIR/skeleton/peer-messaging/PEER-MESSAGING.md" ]; then
+    mkdir -p "$TARGET_DIR/docs/peer-conversations"
+    cp "$FRAMEWORK_DIR/skeleton/peer-messaging/PEER-MESSAGING.md" \
+       "$TARGET_DIR/docs/peer-conversations/PEER-MESSAGING.md"
+    [ -f "$FRAMEWORK_DIR/skeleton/peer-messaging/peer-conversations-README.md" ] && \
+      cp "$FRAMEWORK_DIR/skeleton/peer-messaging/peer-conversations-README.md" \
+         "$TARGET_DIR/docs/peer-conversations/README.md"
+    # Ignore the LOGS, not the standard or the README -- those two are meant to be tracked,
+    # since they are what a peer bootstraps from. Idempotent: never append twice.
+    if ! grep -qxF 'docs/peer-conversations/*.md' "$TARGET_DIR/.gitignore" 2>/dev/null; then
+      {
+        printf '\n# Peer-conversation logs: one file per peer, GITIGNORED BY DEFAULT.\n'
+        printf '# A repo can become public and git history keeps what you committed.\n'
+        printf '# Track them deliberately (remove these lines) or not at all.\n'
+        printf 'docs/peer-conversations/*.md\n'
+        printf '!docs/peer-conversations/PEER-MESSAGING.md\n'
+        printf '!docs/peer-conversations/README.md\n'
+      } >> "$TARGET_DIR/.gitignore"
+    fi
+    info "✓ Peer messaging seeded: standard + docs/peer-conversations/ (logs gitignored)"
+  fi
   info "✓ Seeded (uncommitted): CLAUDE.md, PROJECTS.md, PLAYBOOK.md, docs/onboarding/PLAN.md"
   info "  Review + your first commit happen in the next step, under your approval."
 fi
