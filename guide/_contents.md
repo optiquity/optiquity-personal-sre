@@ -15,10 +15,13 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 | 06 | [Secrets](06-secrets.md) | Zero-secrets-in-git: allowlist ignore files, vault/keychain, the `.env` recipe. Plus credentials that live on a node, and why their expiry is silent by construction. |
 | 07 | [Tools & requirements](07-tools-requirements.md) | Hard vs optional tools + the idempotent, role-aware installer pattern. |
 | 08 | [Networking](08-networking.md) | Private mesh (Tailscale) + key-only SSH, the access-edge graph, subnet-router / exit-node gateways (+ their traps), and isolating which layer is actually slow. |
+| 09 | [Container & virtualization runtimes](09-runtimes.md) | Where services actually run: choosing a runtime, owning it as a stateful dependency, and enumerating services rather than containers. |
 | 10 | [Permissions](10-permissions.md) | The two permission layers: CLI auto-approve presets + session rules. |
 | 11 | [MCP](11-mcp.md) | External capabilities (GitHub, filesystem, …) — each a scoped capability grant. |
 | 12 | [Agents & skills](12-agents-skills.md) | Subagents + the `SKILL.md` pattern; the multi-CLI config-location map. |
 | 13 | [Repo comprehension](13-repo-comprehension.md) | Making your codebase legible to the operator: packing vs indexing, staleness, and grounding. |
+| 14 | [Workflows & automation](14-automation.md) | The fleet's glue: cron as the honest floor, choosing a platform, owning it — and the operator's second role, writing the automations. |
+| 15 | [Documentation & content generation](15-content-generation.md) | Writing from a source of truth: grounding, why a generator can't detect a stale corpus, and docs-as-code. |
 | 16 | [Multi-node](16-multinode.md) | The advanced layer: remote apply, session mobility, the fleet view — and the node that isn't like the others. |
 | 17 | [Monitoring](17-monitoring.md) | Knowing it works and hearing when it doesn't: health checks, coverage probes for batch work (why a runner's "success" isn't the work's), maintenance windows, self-retiring scaffolding, alerting, and the update digest. |
 | 18 | [Setup](18-setup.md) | The onboarding journey — the three tiers and what they share. |

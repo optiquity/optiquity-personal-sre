@@ -36,8 +36,15 @@ If you're single-node, these are optional; add them when you grow. This section 
 
 Add these when a project needs them — never preemptively:
 
-- **A container runtime** (OrbStack / Docker / Podman) — for self-hosted services.
-- **An automation runtime** (n8n or similar) — for workflows/webhooks.
+- **A container runtime** (Docker / Podman / OrbStack / Colima — see [09 · Runtimes](09-runtimes.md)
+  for the field and the licence question) — for self-hosted services. In practice the second thing
+  most people install, and a stateful dependency in its own right.
+- **An automation runtime** (cron and systemd timers are the honest floor; n8n, Node-RED, Windmill
+  and others when you need events, state or a run history — see
+  [14 · Workflows & automation](14-automation.md)) — for workflows and webhooks.
+- **A documentation or content pipeline** (docs-as-code, or grounded generation — see
+  [15 · Documentation & content generation](15-content-generation.md)) — when the corpus outgrows
+  what you can hold in your head.
 - **Browser automation** (a Playwright-class CLI) — for tasks that need a real browser.
 - **Doc/diagram tooling** (pandoc, graphviz, d2, …) — for generating docs and diagrams.
 - **The multi-node coordination layer** — session transfer, a fleet dashboard.

@@ -256,5 +256,5 @@ ingress connection.)
 - **When a published service is refused but reachable, read the service's own logs first** — the
   transport is almost always fine; the app is rejecting the connection and will tell you why.
 
-Next: [10 · Permissions](10-permissions.md) — the CLI-level permission layer that, together
-with the governance rules, bounds what the operator may do without asking.
+Next: [09 · Container & virtualization runtimes](09-runtimes.md) — where the services you just
+made reachable actually run.

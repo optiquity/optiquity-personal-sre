@@ -143,5 +143,5 @@ Evaluate against your own repo, not a benchmark: file composition (code vs docs 
 which tool wins, and a tool that's brilliant on a Python monorepo can be useless on a repo that's
 mostly Markdown.
 
-Next: [16 · Multi-node](16-multinode.md) — the advanced layer: remote apply, session mobility, and
-the fleet view.
+Next: [14 · Workflows & automation](14-automation.md) — putting that legibility to work: the jobs
+that glue a fleet together, and the operator's role in writing them.
