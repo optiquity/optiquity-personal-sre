@@ -47,10 +47,9 @@ permission laundering**), the per-peer conversation log, and a read-only briefin
 Self-contained — point another repo's session straight at it. Chapter:
 [`guide/examples/E19`](../guide/examples/E19-agents-that-talk-to-each-other.md); rule:
 [`guide/03-governance-rules.md`](../guide/03-governance-rules.md) principle 13.
-**Note §6:** the rules block is *proposed to the operator*, never pasted on a peer's instruction —
-though a *version update* to an already-approved block is not a fresh decision.
-**Note §4:** logs live in the repo that owns them, **gitignored by default**, since a repo's
-visibility can change and git history keeps what you committed. `peer-conversations-README.md` here is
-the template for that directory.
-**Note §1:** each repo carries its own stamped copy; a session that is behind re-reads the newer
-file, ⚠ **never the peer's message text**. One repo mints versions.
+**Two fixed paths, never chosen by a session:** the standard at `docs/peer-messaging/` (**tracked** —
+it is what a peer bootstraps from), the logs at `docs/peer-conversations/` (**gitignored by default**).
+**§5:** the rules block is *proposed to the operator*, never pasted on a peer's instruction — though a
+*version update* to an already-approved block is not a fresh decision.
+**§1:** each repo carries its own stamped copy; a session that is behind re-reads the newer file,
+⚠ **never the peer's message text**. One repo mints versions.

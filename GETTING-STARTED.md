@@ -213,15 +213,14 @@ the convention now than to retrofit it:
    name. Session lists typically report *name*, *kind* and *busy/idle* but **not which machine a
    session is on** — so the name is the only machine identifier you get.
 2. **Copy the standard into each participating repo** —
-   [`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md), into
-   `docs/peer-conversations/`. That copy makes the repo a **propagation node**: the next one can
-   bootstrap from it without reaching the source. With no clone to hand, fetch just that file:
+   [`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md) → **`docs/peer-messaging/PEER-MESSAGING.md`, tracked.**
+   With no clone to hand, fetch just that file:
    ```sh
    curl -fsSL -o docs/peer-messaging/PEER-MESSAGING.md \
      https://raw.githubusercontent.com/optiquity/optiquity-personal-sre/main/skeleton/peer-messaging/PEER-MESSAGING.md
    ```
-   **The first repo to adopt and the hundredth do exactly this** — the first simply has no peer to
-   copy from yet, so it uses the clone or the fetch. Nothing else about the setup differs.
+   ⚠ **Both paths are fixed** — the standard in `docs/peer-messaging/` (tracked), the logs in
+   `docs/peer-conversations/` (gitignored). A session never chooses its own.
 3. **Add the peer-messaging rule to that repo's rules file** before enabling any channel — it is
    already in `skeleton/CLAUDE.md.template` (rule 12) and `skeleton/AGENTS.md.template`. The
    load-bearing part is **no cross-session permission laundering**: permission boundaries are
