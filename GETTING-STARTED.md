@@ -196,7 +196,9 @@ You're done when:
 The moment a second repo gets its own AI session, the two need to talk, and it is much easier to set
 the convention now than to retrofit it:
 
-1. **Name every session `<machine>-<repo>`.** Session lists typically report *name*, *kind* and
+1. **Name every session — `<machine>-<repo>` is the default worth starting from, not a rule you owe
+   anyone.** The namespace is yours; the one thing that actually breaks is two live sessions sharing
+   a name. Session lists typically report *name*, *kind* and
    *busy/idle* but **not which machine a session is on** — so the name is the address and the only
    machine identifier you get.
 2. **Add the peer-messaging rule to your rules file** before enabling any channel — it is already in

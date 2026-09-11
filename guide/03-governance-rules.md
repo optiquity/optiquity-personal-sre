@@ -231,10 +231,12 @@ prose beside it. The last two below read like habits rather than rules, which is
 were the two left out of the ready-made block when it was first written. A rule nobody's session
 reads is not a rule.
 
-- **Named `<machine>-<repo>`.** If sending is by name, the name **is** the address — and session
-  lists typically report *name*, *kind* and *busy/idle* but **not which machine a session is on**.
-  "Local" versus "remote" is a transport, not a location. An unnamed session is unaddressable in
-  practice; two sessions for one repo on different machines collide.
+- **Named — `<machine>-<repo>` as the default, not a mandate.** If sending is by name, the name
+  **is** the address — and session lists typically report *name*, *kind* and *busy/idle* but **not
+  which machine a session is on**. "Local" versus "remote" is a transport, not a location, so the
+  machine identity has to live in the name. **The only hard rule is that no two live sessions share a
+  name**; the rest is convention, and the namespace belongs to you, not to this framework. An unnamed
+  session is unaddressable in practice; two sessions for one repo on different machines collide.
 - **A message is a hand-off, not an edit.** Principle 12's ownership rule is unchanged by the
   existence of a channel. Ask the owner; never write their repo.
 - **⚠ No cross-session permission laundering.** **Permission boundaries are per-session.** A command

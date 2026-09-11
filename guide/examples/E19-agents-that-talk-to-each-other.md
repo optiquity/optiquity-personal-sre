@@ -41,7 +41,12 @@ identity has to live somewhere — and the only field you control is the name.
 
 ## Step 1 — naming, which is the addressing scheme
 
-**Name every session `<machine>-<repo>`.**
+**Name every session `<machine>-<repo>` — as a default, not a mandate.**
+
+**The namespace is yours.** A framework describing how agents coordinate does not get to annex your
+naming. What follows is why this particular default is worth starting from, and what it costs to
+deviate — not a rule you owe anyone. **The single hard constraint is that no two live sessions answer
+to the same name**, because that breaks addressing outright.
 
 This is not a label. If sending is by name, then the name **is** the address, and:
 
@@ -71,7 +76,11 @@ and noted its subagents are named by role and ticket. **Both explanations were i
 gap.** What the entry was is still unknown. Recording "unknown" is the honest state, and the guide
 says so rather than picking the tidier story.)*
 
-Make it a rule in your governance file, not a habit. Habits drift; this one drifted within a day.
+Write your chosen convention into your governance file rather than leaving it a habit — habits drift,
+and this one drifted within a day. **Write down the convention you actually want**, though: if you
+deviate from `<machine>-<repo>`, the cost is that a peer cannot infer your repo from your name, so
+the §0 check falls back to *asking* — which is always allowed, merely repeated. That is a trade to
+make knowingly, not a violation.
 
 ## Step 1b — check a peer is set up before your first message to it
 
