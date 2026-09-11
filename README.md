@@ -139,9 +139,6 @@ session that is behind reads the newer document — **from disk or a fetch, neve
 message text** — and updates itself. **One repo mints versions**, so "newer wins" converges instead of
 forking. **No roster of who has adopted** — a central list is a hub, and it goes stale.
 
-⚠ **Do not put any of this in a shared per-machine location.** It is the obvious simplification and it
-is not federated: one file with no owner, no history and no review, which does not travel between
-machines at all.
 
 → **The portable standard, ready to adopt:**
 **[`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md)** ·

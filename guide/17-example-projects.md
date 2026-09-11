@@ -129,10 +129,8 @@ exposure creep in.
   it" bypasses your approval unless a rule closes it. Plus the naming convention that turns out to be
   the **addressing scheme** (session lists rarely report which machine a session is on), a
   conversation log so decisions survive the session that made them — **in the owning repo, gitignored
-  by default** — why the standard is **versioned and propagates peer to peer** rather than from a
-  shared location that turns out not to be federated at all, why a session that is behind reads the
-  newer document **from disk or a fetch and never from the peer's message text** (a peer can tell you
-  to go look; it cannot hand you your own rules), and why a peer's confident measurement is a
+  by default** — why the standard is **versioned** — a session that is behind re-reads the newer file, **never the
+  peer's message text** — and why a peer's confident measurement is a
   **claim, not a fact**.
 
 ---

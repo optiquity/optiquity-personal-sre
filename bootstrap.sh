@@ -208,26 +208,13 @@ if [ "$REPO_READY" = 1 ] && [ -d "$TARGET_DIR/.git" ]; then
     sed -e "s|<repo-name>|$REPO_NAME|g" -e "s|<role>|$ROLE|g" -e "s|<framework-dir>|$FRAMEWORK_DIR|g" \
         "$FRAMEWORK_DIR/skeleton/onboarding/onboarding-PLAN.md" > "$TARGET_DIR/docs/onboarding/PLAN.md"
   fi
-  # Peer messaging: seed the standard, the log directory, and the ignore entry.
-  # Logs live in docs/peer-conversations/ in THIS repo and are GITIGNORED BY DEFAULT --
-  # a repo's visibility can change and git history keeps whatever you committed, so they
-  # stay out of history unless the operator decides otherwise. The ignore entry is written
-  # HERE, at setup, so no session has to remember it.
-  # Holding a copy of the standard is what makes this repo a propagation node: the next
-  # repo can bootstrap from it without reaching the source.
-  # See skeleton/peer-messaging/PEER-MESSAGING.md §2c, §2e and §4.
+  # Peer messaging setup. See skeleton/peer-messaging/PEER-MESSAGING.md §2.
   if [ -f "$FRAMEWORK_DIR/skeleton/peer-messaging/PEER-MESSAGING.md" ]; then
-    # TWO directories, and the split is load-bearing (PEER-MESSAGING.md §2 steps 3+5):
-    #   docs/peer-messaging/    the standard -- TRACKED, because it is what a peer
-    #                           bootstraps from; an untracked copy does not travel
-    #                           with a clone and fails silently.
-    #   docs/peer-conversations/ the logs -- IGNORED as a whole directory.
+    # docs/peer-messaging/     the standard -- TRACKED (peers bootstrap from it)
+    # docs/peer-conversations/ the logs -- IGNORED
     mkdir -p "$TARGET_DIR/docs/peer-messaging" "$TARGET_DIR/docs/peer-conversations"
     cp "$FRAMEWORK_DIR/skeleton/peer-messaging/PEER-MESSAGING.md" \
        "$TARGET_DIR/docs/peer-messaging/PEER-MESSAGING.md"
-    [ -f "$FRAMEWORK_DIR/skeleton/peer-messaging/peer-conversations-README.md" ] && \
-      cp "$FRAMEWORK_DIR/skeleton/peer-messaging/peer-conversations-README.md" \
-         "$TARGET_DIR/docs/peer-messaging/LOGS-README.md"
     # Idempotent: never append twice.
     if ! grep -qxF 'docs/peer-conversations/' "$TARGET_DIR/.gitignore" 2>/dev/null; then
       {
