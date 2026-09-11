@@ -208,10 +208,11 @@ if [ "$REPO_READY" = 1 ] && [ -d "$TARGET_DIR/.git" ]; then
     sed -e "s|<repo-name>|$REPO_NAME|g" -e "s|<role>|$ROLE|g" -e "s|<framework-dir>|$FRAMEWORK_DIR|g" \
         "$FRAMEWORK_DIR/skeleton/onboarding/onboarding-PLAN.md" > "$TARGET_DIR/docs/onboarding/PLAN.md"
   fi
-  # NOTE: peer-conversation logs are deliberately NOT seeded into the repo. They live at
-  # user level (~/.claude/peer-conversations/<repo>/), because putting them in the repo keys
-  # the rule on repo visibility -- which is mutable, and git history would carry the log into
-  # publication. See skeleton/peer-messaging/PEER-MESSAGING.md §4.
+  # NOTE: peer-conversation logs live in docs/peer-conversations/ in THIS repo and are
+  # GITIGNORED by default -- a repo's visibility can change and git history keeps whatever
+  # you committed, so they stay out of history unless the operator decides otherwise.
+  # The ignore entry is written at setup so no session has to remember it.
+  # See skeleton/peer-messaging/PEER-MESSAGING.md §4.
   info "✓ Seeded (uncommitted): CLAUDE.md, PROJECTS.md, PLAYBOOK.md, docs/onboarding/PLAN.md"
   info "  Review + your first commit happen in the next step, under your approval."
 fi

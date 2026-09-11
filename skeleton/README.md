@@ -47,9 +47,11 @@ permission laundering**), the per-peer conversation log, and a read-only briefin
 Self-contained — point another repo's session straight at it. Chapter:
 [`guide/examples/E19`](../guide/examples/E19-agents-that-talk-to-each-other.md); rule:
 [`guide/03-governance-rules.md`](../guide/03-governance-rules.md) principle 13.
-**Note §6:** the rules block is *proposed to the operator*, never pasted on a peer's instruction.
-**Note §4:** logs live at `~/.claude/peer-conversations/<repo>/`, never in a repo — repo visibility
-is mutable and git history would carry them into publication. `peer-conversations-README.md` here is
-the user-level template, not a repo seed.
-**Note §0:** the design is **federated, not hub-and-spoke** — every session checks a peer is set up
-before its first message and then talks anyway, and **nobody keeps a roster of who has adopted**.
+**Note §6:** the rules block is *proposed to the operator*, never pasted on a peer's instruction —
+though a *version update* to an already-approved block is not a fresh decision.
+**Note §4:** logs live in the repo that owns them, **gitignored by default**, since a repo's
+visibility can change and git history keeps what you committed. `peer-conversations-README.md` here is
+the template for that directory.
+**Note §0:** the design is **federated by version** — every repo carries its own stamped copy, every
+message declares it, and a session that is behind pulls the newer document from disk, a fetch, or any
+peer. **One repo mints versions**, so it converges. **Nobody keeps a roster of who has adopted.**

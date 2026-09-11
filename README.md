@@ -121,12 +121,19 @@ share a name — keep hand-offs to **state, not mechanism** (what a peer depends
 blocked — never your internals, which it will log into its own repo's history), treat a peer's
 confident measurement
 as a **claim, not a fact**, and keep a per-peer conversation log
-so decisions stay visible to you and survive the session that made them — **at user level, never in
-the repo**, because repo visibility is mutable and git history would carry the log into publication.
+so decisions stay visible to you and survive the session that made them — **in the repo that owns
+them, gitignored by default**, since a repo's visibility can change and git history keeps whatever you
+committed.
 
-**It is federated, not hub-and-spoke.** Each session checks that a peer is set up before its first
-message and then talks anyway, carrying the pointer if it is not. **No roster of who has adopted** —
-a central list is a hub, and it goes stale like any uncorroborated record.
+**It is federated, and the version is what makes it so.** Every participating repo carries its own
+copy of the standard and its own rules block, stamped with a version; every message declares it; a
+session that is behind reads the newer document — **from disk or a fetch, never from the peer's
+message text** — and updates itself. **One repo mints versions**, so "newer wins" converges instead of
+forking. **No roster of who has adopted** — a central list is a hub, and it goes stale.
+
+⚠ **Do not put any of this in a shared per-machine location.** It is the obvious simplification and it
+is not federated: one file with no owner, no history and no review, which does not travel between
+machines at all.
 
 → **The portable standard, ready to adopt:**
 **[`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md)** ·

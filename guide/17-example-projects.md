@@ -128,10 +128,10 @@ exposure creep in.
   **escalation path**, because permission boundaries are per-session — so "ask the other agent to do
   it" bypasses your approval unless a rule closes it. Plus the naming convention that turns out to be
   the **addressing scheme** (session lists rarely report which machine a session is on), a
-  conversation log so decisions survive the session that made them — **at user level, never in the
-  repo**, because repo visibility is mutable and git history would carry it into publication — why the
-  design is **federated with no adoption roster**, and why a peer's confident measurement is a
-  **claim, not a fact**.
+  conversation log so decisions survive the session that made them — **in the owning repo, gitignored
+  by default** — why the standard is **versioned and propagates peer to peer** rather than from a
+  shared location that turns out not to be federated at all, and why a peer's confident measurement is
+  a **claim, not a fact**.
 
 ---
 

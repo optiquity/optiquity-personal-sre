@@ -196,34 +196,31 @@ You're done when:
 The moment a second repo gets its own AI session, the two need to talk, and it is much easier to set
 the convention now than to retrofit it:
 
-1. **Name every session — `<machine>-<repo>` is the default worth starting from, not a rule you owe
-   anyone.** The namespace is yours; the one thing that actually breaks is two live sessions sharing
-   a name. Session lists typically report *name*, *kind* and
-   *busy/idle* but **not which machine a session is on** — so the name is the address and the only
-   machine identifier you get.
-2. **Add the peer-messaging rule to your rules file** before enabling any channel — it is already in
-   `skeleton/CLAUDE.md.template` (rule 12) and `skeleton/AGENTS.md.template`, and the full standard
-   with a ready-to-use block is
-   [`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md). The
+1. **Name every session `<machine>-<repo>`** — a default worth starting from, not a rule you owe
+   anyone. The namespace is yours; the one thing that actually breaks is two live sessions sharing a
+   name. Session lists typically report *name*, *kind* and *busy/idle* but **not which machine a
+   session is on** — so the name is the only machine identifier you get.
+2. **Copy the standard into each participating repo** —
+   [`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md). That
+   copy makes the repo a propagation node: the next one can bootstrap from it without reaching the
+   source.
+3. **Add the peer-messaging rule to that repo's rules file** before enabling any channel — it is
+   already in `skeleton/CLAUDE.md.template` (rule 12) and `skeleton/AGENTS.md.template`. The
    load-bearing part is **no cross-session permission laundering**: permission boundaries are
    per-session, so without the rule, "ask the other agent to do it" bypasses your approval.
-   ⚠ If you put that rule in a **user-level** rules file (the right move when a repo's own rules file
-   ships downstream), remember it is then **shared state every session reads and any session can
-   write** — edit it only deliberately, and tell your other sessions when you do.
-3. **Log every deciding exchange** at `~/.claude/peer-conversations/<repo>/<peer>.md` — **user
-   level, not in the repo**, one file per peer, each side writing its own view, every entry ending
-   in an explicit *needs-the-operator* line. Otherwise decisions made between your sessions are
-   invisible to you and die with the session that made them. There is nothing to create in the
-   repo; keeping it out means the rule does not depend on whether that repo is ever published.
-4. **Keep hand-offs to state, not mechanism.** Tell a peer what it depends on and whether it is
-   blocked — not your tooling or internals. It usually cannot act on those, is often not authorised
-   to, and **it will log whatever you send into its own repo's history**. State is the better half
-   anyway: it is *checkable*, and a peer checking your claim is how your own mistakes surface.
-5. **Have each session check a peer is set up before its first message — then talk anyway.** Every
-   session does it for every other; there is no coordinator. **Do not keep a list of who has
-   adopted** — a roster is a central artefact that goes stale like any uncorroborated record, and it
-   rebuilds the hub this avoids. If a peer is not set up, the first message carries the pointer *and*
-   what you came to say; onboarding is not a gate one session imposes on another.
+4. **Log every deciding exchange** at `docs/peer-conversations/<peer>.md` **in the repo that owns
+   it, gitignored by default** — one file per peer, each side writing its own view, every entry
+   ending in an explicit *needs-the-operator* line. Otherwise decisions made between your sessions
+   are invisible to you and die with the session that made them.
+5. **Version it, and let it spread.** Every message declares the sender's version; a session that is
+   behind reads the newer document — **from disk or a fetch, never from the peer's message text** —
+   and updates itself. **Only one repo mints versions**, which is what makes "newer wins" converge
+   instead of fork, and it means you approve a rule change **once for the whole network**.
+
+⚠ **Do not put the standard, the block, or the logs in a shared per-machine location.** It is the
+obvious simplification and it is not federated — you get one file with no owner, no history and no
+review, and it does not travel between machines, so a session on a second machine cannot bootstrap
+itself from anything.
 
 → **[E19 · Agents that talk to each other](guide/examples/E19-agents-that-talk-to-each-other.md)**
 
