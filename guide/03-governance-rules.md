@@ -5,7 +5,7 @@ This section defines the governance model: the principles, why each exists, and 
 them into a rules file the operator reads at the start of every session.
 
 This is the **judgment layer**. A separate, coarser layer — the CLI's own permission settings
-— is covered in [09 · Permissions](09-permissions.md). You want both; here's the one that
+— is covered in [10 · Permissions](10-permissions.md). You want both; here's the one that
 carries the reasoning.
 
 ## Why rules, not just trust
@@ -133,13 +133,13 @@ facts change or a revisit date arrives.
 **Why:** the naive version of this rule is "don't touch anything unless asked", which is safe and
 quietly corrosive — it makes *your attention* the only thing standing between the fleet and years of
 accumulated drift. Moving the burden of noticing onto the operator while keeping the decision with
-you gets the safety without the rot. See [14 · Monitoring](14-monitoring.md) for the detection side.
+you gets the safety without the rot. See [17 · Monitoring](17-monitoring.md) for the detection side.
 
 ## Encoding the rules: the rules file
 
 The operator reads a **rules file** at the repo root — for Claude Code this is `CLAUDE.md`;
 Codex uses `AGENTS.md`; other CLIs have their own (see
-[11 · Agents & skills](11-agents-skills.md)). The framework ships a **template** you tune:
+[12 · Agents & skills](12-agents-skills.md)). The framework ships a **template** you tune:
 `skeleton/CLAUDE.md.template`.
 
 A good rules file has these parts:
@@ -163,7 +163,7 @@ Keep it **specific and locked**. Vague rules ("be careful") don't constrain; con
 
 Rules the operator can quietly skip aren't rules. Reinforce them structurally:
 
-- **Pair with CLI permissions** ([09 · Permissions](09-permissions.md)): the settings layer
+- **Pair with CLI permissions** ([10 · Permissions](10-permissions.md)): the settings layer
   can *auto-deny* or *prompt* on categories, so even a rule-lapse hits a second wall.
 - **Pair with ignore files** ([06 · Secrets](06-secrets.md)): a secret can't be committed if
   it's ignored, regardless of the operator's judgment.

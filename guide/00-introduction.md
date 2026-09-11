@@ -77,7 +77,7 @@ Two independent permission layers, both deliberate:
 
 **Minimum:** apply one CLI permission preset (ship-ready in `skeleton/settings/`), and — if
 multi-node — set up key-only SSH between the machines that genuinely talk.
-→ CLI presets + the two-layer model: [09 · Permissions](09-permissions.md). The SSH access graph:
+→ CLI presets + the two-layer model: [10 · Permissions](10-permissions.md). The SSH access graph:
 [08 · Networking](08-networking.md).
 
 ### Foundation 3 — Privacy & security (keep secrets and identity out of git)
@@ -97,7 +97,7 @@ The load-bearing invariant: **zero secrets in git, ever** — enforced structura
 `skeleton/chezmoiignore.template`), wire your platform's secret store, and confirm a secret-scan
 of your repo finds nothing.
 → The full discipline + the `.env`/keychain recipes: [06 · Secrets](06-secrets.md). Sharing safely:
-[16 · Public/shared repos](16-sharing.md).
+[19 · Public/shared repos](19-sharing.md).
 
 ### Foundation 4 — Rules (how the operator stays grounded and knows when to ask)
 
@@ -160,9 +160,9 @@ projects need them* — never preemptively.
 2. [01 · Concepts](01-concepts.md) — the model + vocabulary in depth.
 3. [02 · The operator](02-operator.md) — how you actually work with the operator.
 4. [03 · Governance](03-governance-rules.md) — the rules that make it safe.
-5. Skim [04](04-structure.md)–[14](16-sharing.md) for the pieces you'll use; see
+5. Skim [04](04-structure.md)–[14](19-sharing.md) for the pieces you'll use; see
    [`_contents.md`](_contents.md) for the one-line index.
 6. Worked, end-to-end examples of the operator owning install *and* maintenance:
-   [17 · Example projects](17-example-projects.md).
+   [20 · Example projects](20-example-projects.md).
 7. Then your platform spoke (`platforms/<os>.md`) and a setup tier in
    [`GETTING-STARTED.md`](../GETTING-STARTED.md).

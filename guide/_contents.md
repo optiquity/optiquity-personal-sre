@@ -15,17 +15,17 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 | 06 | [Secrets](06-secrets.md) | Zero-secrets-in-git: allowlist ignore files, vault/keychain, the `.env` recipe. Plus credentials that live on a node, and why their expiry is silent by construction. |
 | 07 | [Tools & requirements](07-tools-requirements.md) | Hard vs optional tools + the idempotent, role-aware installer pattern. |
 | 08 | [Networking](08-networking.md) | Private mesh (Tailscale) + key-only SSH, the access-edge graph, subnet-router / exit-node gateways (+ their traps), and isolating which layer is actually slow. |
-| 09 | [Permissions](09-permissions.md) | The two permission layers: CLI auto-approve presets + session rules. |
-| 10 | [MCP](10-mcp.md) | External capabilities (GitHub, filesystem, …) — each a scoped capability grant. |
-| 11 | [Agents & skills](11-agents-skills.md) | Subagents + the `SKILL.md` pattern; the multi-CLI config-location map. |
-| 12 | [Repo comprehension](12-repo-comprehension.md) | Making your codebase legible to the operator: packing vs indexing, staleness, and grounding. |
-| 13 | [Multi-node](13-multinode.md) | The advanced layer: remote apply, session mobility, the fleet view — and the node that isn't like the others. |
-| 14 | [Monitoring](14-monitoring.md) | Knowing it works and hearing when it doesn't: health checks, coverage probes for batch work (why a runner's "success" isn't the work's), maintenance windows, self-retiring scaffolding, alerting, and the update digest. |
-| 15 | [Setup](15-setup.md) | The onboarding journey — the three tiers and what they share. |
-| 16 | [Public/shared repos](16-sharing.md) | Publishing a scrubbed framework: derive-don't-copy + the grep-guard. |
-| 17 | [Example projects](17-example-projects.md) | A catalog of worked, end-to-end examples of the operator owning install + maintenance. |
+| 10 | [Permissions](10-permissions.md) | The two permission layers: CLI auto-approve presets + session rules. |
+| 11 | [MCP](11-mcp.md) | External capabilities (GitHub, filesystem, …) — each a scoped capability grant. |
+| 12 | [Agents & skills](12-agents-skills.md) | Subagents + the `SKILL.md` pattern; the multi-CLI config-location map. |
+| 13 | [Repo comprehension](13-repo-comprehension.md) | Making your codebase legible to the operator: packing vs indexing, staleness, and grounding. |
+| 16 | [Multi-node](16-multinode.md) | The advanced layer: remote apply, session mobility, the fleet view — and the node that isn't like the others. |
+| 17 | [Monitoring](17-monitoring.md) | Knowing it works and hearing when it doesn't: health checks, coverage probes for batch work (why a runner's "success" isn't the work's), maintenance windows, self-retiring scaffolding, alerting, and the update digest. |
+| 18 | [Setup](18-setup.md) | The onboarding journey — the three tiers and what they share. |
+| 19 | [Public/shared repos](19-sharing.md) | Publishing a scrubbed framework: derive-don't-copy + the grep-guard. |
+| 20 | [Example projects](20-example-projects.md) | A catalog of worked, end-to-end examples of the operator owning install + maintenance. |
 
-**Worked examples** — [`examples/`](examples/), catalogued in [15](17-example-projects.md): the
+**Worked examples** — [`examples/`](examples/), catalogued in [15](20-example-projects.md): the
 A/B/C/D/E series, each an end-to-end project the operator owns. Several ship starter files in
 [`../skeleton/`](../skeleton/) — notably **[E16 · Health, alerting & the update digest](examples/E16-fleet-health-and-alerting.md)**,
 whose tools live in [`../skeleton/monitoring/`](../skeleton/monitoring/), and

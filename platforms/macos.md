@@ -139,7 +139,7 @@ queries) and keep the Linux one for Linux nodes.
 ## Roles on macOS — common mapping
 
 - **`workstation`** — a MacBook; Tailscale on; services on-demand; permission preset
-  standard/trusting ([09](../guide/09-permissions.md)).
+  standard/trusting ([09](../guide/10-permissions.md)).
 - **`server`** — a Mac mini / always-on Mac; LaunchDaemons for 24/7 services; NAS mounts;
   permission preset cautious. Watch the TCC-network-volume gotcha above for any scheduled job.
 

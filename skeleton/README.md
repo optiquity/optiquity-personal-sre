@@ -10,15 +10,15 @@ where the *why* lives; this table is just the map back.
 | Entry | What it is | Explained in |
 |---|---|---|
 | `CLAUDE.md.template` | The operator's rules file — the governance the AI reads at session start. | [03 · Governance](../guide/03-governance-rules.md) |
-| `AGENTS.md.template` | The same rules for a second CLI, so behaviour matches whichever you invoke. | [11 · Agents & skills](../guide/11-agents-skills.md) |
-| `settings/` | Three permission presets (permissive → cautious) for the CLI's auto-approve layer. | [09 · Permissions](../guide/09-permissions.md) |
-| `mcp/` | MCP server configs — each one a scoped capability grant. | [10 · MCP](../guide/10-mcp.md) |
-| `skills/` | Two worked `SKILL.md` examples (a vault read, a browser login). | [11 · Agents & skills](../guide/11-agents-skills.md) |
+| `AGENTS.md.template` | The same rules for a second CLI, so behaviour matches whichever you invoke. | [12 · Agents & skills](../guide/12-agents-skills.md) |
+| `settings/` | Three permission presets (permissive → cautious) for the CLI's auto-approve layer. | [10 · Permissions](../guide/10-permissions.md) |
+| `mcp/` | MCP server configs — each one a scoped capability grant. | [11 · MCP](../guide/11-mcp.md) |
+| `skills/` | Two worked `SKILL.md` examples (a vault read, a browser login). | [12 · Agents & skills](../guide/12-agents-skills.md) |
 | `installers/` | The idempotent, role-aware install-script pattern. | [07 · Tools & requirements](../guide/07-tools-requirements.md) |
-| `monitoring/` | **Ready-to-run**: health-check config + email alerting, a local probe, an update digest, install-conflict and stale-image checks, and the timers to schedule them. Has its own [README](monitoring/README.md). | [14 · Monitoring](../guide/14-monitoring.md) |
-| `repo-index/` | Enabling a repo index: an annotated exclusion template + an idempotent per-repo enablement script. | [12 · Repo comprehension](../guide/12-repo-comprehension.md) |
+| `monitoring/` | **Ready-to-run**: health-check config + email alerting, a local probe, an update digest, install-conflict and stale-image checks, and the timers to schedule them. Has its own [README](monitoring/README.md). | [17 · Monitoring](../guide/17-monitoring.md) |
+| `repo-index/` | Enabling a repo index: an annotated exclusion template + an idempotent per-repo enablement script. | [13 · Repo comprehension](../guide/13-repo-comprehension.md) |
 | `onboarding/` | The seed for a brand-new personal-SRE repo (registry, playbook, first docs). | [04 · Structure](../guide/04-structure.md) |
-| `github/` | CI workflow — runs the secret-scan on every push, so the never-leak rule is enforced by a machine. | [16 · Public/shared repos](../guide/16-sharing.md) |
+| `github/` | CI workflow — runs the secret-scan on every push, so the never-leak rule is enforced by a machine. | [19 · Public/shared repos](../guide/19-sharing.md) |
 | `chezmoi.toml.example` | Config-manager settings: role/node data the templates branch on. | [05 · chezmoi](../guide/05-chezmoi.md) |
 | `chezmoiignore.template` | What the config manager must never apply to a machine. | [05 · chezmoi](../guide/05-chezmoi.md) |
 | `gitignore.template` | The allowlist-shaped ignore file — the structural half of zero-secrets-in-git. | [06 · Secrets](../guide/06-secrets.md) |

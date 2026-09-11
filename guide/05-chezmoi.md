@@ -185,7 +185,7 @@ workflow gets for free:
   interval, and a script with a syntax error is written to disk perfectly happily — it fails only when
   something *runs* it, which may be days later and far from the cause. Syntax-check what you applied
   and surface failures where you will read them. *"The file was written"* is not *"the file works"* —
-  the same distinction as *"the process ran"* versus *"the work happened"* ([14 · Monitoring](14-monitoring.md)).
+  the same distinction as *"the process ran"* versus *"the work happened"* ([17 · Monitoring](17-monitoring.md)).
 
 ## Handling drift
 

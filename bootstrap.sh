@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bootstrap.sh — set up YOUR private personal-SRE repo (guide/15-setup.md, Tier 2).
+# bootstrap.sh — set up YOUR private personal-SRE repo (guide/18-setup.md, Tier 2).
 #
 # This framework repo is a READ-ONLY REFERENCE. You do NOT work in it. bootstrap
 # creates (or points you at) YOUR OWN private repo, where all your work happens —
@@ -159,7 +159,7 @@ else
     info "  Detected: ${SCOPES:-<none reported>}"
     info "  Grant it with:  gh auth refresh -h $GIT_HOST -s repo"
     info "  (More GitHub permission = more the operator can automate without asking you —"
-    info "   the convenience/blast-radius trade-off; see guide/09-permissions.md.)"
+    info "   the convenience/blast-radius trade-off; see guide/10-permissions.md.)"
     info "Falling back to manual: create a PRIVATE repo at https://$GIT_HOST/new, then re-run."
   fi
 fi

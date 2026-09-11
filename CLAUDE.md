@@ -3,7 +3,7 @@
 **The operating rules for this repo live in [`AGENTS.md`](AGENTS.md). Read that file.**
 
 It is the single source deliberately: keeping two rule files in sync is a bug waiting to happen,
-and this framework's own guidance ([11 · Agents & skills](guide/11-agents-skills.md)) is to keep
+and this framework's own guidance ([12 · Agents & skills](guide/12-agents-skills.md)) is to keep
 the rule *content* identical across CLIs rather than let them drift.
 
 The short version, so this file is useful on its own:

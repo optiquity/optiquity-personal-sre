@@ -18,7 +18,7 @@ user the next uncompleted step. Reference the framework's `GETTING-STARTED.md` a
 1. **First commit.** Review the seeded files, then make the initial commit (governed: show the
    user what will be committed, get approval — Rule 2). This is the first exercise of the loop.
 2. **Read the rules.** Confirm `CLAUDE.md` matches how the user wants you to behave; adjust the
-   permission posture (cautious/standard/trusting — `guide/09-permissions.md`) for this role.
+   permission posture (cautious/standard/trusting — `guide/10-permissions.md`) for this role.
 3. **Secrets.** Set up the ignore files (allowlist pattern) + the platform secret store, and a
    runtime secrets file if needed (`.env`/shell env) — `guide/06-secrets.md`. Confirm the
    zero-secrets-in-git invariant. NEVER put a secret in a tracked file.
@@ -27,7 +27,7 @@ user the next uncompleted step. Reference the framework's `GETTING-STARTED.md` a
    (`guide/05-chezmoi.md`). Do not apply to the machine without a diff + approval.
 5. **MCP (optional).** Configure the external capabilities the user needs (GitHub, filesystem)
    from the templates — no tokens in committed config, filesystem scopes limited
-   (`guide/10-mcp.md`).
+   (`guide/11-mcp.md`).
 6. **Multi-node (optional).** If >1 node: SSH keys (key-only) + a private mesh (Tailscale) +
    record the access edges (`guide/08-networking.md`).
 7. **First real project.** Track something the user is actually doing as a project in

@@ -1,4 +1,4 @@
-# 16 · Public/shared repos — publishing without leaking
+# 19 · Public/shared repos — publishing without leaking
 
 Most adopters never need this section: your setup lives in your **private repo** and stays
 there. But if you want to **publish a generalized version of your framework** — as *this*
@@ -40,7 +40,7 @@ The non-negotiable exclusion list:
 - **Any secret** — the entire [06 · Secrets](06-secrets.md) list, obviously; but also
   *references* that happen to embed a real value.
 - **Personal skills/projects** — anything tied to *your* specific accounts or services stays
-  private. Only *generic* example skills ([11](11-agents-skills.md)) go public.
+  private. Only *generic* example skills ([12](12-agents-skills.md)) go public.
 - **Vault paths, backup locations, service URLs** — anything that describes *your* actual
 - **Monitoring config**, which is quietly full of your topology: node inventories (SSH targets and
   hostnames), local-check configs (mount paths, service labels), and health-check configs (service
@@ -115,4 +115,4 @@ what lets you share the work at all.
 ---
 
 *This is the last section of the master guide. For platform-specific commands, see the spokes
-(`platforms/`); for starter files, see `skeleton/`; to begin, see [15 · Setup](15-setup.md).*
+(`platforms/`); for starter files, see `skeleton/`; to begin, see [18 · Setup](18-setup.md).*

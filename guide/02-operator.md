@@ -9,12 +9,12 @@ the *boundaries* of what's described here.
 ## The operator, defined
 
 The **operator** is an AI coding CLI (Claude Code as the reference; Codex and others work too —
-see [11 · Agents & skills](11-agents-skills.md)) running in your repo, with:
+see [12 · Agents & skills](12-agents-skills.md)) running in your repo, with:
 
 - a **rules file** it reads at the start of every session ([03 · Governance](03-governance-rules.md)),
-- a **permission configuration** bounding what it can do without asking ([09 · Permissions](09-permissions.md)),
-- optional **external capabilities** via MCP ([10 · MCP](10-mcp.md)),
-- and optional **skills** — packaged, repeatable procedures ([11 · Agents & skills](11-agents-skills.md)).
+- a **permission configuration** bounding what it can do without asking ([10 · Permissions](10-permissions.md)),
+- optional **external capabilities** via MCP ([11 · MCP](11-mcp.md)),
+- and optional **skills** — packaged, repeatable procedures ([12 · Agents & skills](12-agents-skills.md)).
 
 You don't program it. You **converse** with it: you state intent, it proposes, you approve, it
 acts. The repo and the git history are the record of that conversation.
@@ -50,7 +50,7 @@ purpose.**
 
 This is what makes handing ops work to a capable, fast AI *safe*: it can do a lot quickly, but
 never crosses a consequential line without you. Sections [03 · Governance](03-governance-rules.md)
-(the judgment layer) and [09 · Permissions](09-permissions.md) (the capability layer) define
+(the judgment layer) and [10 · Permissions](10-permissions.md) (the capability layer) define
 exactly where that line sits — and let you move it as your trust grows.
 
 ## What the operator honors from the first minute
@@ -61,7 +61,7 @@ so from that point on it won't push, apply, delete, or create remote artifacts w
 explicit approval. You're not hoping it behaves; you've configured it to, and the permission
 layer backstops the configuration.
 
-This is why onboarding ([15 · Setup](15-setup.md)) puts the rules file in place **first**: every
+This is why onboarding ([18 · Setup](18-setup.md)) puts the rules file in place **first**: every
 later step happens under governance, including the operator's own setup work.
 
 ## Where the operator gets its "self"
@@ -72,9 +72,9 @@ it's consistent across sessions and nodes:
 | What | Where it comes from | Section |
 |---|---|---|
 | **Its rules / guardrails** | the rules file (`CLAUDE.md` / `AGENTS.md`) | [03](03-governance-rules.md) |
-| **What it can auto-do** | the CLI's permission settings | [09](09-permissions.md) |
-| **External reach** (git host, files, browser) | MCP servers | [10](10-mcp.md) |
-| **Packaged procedures** | skills (`SKILL.md`) | [11](11-agents-skills.md) |
+| **What it can auto-do** | the CLI's permission settings | [10](10-permissions.md) |
+| **External reach** (git host, files, browser) | MCP servers | [11](11-mcp.md) |
+| **Packaged procedures** | skills (`SKILL.md`) | [12](12-agents-skills.md) |
 | **Its memory of the system** | the project registry + docs, not chat | [04](04-structure.md) |
 
 Because all of these are **files in your repo**, rendered onto each node by the config manager,
@@ -85,20 +85,20 @@ a new session picks up exactly where the last left off by reading them.
 
 - **A new session is not a blank slate.** It reads the rules + registry and orients itself —
   which is how a fresh session resumes an in-progress project (this is what onboarding's
-  hand-off relies on: [15 · Setup](15-setup.md)).
+  hand-off relies on: [18 · Setup](18-setup.md)).
 - **You can run more than one CLI.** Claude Code is the reference; Codex and others map cleanly
-  ([11 · Agents & skills](11-agents-skills.md) has the config-location table). Keep the rule
+  ([12 · Agents & skills](12-agents-skills.md) has the config-location table). Keep the rule
   *content* in sync across them so the operator behaves identically whichever you invoke.
 - **You can run it on more than one node.** Same rules everywhere (symmetry —
   [Rule 5](03-governance-rules.md)); role-appropriate permission posture per node
-  ([13 · Multi-node](13-multinode.md)).
+  ([16 · Multi-node](16-multinode.md)).
 
 ## Delegation and parallelism (briefly)
 
 For big or independent work, the operator can spawn **subagents** — parallel helpers that
 search, review, or research concurrently while the main operator synthesizes and acts. Reads and
 research delegate freely; **material actions stay in the main thread under your approval.** Full
-treatment in [11 · Agents & skills](11-agents-skills.md).
+treatment in [12 · Agents & skills](12-agents-skills.md).
 
 ## Why work this way at all
 

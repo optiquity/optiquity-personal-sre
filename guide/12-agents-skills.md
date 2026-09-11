@@ -1,4 +1,4 @@
-# 11 · Agents & skills
+# 12 · Agents & skills
 
 Beyond running commands, the operator can take on **packaged, repeatable capabilities** and
 **delegate work to subagents**. This section covers two patterns: **skills** (documented
@@ -90,7 +90,7 @@ of work. Two reasons to use them:
   triage, not the polling loop.
   *decide*; use the main operator to *act*.
 - **Scope them.** A subagent gets the tools and context its task needs — not blanket access.
-  The permission model ([09](09-permissions.md)) still applies.
+  The permission model ([10](10-permissions.md)) still applies.
 
 ## The operator's config across CLIs
 
@@ -99,7 +99,7 @@ keeps the *pattern* portable:
 
 | CLI | Rules file | Model/global config | MCP config | Permissions |
 |---|---|---|---|---|
-| **Claude Code** (reference) | `CLAUDE.md` | `settings.json` | `settings.json` → `mcpServers` | `settings.json` → `permissions` (3 presets, [09](09-permissions.md)) |
+| **Claude Code** (reference) | `CLAUDE.md` | `settings.json` | `settings.json` → `mcpServers` | `settings.json` → `permissions` (3 presets, [10](10-permissions.md)) |
 | **Codex** | `AGENTS.md` | `~/.codex/config.toml` | `config.toml` → `[mcp_servers]` | Codex's approval settings |
 | **Gemini / agy** | its own rules doc | its own config | its own MCP section | its own approval settings |
 | **Others** | their equivalent | varies | varies | varies |
@@ -127,7 +127,7 @@ Same discipline as everywhere else:
 - Each skill's **guardrails are reviewed** — especially destructive-action confirmations and
   credential handling.
 - **Personal skills stay private; generic skills can be shared** — the same scrub discipline
-  that governs the whole public/private split ([16 · Sharing](16-sharing.md)).
+  that governs the whole public/private split ([19 · Sharing](19-sharing.md)).
 
-Next: [12 · Repo comprehension](12-repo-comprehension.md) — giving the operator a queryable
+Next: [13 · Repo comprehension](13-repo-comprehension.md) — giving the operator a queryable
 model of your codebase instead of making it grep.

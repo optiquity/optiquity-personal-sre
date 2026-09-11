@@ -5,7 +5,7 @@ Tune the placeholders and rules to your setup. See the framework guide `guide/03
 for the reasoning behind each rule.
 
 > This file is the operator's **judgment layer**. Pair it with the CLI permission settings
-> (`guide/09-permissions.md`) for defense in depth.
+> (`guide/10-permissions.md`) for defense in depth.
 
 ## Repo purpose
 

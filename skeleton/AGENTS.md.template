@@ -61,9 +61,9 @@ diff → (approval) apply → verify. Same flow as the Claude version.
   `CLAUDE.md`).
 - **Model / global config:** `~/.codex/config.toml`.
 - **MCP servers:** the `[mcp_servers]` section of `~/.codex/config.toml` — see
-  `skeleton/mcp/codex.mcp.toml` (placeholders, no tokens/paths; `guide/10-mcp.md`).
+  `skeleton/mcp/codex.mcp.toml` (placeholders, no tokens/paths; `guide/11-mcp.md`).
 - **Permissions:** Codex's own approval settings — map the framework's presets
-  (cautious/standard/trusting, `guide/09-permissions.md`) to Codex's equivalents; the
+  (cautious/standard/trusting, `guide/10-permissions.md`) to Codex's equivalents; the
   invariant holds: never auto-approve pushes, deletes, deploys, or service bootstraps.
 
 ## File scope / restricted

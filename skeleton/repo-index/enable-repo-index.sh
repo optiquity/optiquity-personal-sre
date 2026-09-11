@@ -63,5 +63,5 @@ Committed footprint done. Three manual steps remain — the script cannot do the
   If this repo already had an index built by an OLDER version of your indexer, do ONE forced
   rebuild now to re-baseline. Upgrades that change ignore semantics legitimately shrink the index,
   and a shrink guard will otherwise refuse every future write — silently. See
-  ../../guide/12-repo-comprehension.md.
+  ../../guide/13-repo-comprehension.md.
 EOF

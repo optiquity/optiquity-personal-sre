@@ -114,7 +114,7 @@ exactly what you'll do and wait for my go. Start with phase 1 now.
 - **Claude-first.** The prompt uses Claude Code conventions. For **Codex**, two swaps: the rules
   file is `AGENTS.md`, and permission/MCP config lives in `~/.codex/config.toml` (see
   `skeleton/mcp/codex.mcp.toml`). Where an equivalent isn't obvious, tell the operator to "adapt
-  here" — `guide/` is CLI-agnostic. (Config-location table: `guide/11-agents-skills.md`.)
+  here" — `guide/` is CLI-agnostic. (Config-location table: `guide/12-agents-skills.md`.)
 - **The operator honors the gates from step 3 on** — because the first real thing it does is put
   the rules in place. It won't push, apply, or create remote artifacts without your go.
 
@@ -140,7 +140,7 @@ Set these up first (or let the AI path / `bootstrap.sh` help). Full detail:
 ### Recommended
 | Tool | Why |
 |---|---|
-| **GitHub CLI (`gh`) + GitHub auth** | lets setup create your repo + lets the operator manage repos/PRs. **The more permission you grant the token, the more the operator can automate without stopping to ask you** — a read-only token means it drafts and you push; a token that can create repos / merge PRs means it can do those unattended. Same convenience-vs-blast-radius trade-off as the permission presets (`guide/09-permissions.md`). Grant deliberately. |
+| **GitHub CLI (`gh`) + GitHub auth** | lets setup create your repo + lets the operator manage repos/PRs. **The more permission you grant the token, the more the operator can automate without stopping to ask you** — a read-only token means it drafts and you push; a token that can create repos / merge PRs means it can do those unattended. Same convenience-vs-blast-radius trade-off as the permission presets (`guide/10-permissions.md`). Grant deliberately. |
 | **A backup target** | governance requires "back up before apply" (Rule 4). Decide where — a local dir, an external disk, a NAS — before you apply config. |
 | **`jq`** | JSON parsing (handy with `gh` and scripts). |
 
@@ -152,7 +152,7 @@ Set these up first (or let the AI path / `bootstrap.sh` help). Full detail:
 
 ### Optional — add per project
 - **MCP servers** (high value): each is a **capability grant** — enable only what you need and
-  scope it (`guide/10-mcp.md`). For **GitHub**, use the official `github/github-mcp-server`
+  scope it (`guide/11-mcp.md`). For **GitHub**, use the official `github/github-mcp-server`
   (`brew install github-mcp-server` / Docker, PAT auth — or the remote hosted server; **not** the
   deprecated community `@modelcontextprotocol/server-github`). Plus filesystem, docs, browser,
   and more.

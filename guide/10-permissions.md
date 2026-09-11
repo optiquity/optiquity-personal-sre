@@ -1,4 +1,4 @@
-# 09 · Permissions — bounding what the operator can do
+# 10 · Permissions — bounding what the operator can do
 
 The governance rules ([03](03-governance-rules.md)) are the operator's *judgment* layer — it
 reads them and chooses to pause. This section covers the **capability** layer: the CLI's own
@@ -98,7 +98,7 @@ manager can render the right preset per role ([05 · chezmoi](05-chezmoi.md)).
 
 ## MCP servers are a permission grant too
 
-An MCP server ([10 · MCP](10-mcp.md)) gives the operator a **new capability** — reaching GitHub,
+An MCP server ([11 · MCP](11-mcp.md)) gives the operator a **new capability** — reaching GitHub,
 a filesystem path, a browser, an external API. Treat enabling one exactly like a permission
 grant:
 
@@ -124,5 +124,5 @@ Permissions are only trustworthy if they're **legible**. The framework requires:
 The through-line with governance ([03](03-governance-rules.md)): **the rules say pause; the
 permissions make sure it pauses.** Document both, and the operator is powerful *and* bounded.
 
-Next: [10 · MCP](10-mcp.md) — configuring the external capabilities (GitHub, filesystem, and
+Next: [11 · MCP](11-mcp.md) — configuring the external capabilities (GitHub, filesystem, and
 more) the operator can use, and their trust implications.

@@ -1,4 +1,4 @@
-# 13 · Multi-node operations (advanced)
+# 16 · Multi-node operations (advanced)
 
 Everything so far works on a single node. This section is the **optional advanced layer**: how
 the operator works effectively across *several* nodes at once — inventory, remote apply,
@@ -44,7 +44,7 @@ the always-on `server`. Two things to manage:
   on one node and not another is drift ([Rule 7](03-governance-rules.md)).
 - **Per-role permissions.** The *posture* differs by role even though the rules are shared: the
   unattended `server` runs a **cautious** permission preset; the `workstation` you sit at can
-  run **standard/trusting** ([09 · Permissions](09-permissions.md)). Same rules, role-appropriate
+  run **standard/trusting** ([10 · Permissions](10-permissions.md)). Same rules, role-appropriate
   capability limits.
 
 ## Session mobility and coordination (patterns)
@@ -187,4 +187,4 @@ tool updated on another, a rule that drifted. Counter it with the disciplines al
 Multi-node doesn't change the framework's shape — it's the same rules, structure, and
 config-flow applied to more nodes. That invariance is what keeps it manageable as you grow.
 
-Next: [14 · Monitoring](14-monitoring.md) — knowing the fleet works, and hearing when it doesn't.
+Next: [17 · Monitoring](17-monitoring.md) — knowing the fleet works, and hearing when it doesn't.

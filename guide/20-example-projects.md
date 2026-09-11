@@ -1,4 +1,4 @@
-# 17 · Example projects
+# 20 · Example projects
 
 Worked, end-to-end examples of the personal-SRE operator **owning a tool or service across its
 whole lifecycle — install *and* maintenance**, not just a one-time setup. Each shows the same
@@ -14,7 +14,7 @@ Each example lives in its own doc under [`examples/`](examples/). This page is t
 > ([07 · Tools](07-tools-requirements.md)), the config-manager flow
 > ([05 · chezmoi](05-chezmoi.md)), the governance gates ([03 · Governance](03-governance-rules.md)),
 > and — where relevant — networking ([08](08-networking.md)), secrets ([06](06-secrets.md)),
-> and skills ([11](11-agents-skills.md)).
+> and skills ([12](12-agents-skills.md)).
 
 ---
 
@@ -67,7 +67,7 @@ guardrails together.
 - **[D9 · A vault-read helper + login-automation skill](examples/D9-vault-login-skill.md)** —
   compose a **read-only** vault helper with browser automation into a `SKILL.md` that logs into a
   service the operator can't reach by API, with destructive-op confirmation baked in. Ties
-  [06 · Secrets](06-secrets.md) + [11 · Agents & skills](11-agents-skills.md).
+  [06 · Secrets](06-secrets.md) + [12 · Agents & skills](12-agents-skills.md).
 
 ## E · Fleet operations
 

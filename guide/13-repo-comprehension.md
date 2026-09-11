@@ -1,4 +1,4 @@
-# 12 · Repo comprehension — making your codebase legible to the operator
+# 13 · Repo comprehension — making your codebase legible to the operator
 
 An AI operator working in a repo it doesn't understand does what you'd do on your first day: it
 greps. It opens files, follows imports, reads a lot to answer a little. That works, and it is
@@ -93,7 +93,7 @@ ignore file and the gitignore entry.
 across nodes, but a pin nobody watches is just a stale install — and tools installed outside your
 main package manager (a Python tool installer, a language-specific tool manager) are exactly the
 ones your update checks are most likely to miss. Make sure they're in scope
-([14 · Monitoring](14-monitoring.md)).
+([17 · Monitoring](17-monitoring.md)).
 
 ## Adopting it per repo
 
@@ -143,5 +143,5 @@ Evaluate against your own repo, not a benchmark: file composition (code vs docs 
 which tool wins, and a tool that's brilliant on a Python monorepo can be useless on a repo that's
 mostly Markdown.
 
-Next: [13 · Multi-node](13-multinode.md) — the advanced layer: remote apply, session mobility, and
+Next: [16 · Multi-node](16-multinode.md) — the advanced layer: remote apply, session mobility, and
 the fleet view.

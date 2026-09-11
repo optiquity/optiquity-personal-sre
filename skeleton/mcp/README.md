@@ -1,6 +1,6 @@
 # MCP server config templates
 
-Templates for the operator's external capabilities (guide/10-mcp.md). **Placeholders only —
+Templates for the operator's external capabilities (guide/11-mcp.md). **Placeholders only —
 never real tokens or personal paths.** Each server is a capability grant: enable only what a
 project needs, scope it tightly, and know whether it's read-only or mutating.
 
@@ -24,7 +24,7 @@ use it. Two deployment modes:
 **Scope it (least privilege — this is a capability grant):** limit toolsets with
 `--toolsets=repos,issues,pull_requests` (20+ exist: actions, code_security, …), and add
 **`--read-only`** to disable all mutations. A GitHub MCP that can merge PRs and delete branches
-is a much bigger grant than a read-only one — grant deliberately (guide/09-permissions.md).
+is a much bigger grant than a read-only one — grant deliberately (guide/10-permissions.md).
 
 ## Rules (both from guide/06-secrets.md)
 

@@ -1,11 +1,11 @@
-# 10 · MCP — external capabilities for the operator
+# 11 · MCP — external capabilities for the operator
 
 An AI operator is far more useful when it can reach *outside* its own process — to your git
 host, a scoped part of the filesystem, a browser, an external API. The **Model Context
 Protocol (MCP)** is the standard way to grant those capabilities. This section covers which
 MCP servers the framework treats as core vs optional, how they're configured per CLI, and —
 critically — the **trust implications**, because every MCP server is a capability grant
-([09 · Permissions](09-permissions.md)).
+([10 · Permissions](10-permissions.md)).
 
 ## What MCP is, in one paragraph
 
@@ -33,7 +33,7 @@ added because a project needs it, scoped to the minimum, and understood before i
 | Server | Grants | Add when |
 |---|---|---|
 | **docs/context** (e.g. a docs-fetcher) | Current library/API docs | You want the operator citing up-to-date docs, not training memory. |
-| **browser automation** (e.g. Playwright) | Drive a real browser | A task needs the web UI (see [11 · Agents & skills](11-agents-skills.md)). |
+| **browser automation** (e.g. Playwright) | Drive a real browser | A task needs the web UI (see [12 · Agents & skills](12-agents-skills.md)). |
 | **domain APIs** | Whatever that API does | A specific integration (a cloud provider, a service) is in scope. |
 
 Keep the enabled set **small**. Every server is capability *and* attack surface; an unused
@@ -61,7 +61,7 @@ with a launch command/args and (often) a scope. The framework ships **config tem
 ## Trust implications — treat enabling a server like granting a permission
 
 This is the part people skip and shouldn't. **An MCP server is a capability the operator
-gains** — reason about it exactly as you would a permission grant ([09](09-permissions.md)):
+gains** — reason about it exactly as you would a permission grant ([10](10-permissions.md)):
 
 - **Know what it can *do*, not just what you'll use it for.** A git-host server that can *merge
   PRs and delete branches* is a far bigger grant than one that can only *read issues*. Prefer
@@ -77,7 +77,7 @@ gains** — reason about it exactly as you would a permission grant ([09](09-per
   sandbox unknown ones. An MCP server has the capabilities you grant it *plus* whatever its own
   code does.
 - **The operator's permission layer still applies.** Even with a server enabled, the CLI's
-  permission settings ([09](09-permissions.md)) can keep its more dangerous tools on *ask*.
+  permission settings ([10](10-permissions.md)) can keep its more dangerous tools on *ask*.
   Enabling a server is "the capability exists"; permissions decide "and it runs without a
   prompt or not."
 
@@ -127,9 +127,9 @@ solves this by parking an idle agent on a **long-poll** endpoint rather than pol
 
 Before building any of this, check whether your coding agent ships **native cross-session
 messaging** — several now do, at zero infrastructure cost, for same-vendor sessions. See
-[13 · Multi-node](13-multinode.md) and
+[16 · Multi-node](16-multinode.md) and
 **[E19 · Agents that talk to each other](examples/E19-agents-that-talk-to-each-other.md)**, which
 also covers the permission boundary that a message channel opens.
 
-Next: [11 · Agents & skills](11-agents-skills.md) — subagents and the SKILL.md pattern that let
+Next: [12 · Agents & skills](12-agents-skills.md) — subagents and the SKILL.md pattern that let
 the operator take on packaged, repeatable capabilities.

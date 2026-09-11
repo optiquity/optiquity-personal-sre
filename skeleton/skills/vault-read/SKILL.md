@@ -10,7 +10,7 @@ metadata:
 
 # vault-read — read-only credential access (example skill)
 
-A generic example of the vault-read pattern (guide/06-secrets.md, guide/11-agents-skills.md).
+A generic example of the vault-read pattern (guide/06-secrets.md, guide/12-agents-skills.md).
 Adapt `<vault-cli>` and the unlock mechanism to your secret store (KeePassXC, 1Password, `pass`,
 the OS keychain — see the platform spokes). **This is a teaching example — it contains no real
 credentials, paths, or entry names.**

@@ -62,7 +62,7 @@ Editing one when you meant the other is the easiest mistake to make here.
 ## Repo index
 
 This repo carries a `.graphifyignore`, so it can be indexed by a repo-comprehension tool
-(see [12 · Repo comprehension](guide/12-repo-comprehension.md)). If an index has been built in your
+(see [13 · Repo comprehension](guide/13-repo-comprehension.md)). If an index has been built in your
 clone — `graphify-out/` is gitignored, so **check rather than assume** — **prefer querying it over
 grepping**: it answers structural questions ("what links to this chapter", "where is this concept
 explained") far more cheaply than reading files.
@@ -76,7 +76,7 @@ raw heading-level nodes, and it looks like it succeeded. So the index here is re
 **deliberately**, via the graphify skill's `/graphify . --update`, not automatically on commit.
 
 **Do not "fix" the missing hook.** If you are tempted to add one, read
-[12 · Repo comprehension](guide/12-repo-comprehension.md) § the docs-vs-code distinction first, and
+[13 · Repo comprehension](guide/13-repo-comprehension.md) § the docs-vs-code distinction first, and
 [`skeleton/repo-index/README.md`](skeleton/repo-index/README.md) § "Not every repo should get a
 hook". The rule of thumb: a hook is right for a code repo, wrong for this one.
 

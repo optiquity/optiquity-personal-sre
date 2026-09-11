@@ -1,6 +1,6 @@
 # E18 · Search and answer-engine visibility
 
-**Section E — fleet operations.** Back to the [catalog](../17-example-projects.md).
+**Section E — fleet operations.** Back to the [catalog](../20-example-projects.md).
 
 **What this shows:** making a self-hosted site **findable** — by classic search engines *and* by AI
 assistants — as a maintained property of the platform rather than a one-off audit. The emphasis is on
@@ -216,5 +216,5 @@ rewrites — neither side can fix it alone. Name that boundary explicitly before
 ## Related
 
 - [E17 · Hosting public websites from one box](E17-public-websites.md) — the platform this sits on
-- [08 · Networking](../08-networking.md) · [14 · Monitoring](../14-monitoring.md)
+- [08 · Networking](../08-networking.md) · [17 · Monitoring](../17-monitoring.md)
 - [03 · Governance](../03-governance-rules.md) — principle 12, one plan and one owner

@@ -13,7 +13,7 @@ For a **single node** to run the framework at all:
 |---|---|---|
 | **git + a git host account** | Source of truth; the whole model is repo-centric. | Everything derives from version control. |
 | **A config manager** (chezmoi) | Renders the repo onto the node ([05](05-chezmoi.md)). | Without it, "machines are derived" isn't real. |
-| **An AI coding CLI** (Claude Code = reference) | The operator ([03](03-governance-rules.md), [11](11-agents-skills.md)). | It's who does the work under the rules. |
+| **An AI coding CLI** (Claude Code = reference) | The operator ([03](03-governance-rules.md), [12](12-agents-skills.md)). | It's who does the work under the rules. |
 | **A secret store** (OS keychain / vault) | Runtime credentials, zero-in-git ([06](06-secrets.md)). | The alternative is secrets in git — forbidden. |
 
 That's the whole floor: **four things on one machine.** You can run a meaningful personal-SRE
@@ -137,7 +137,7 @@ of installed thing that nothing enumerates — and it also arrives as language-v
 hand-placed binaries, and *entire hosts* that were marked "manual" once and never retested. Patching
 it case by case never converges; the fix is to reconcile **discovery against a registry** so anything
 present-but-unregistered reports itself. See
-[14 · Monitoring → the enumeration blind spot](14-monitoring.md) for the mechanism and the two rules
+[17 · Monitoring → the enumeration blind spot](17-monitoring.md) for the mechanism and the two rules
 that keep it honest.
 
 Worked end-to-end in [E16 · Health, alerting & the update digest](examples/E16-fleet-health-and-alerting.md);

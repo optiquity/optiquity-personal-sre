@@ -1,6 +1,6 @@
 # E19 · Agents that talk to each other
 
-**Section E — fleet operations.** Back to the [catalog](../17-example-projects.md).
+**Section E — fleet operations.** Back to the [catalog](../20-example-projects.md).
 
 **What this shows:** letting the AI sessions that own different repos **message each other directly**
 instead of routing every question through the operator — and the governance that has to arrive with

@@ -1,11 +1,11 @@
 # D9 · A vault-read helper + login-automation skill
 
-**Section D — composed skills & credentials.** Back to the [catalog](../17-example-projects.md).
+**Section D — composed skills & credentials.** Back to the [catalog](../20-example-projects.md).
 
 **What this shows:** turning credential access + browser automation into a **governed, reusable
 skill** — a **read-only** vault helper composed with browser automation into a `SKILL.md` that
 logs into a service the operator can't reach by API, with **destructive-op confirmation** baked in.
-Ties [06 · Secrets](../06-secrets.md) + [11 · Agents & skills](../11-agents-skills.md) together.
+Ties [06 · Secrets](../06-secrets.md) + [12 · Agents & skills](../12-agents-skills.md) together.
 
 > Generic pattern, no personal config. `<placeholders>` are yours to fill.
 
@@ -29,7 +29,7 @@ This is where secrets, skills, and governance meet. The framework's stance:
 - **Credentials come from the vault, read-only, just-in-time** — never inlined, never logged
   ([06 · Secrets](../06-secrets.md)).
 - **Skills compose existing capabilities** rather than introducing bespoke, brittle code
-  ([11 · Agents & skills](../11-agents-skills.md)).
+  ([12 · Agents & skills](../12-agents-skills.md)).
 - **Guardrails live in the skill** — especially confirmation before destructive actions — so the
   safety travels with the capability.
 
@@ -57,7 +57,7 @@ the vault yourself. Worst case, its blast radius is a read.
 
 ### 2. The login-automation skill (composition)
 
-A `SKILL.md` ([11 · Agents & skills](../11-agents-skills.md)) that uses browser automation to log
+A `SKILL.md` ([12 · Agents & skills](../12-agents-skills.md)) that uses browser automation to log
 in via the vault helper — **filled just-in-time, never echoed**:
 
 ```
@@ -86,7 +86,7 @@ Bake these into the `SKILL.md` so the safety can't be skipped:
 Skills are **tracked** ([05 · chezmoi](../05-chezmoi.md)) so every node has the same version, and
 recorded as a project ([04 · Structure](../04-structure.md)). Note whether it's a **generic** skill
 (shareable) or **personal** (tied to a specific account — stays in your private repo, never
-published — see [14 · Sharing](../16-sharing.md)).
+published — see [19 · Sharing](../19-sharing.md)).
 
 ## Maintenance — the ownership half
 
@@ -114,7 +114,7 @@ In **your** repo: wire your platform's secret store into a read-only `<vault>` h
 skeleton), write a `SKILL.md` that composes it with browser automation for the specific site,
 bake in the confirmation + no-echo guardrails, and track it (private if it's tied to your account).
 
-**Related:** [06 · Secrets](../06-secrets.md) · [11 · Agents & skills](../11-agents-skills.md) ·
+**Related:** [06 · Secrets](../06-secrets.md) · [12 · Agents & skills](../12-agents-skills.md) ·
 [`skeleton/skills/vault-read`](../../skeleton/skills/vault-read/SKILL.md) ·
 [`skeleton/skills/browser-login`](../../skeleton/skills/browser-login/SKILL.md) ·
-[14 · Sharing](../16-sharing.md) · [catalog](../17-example-projects.md).
+[19 · Sharing](../19-sharing.md) · [catalog](../20-example-projects.md).

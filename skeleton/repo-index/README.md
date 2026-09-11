@@ -2,7 +2,7 @@
 
 Starter files for giving your AI operator a **queryable model of a repo** instead of making it
 grep. The concepts, the trade-offs, and the failure modes are in
-[12 · Repo comprehension](../../guide/12-repo-comprehension.md); this folder is the parts.
+[13 · Repo comprehension](../../guide/13-repo-comprehension.md); this folder is the parts.
 
 **Tool-agnostic on purpose.** The framework doesn't pick your indexer — this ships the *committed
 footprint* every indexer needs, plus the operational lessons that cost real debugging. Substitute

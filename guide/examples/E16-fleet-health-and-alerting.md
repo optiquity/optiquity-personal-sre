@@ -1,6 +1,6 @@
 # E16 · Fleet health, alerting, and the update digest
 
-**Section E — fleet operations.** Back to the [catalog](../17-example-projects.md).
+**Section E — fleet operations.** Back to the [catalog](../20-example-projects.md).
 
 **What this shows:** giving your operator **eyes and a voice** — a battery of functional health
 checks across the fleet (with Gatus), a **weekly digest of what's behind** on every node, and
@@ -28,7 +28,7 @@ You have services and nodes doing real work. Two blind spots hurt:
    "manual" once, a language-version manager nobody enumerated, a binary dropped into
    `/usr/local/bin`. The checker therefore reconciles what is **declared** against what is
    **actually installed**, and reports anything present-but-undeclared — see
-   [14 · Monitoring](../14-monitoring.md).
+   [17 · Monitoring](../17-monitoring.md).
 
 And when either goes wrong, you want to **find out by email**, not by stumbling on it.
 
@@ -300,8 +300,8 @@ Deploy Gatus on the gateway per [`skeleton/monitoring/README.md`](../../skeleton
 - [E12 · dedicated mesh gateway](E12-dedicated-mesh-gateway.md) — where Gatus lives.
 - [E13 · fleet metrics stack](E13-fleet-metrics-stack.md) — metrics/history (Prometheus/Grafana);
   Gatus is the up/down + alerting complement, not a replacement.
-- [09 · Permissions](../09-permissions.md) — why unattended, read-only probes are safe.
-- [13 · Multi-node](../13-multinode.md) — the dashboard is state-of-record; this is live health.
-- [15 · Setup](../15-setup.md) — where standing this up belongs in the onboarding path.
+- [10 · Permissions](../10-permissions.md) — why unattended, read-only probes are safe.
+- [16 · Multi-node](../16-multinode.md) — the dashboard is state-of-record; this is live health.
+- [18 · Setup](../18-setup.md) — where standing this up belongs in the onboarding path.
 - Governance [§ 03](../03-governance-rules.md) (Rule 1 = material actions need you; Rule 10 =
   reads are free) · secrets [§ 06](../06-secrets.md) (the daemon-read credential recipe).

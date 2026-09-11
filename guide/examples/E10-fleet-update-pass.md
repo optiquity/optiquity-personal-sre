@@ -1,6 +1,6 @@
 # E10 · A deliberate fleet-update pass
 
-**Section E — fleet operations.** Back to the [catalog](../17-example-projects.md).
+**Section E — fleet operations.** Back to the [catalog](../20-example-projects.md).
 
 **What this shows:** the *maintenance* half made explicit — the **"don't auto-update; inventory
 what's behind, update per machine, verify, note what's held and why"** runbook. Updates as a
@@ -113,6 +113,6 @@ recurring project.
 
 **Related:** [07 · Tools & requirements](../07-tools-requirements.md) ·
 [A3 · one install method](A3-npm-global-cli.md) · [Rule 4 + Rule 7](../03-governance-rules.md) ·
-[13 · Multi-node](../13-multinode.md) ·
+[16 · Multi-node](../16-multinode.md) ·
 [E16 · Health + alerting](E16-fleet-health-and-alerting.md) (automates this inventory into a weekly digest) ·
-[catalog](../17-example-projects.md).
+[catalog](../20-example-projects.md).

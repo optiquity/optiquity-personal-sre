@@ -10,7 +10,7 @@ metadata:
 
 # browser-login — automate a web UI safely (example skill)
 
-A generic example (guide/11-agents-skills.md) of the highest-value skill shape: **compose**
+A generic example (guide/12-agents-skills.md) of the highest-value skill shape: **compose**
 a browser-automation capability + the `vault-read` skill to operate a service that has no API —
 without a bespoke scraper, and without ever exposing a credential. **Teaching example: no real
 site, account, or credentials.**

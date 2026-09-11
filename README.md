@@ -143,7 +143,7 @@ forking. **No roster of who has adopted** — a central list is a hub, and it go
 → **The portable standard, ready to adopt:**
 **[`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md)** ·
 **[E19 · Agents that talk to each other](guide/examples/E19-agents-that-talk-to-each-other.md)** ·
-principle 13 in [03 · Governance](guide/03-governance-rules.md) · [13 · Multi-node](guide/13-multinode.md)
+principle 13 in [03 · Governance](guide/03-governance-rules.md) · [16 · Multi-node](guide/16-multinode.md)
 
 ## The dashboard (optional)
 
@@ -177,13 +177,13 @@ servers) · an **AI coding CLI + account** (Claude Code = reference) · a config
 (chezmoi) · a secret store (OS keychain / vault).
 **Recommended:** **GitHub CLI (`gh`) + GitHub auth** (lets setup create your repo + lets the
 operator manage repos/PRs — *more token scope = more the operator can automate without asking*,
-see `guide/09-permissions.md`) · a **backup target** (governance Rule 4 requires backups) · `jq`.
+see `guide/10-permissions.md`) · a **backup target** (governance Rule 4 requires backups) · `jq`.
 **Hard (multi-node):** a private mesh (Tailscale) · SSH with keys.
-**Optional:** **MCP servers** (GitHub, filesystem, … — each a capability grant, `guide/10-mcp.md`)
+**Optional:** **MCP servers** (GitHub, filesystem, … — each a capability grant, `guide/11-mcp.md`)
 · a container runtime · an automation runtime · the multi-node coordination layer.
 
 Full detail + matrix in [`GETTING-STARTED.md`](GETTING-STARTED.md), `guide/07-tools-requirements.md`,
-and `guide/15-setup.md`.
+and `guide/18-setup.md`.
 
 ## Repository layout
 
@@ -192,9 +192,10 @@ guide/          # THE HUB — platform-agnostic concepts (read these for the "wh
   _contents        # one-line index of the whole guide
   00-introduction  # ▶ start here: philosophy + the four minimal foundations
   01-concepts · 02-operator · 03-governance-rules · 04-structure · 05-chezmoi ·
-  06-secrets · 07-tools-requirements · 08-networking · 09-permissions · 10-mcp ·
-  11-agents-skills · 12-multinode · 13-setup · 14-sharing
-  15-example-projects · examples/   # worked, end-to-end install+maintenance examples
+  06-secrets · 07-tools-requirements · 08-networking · 09-runtimes · 10-permissions ·
+  11-mcp · 12-agents-skills · 13-repo-comprehension · 14-automation ·
+  15-content-generation · 16-multinode · 17-monitoring · 18-setup · 19-sharing
+  20-example-projects · examples/   # worked, end-to-end install+maintenance examples
 platforms/      # THE SPOKES — per-OS "how" (macos ✓ · windows ◑ · linux ◑ · raspberry-pi ◑ · cloud ○)
 skeleton/       # generic starter files you copy + fill (all placeholders, no secrets)
   CLAUDE.md.template · AGENTS.md.template · chezmoi.toml.example · *ignore templates ·
@@ -213,15 +214,15 @@ bootstrap.sh    # Tier-2 onboarding (creates YOUR repo; --help for options)
 2. `guide/01-concepts.md` — the model + vocabulary.
 3. `guide/02-operator.md` — how you actually work with the AI operator.
 4. `guide/03-governance-rules.md` — the rules that make handing ops to an AI safe.
-5. Skim `guide/04`–`14` for the pieces you'll use (`guide/_contents.md` is the one-line index).
-6. `guide/17-example-projects.md` — worked, end-to-end examples of owning install + maintenance.
+5. Skim `guide/04`–`19` for the pieces you'll use (`guide/_contents.md` is the one-line index).
+6. `guide/20-example-projects.md` — worked, end-to-end examples of owning install + maintenance.
 7. Your platform spoke, then a setup tier above.
 
 ## A note on safety & sharing
 
 The framework's own disciplines are load-bearing: **zero secrets in git**
 (`guide/06-secrets.md`) and — because this is a public repo — **zero personal info**
-(`guide/16-sharing.md`), enforced by the `scripts/grep-guard` (pre-commit + CI). If you publish
+(`guide/19-sharing.md`), enforced by the `scripts/grep-guard` (pre-commit + CI). If you publish
 your own generalized version, use the same guard: derive-don't-copy, and let a fail-closed
 scanner be the backstop.
 

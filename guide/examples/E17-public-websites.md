@@ -1,6 +1,6 @@
 # E17 · Hosting public websites from one box
 
-**Section E — fleet operations.** Back to the [catalog](../17-example-projects.md).
+**Section E — fleet operations.** Back to the [catalog](../20-example-projects.md).
 
 **What this shows:** serving **public websites** — each on its own domain, each a designed static
 base plus a CMS for posts — from a single always-on machine at home, **without opening a single
@@ -350,6 +350,6 @@ what it was told. Audit by counting a grid container's in-flow children against 
 ## Related
 
 - [08 · Networking](../08-networking.md) — the private mesh, and publishing a service deliberately
-- [14 · Monitoring](../14-monitoring.md) — checks, alerting, proving the alert
+- [17 · Monitoring](../17-monitoring.md) — checks, alerting, proving the alert
 - [E11 · Publish a service](E11-publish-a-service.md) — the single-service, mesh-hostname case
 - [E16 · Health, alerting & the update digest](E16-fleet-health-and-alerting.md)

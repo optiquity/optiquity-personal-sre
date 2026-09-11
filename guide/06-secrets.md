@@ -202,7 +202,7 @@ edit vault entries yourself, in the vault app. This keeps the blast radius of th
 tiny — the worst it can do is *read* a secret it was already entitled to.
 
 A concrete example skill using this pattern ships in the skeleton
-([11 · Agents & skills](11-agents-skills.md)).
+([12 · Agents & skills](12-agents-skills.md)).
 
 ## Verifying the discipline holds
 
@@ -214,7 +214,7 @@ Trust, but verify — make "no secrets in git" checkable, not assumed:
 - **A guard for shared repos.** If any repo is or may become public, add a **pre-commit hook
   and/or CI check** that *fails* on personal patterns and secret shapes — so a mistake is
   blocked mechanically, not caught by luck. (The framework's own public repo uses exactly this;
-  see [16 · Public/shared repos](16-sharing.md).)
+  see [19 · Public/shared repos](19-sharing.md).)
 - **Periodic history audit.** Occasionally scan the *history*, not just the working tree — a
   secret committed months ago won't show in `status`.
 

@@ -1,4 +1,4 @@
-# 15 · Setup — the onboarding journey
+# 18 · Setup — the onboarding journey
 
 > **Doing setup right now?** Start with **[`GETTING-STARTED.md`](../GETTING-STARTED.md)** — the
 > practical front door (intro, requirements, step-by-step, and the paste-in AI-setup prompt).
@@ -24,7 +24,7 @@ A minimal but complete **single-node** adoption:
 - A **secret store** wired up, with **zero secrets in git**.
 - Your first **project** tracked in the registry.
 
-From there, multi-node ([12](13-multinode.md)) and optional layers are additive.
+From there, multi-node ([12](16-multinode.md)) and optional layers are additive.
 
 ## The requirements checklist (before you start)
 
@@ -38,8 +38,8 @@ store. (Full matrix in [07 · Tools](07-tools-requirements.md).)
 
 **Decisions to make up front:** your **roles** (map your machine[s] to `workstation` /
 `server` / etc. — [01 · Concepts](01-concepts.md)); your **permission posture** per role
-(cautious / standard / trusting — [09](09-permissions.md)); which **MCP servers** you'll enable
-([10](10-mcp.md)).
+(cautious / standard / trusting — [10](10-permissions.md)); which **MCP servers** you'll enable
+([11](11-mcp.md)).
 
 ## Tier 1 — guided by the config manager (`chezmoi init`)
 
@@ -105,7 +105,7 @@ Recommended next steps, in rough order:
    risk tolerance now that you've felt the defaults.
 3. **Stand up the dashboard** ([04](04-structure.md)) — once you have a few projects, the
    at-a-glance view earns itself.
-4. **Add a second node** ([13 · Multi-node](13-multinode.md)) — bring the mesh + SSH online,
+4. **Add a second node** ([16 · Multi-node](16-multinode.md)) — bring the mesh + SSH online,
    map the new node to a role, apply.
 5. **Add optional tools** ([07](07-tools-requirements.md)) — a container runtime, automation,
    browser skills — as specific projects need them, never preemptively.
@@ -131,5 +131,5 @@ You're set up correctly when:
 If those hold, the framework is working as intended: your system is version-controlled,
 governed, legible, operated by an AI you've bounded — and it tells you when something breaks.
 
-Next: [16 · Public/shared repos](16-sharing.md) — if you want to publish your own generalized
+Next: [19 · Public/shared repos](19-sharing.md) — if you want to publish your own generalized
 framework (as this one is), how to do it without leaking anything.
