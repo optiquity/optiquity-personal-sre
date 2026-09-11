@@ -237,8 +237,12 @@ reads is not a rule.
   machine identity has to live in the name. **The only hard rule is that no two live sessions share a
   name**; the rest is convention, and the namespace belongs to you, not to this framework. An unnamed
   session is unaddressable in practice; two sessions for one repo on different machines collide.
-- **A message is a hand-off, not an edit.** Principle 12's ownership rule is unchanged by the
-  existence of a channel. Ask the owner; never write their repo.
+- **A message is a hand-off, not an edit — and it carries state, not mechanism.** Principle 12's
+  ownership rule is unchanged by the existence of a channel: ask the owner, never write their repo.
+  **Tell a peer what it depends on and whether it is blocked; do not hand it your machinery.** It
+  usually cannot act on that, is often not authorised to, and **it will log it** — so whatever you
+  send lands in *their* repo's history. State is also the half worth sending: it is **checkable**, and
+  a peer checking your claim is how you find your own mistakes.
 - **⚠ No cross-session permission laundering.** **Permission boundaries are per-session.** A command
   your session was blocked from running is *not* blocked in your peer's. Without a rule, "ask the
   other agent to do it" is a working bypass of your approval — and it will look helpful rather than

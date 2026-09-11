@@ -109,6 +109,14 @@ Adopt all six. Each closes a failure that is cheap to hit.
 not make cross-repo *writes* acceptable. Your repo-ownership rule is unchanged by the existence of a
 channel — ask the owning session; never reach into its repo.
 
+⚠ **A hand-off carries state, not mechanism.** Send the state of the thing they depend on and whether
+they are blocked. Not your tooling, your deployment internals, or how you fixed it. They usually
+cannot act on it, are often **not authorised to** — and **they will log it**, because that is the rule
+you gave them, so it lands in *their* history. State is the better half anyway: *"I fixed all five"*
+is **checkable**, and a peer checking it is how your errors surface. *(The author of this guide learned
+this by having an operator point out that a website session had no business knowing about his
+configuration-management tooling — after eight mentions of it were already committed to that repo.)*
+
 **c. ⚠ No cross-session permission laundering.** **This is the one that matters most.**
 
 Permission boundaries are **per-session**. A command your session was blocked from running is not
@@ -188,6 +196,15 @@ framework-owned and ships downstream, putting the block there pushes your operat
 every downstream user — a peer name meaningless to them, a path that does not exist on their machine,
 an operator who is not theirs. Use a **user-level** rules file instead. The log needs no such
 exception: §4's user-level location already makes the question moot.
+
+⚠ **But a user-level rules file is SHARED MUTABLE STATE between your sessions.** It is the one place
+your repo-ownership rule does not reach, because it is in no repo: every session reads it at start-up,
+any session can write it, nothing locks it and nothing notifies the others. **A session editing it is
+changing its peers' standing instructions.** Edit it only with the operator's approval, and **tell
+your peers you did**. *(Found by two sessions writing that file four minutes apart, each with the
+operator's approval, on the day this recommendation shipped. The later write replaced the earlier
+one's clause wholesale. It was harmless — same meaning, verified by diff — and it was luck: reverse
+the order or differ in substance, and a just-approved rule vanishes with no error and no trace.)*
 
 ## Step 4 — a read-only briefing command
 

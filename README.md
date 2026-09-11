@@ -114,9 +114,13 @@ different machines, addressing each other by name. Check before you build anythi
 ⚠ **Adopt the governance with the channel, not after it.** A message channel between agents is also
 an **escalation path** — permission boundaries are per-session, so a command *your* session was
 blocked from running is not blocked in your peer's, and "ask the other agent to do it" becomes a
-working bypass of your approval unless a rule forbids it. Three more obligations come with it: name
-sessions `<machine>-<repo>` (session lists rarely report the host, so **the name is the address**),
-treat a peer's confident measurement as a **claim, not a fact**, and keep a per-peer conversation log
+working bypass of your approval unless a rule forbids it. The rest of the contract: name sessions
+`<machine>-<repo>` — **a default, not a mandate, since the namespace is yours**; session lists rarely
+report the host, so **the name is the address**, and the one hard rule is that no two live sessions
+share a name — keep hand-offs to **state, not mechanism** (what a peer depends on and whether it is
+blocked — never your internals, which it will log into its own repo's history), treat a peer's
+confident measurement
+as a **claim, not a fact**, and keep a per-peer conversation log
 so decisions stay visible to you and survive the session that made them — **at user level, never in
 the repo**, because repo visibility is mutable and git history would carry the log into publication.
 

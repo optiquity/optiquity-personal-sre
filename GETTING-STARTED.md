@@ -207,12 +207,19 @@ the convention now than to retrofit it:
    [`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md). The
    load-bearing part is **no cross-session permission laundering**: permission boundaries are
    per-session, so without the rule, "ask the other agent to do it" bypasses your approval.
+   ⚠ If you put that rule in a **user-level** rules file (the right move when a repo's own rules file
+   ships downstream), remember it is then **shared state every session reads and any session can
+   write** — edit it only deliberately, and tell your other sessions when you do.
 3. **Log every deciding exchange** at `~/.claude/peer-conversations/<repo>/<peer>.md` — **user
    level, not in the repo**, one file per peer, each side writing its own view, every entry ending
    in an explicit *needs-the-operator* line. Otherwise decisions made between your sessions are
    invisible to you and die with the session that made them. There is nothing to create in the
    repo; keeping it out means the rule does not depend on whether that repo is ever published.
-4. **Have each session check a peer is set up before its first message — then talk anyway.** Every
+4. **Keep hand-offs to state, not mechanism.** Tell a peer what it depends on and whether it is
+   blocked — not your tooling or internals. It usually cannot act on those, is often not authorised
+   to, and **it will log whatever you send into its own repo's history**. State is the better half
+   anyway: it is *checkable*, and a peer checking your claim is how your own mistakes surface.
+5. **Have each session check a peer is set up before its first message — then talk anyway.** Every
    session does it for every other; there is no coordinator. **Do not keep a list of who has
    adopted** — a roster is a central artefact that goes stale like any uncorroborated record, and it
    rebuilds the hub this avoids. If a peer is not set up, the first message carries the pointer *and*
