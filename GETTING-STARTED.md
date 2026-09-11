@@ -26,6 +26,18 @@ in your own repo. (More: `guide/01-concepts.md` → "The two-repo model".)
 
 ---
 
+## Getting the framework
+
+Everything below assumes you have this repo locally. It is public, Apache-2.0:
+
+```sh
+git clone https://github.com/optiquity/optiquity-personal-sre.git
+cd optiquity-personal-sre
+```
+
+You never edit or commit to it — it stays a read-only reference. Your work happens in **your own
+repo**, which the setup creates (the two-repo model above).
+
 ## The fastest path (Tier 3): let the AI CLI do it — recommended ⭐
 
 Because this framework is AI-CLI-driven, the quickest setup is to **let the operator set it up
@@ -201,9 +213,15 @@ the convention now than to retrofit it:
    name. Session lists typically report *name*, *kind* and *busy/idle* but **not which machine a
    session is on** — so the name is the only machine identifier you get.
 2. **Copy the standard into each participating repo** —
-   [`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md). That
-   copy makes the repo a propagation node: the next one can bootstrap from it without reaching the
-   source.
+   [`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md), into
+   `docs/peer-conversations/`. That copy makes the repo a **propagation node**: the next one can
+   bootstrap from it without reaching the source. With no clone to hand, fetch just that file:
+   ```sh
+   curl -fsSL -o docs/peer-conversations/PEER-MESSAGING.md \
+     https://raw.githubusercontent.com/optiquity/optiquity-personal-sre/main/skeleton/peer-messaging/PEER-MESSAGING.md
+   ```
+   **The first repo to adopt and the hundredth do exactly this** — the first simply has no peer to
+   copy from yet, so it uses the clone or the fetch. Nothing else about the setup differs.
 3. **Add the peer-messaging rule to that repo's rules file** before enabling any channel — it is
    already in `skeleton/CLAUDE.md.template` (rule 12) and `skeleton/AGENTS.md.template`. The
    load-bearing part is **no cross-session permission laundering**: permission boundaries are

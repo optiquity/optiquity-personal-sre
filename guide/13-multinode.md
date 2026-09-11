@@ -68,6 +68,12 @@ are **options**, not requirements — adopt the ones that fit:
   the coding agent, so check before building. It is the one pattern here that pays off immediately
   with only two repos, because without it **you are the transport** — and that quietly removes the
   only party who can challenge a claim, since you were not the one who measured it.
+  **A ready-to-adopt standard is in
+  [`skeleton/peer-messaging/PEER-MESSAGING.md`](../skeleton/peer-messaging/PEER-MESSAGING.md)** — it
+  is **versioned and propagates peer to peer**: each repo carries its own stamped copy, every message
+  declares a version, and a session that is behind pulls the newer one. ⚠ **Do not put it in a shared
+  per-machine location** — that is the obvious move and it is not federated; it does not travel
+  between nodes, which on a multi-node fleet is exactly the failure you would not notice.
 
 Each is a distinct capability with its own tooling; the framework describes the patterns and
 their trade-offs rather than mandating one. Most setups need none of them at first — a single

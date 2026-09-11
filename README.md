@@ -37,6 +37,14 @@ allow it to do more.
 
 ## ▶ Start here
 
+**This framework lives at <https://github.com/optiquity/optiquity-personal-sre>** — public,
+Apache-2.0. To work with it locally:
+
+```sh
+git clone https://github.com/optiquity/optiquity-personal-sre.git
+cd optiquity-personal-sre
+```
+
 **New?** Two entry points, depending on what you want first:
 
 - **Understand it →** read the guide's **[`guide/00-introduction.md`](guide/00-introduction.md)**
