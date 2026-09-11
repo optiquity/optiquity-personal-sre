@@ -68,7 +68,7 @@ Re-read these before every commit (Rule 6).
     `guide/04-structure.md`.
 
 12. **Peer messaging: named, logged, versioned, never a permission bypass.** *(Per this repo's copy
-    of `PEER-MESSAGING.md`, **v2**.)* If sessions in different repos can message each other:
+    of `PEER-MESSAGING.md`, **v3**.)* If sessions in different repos can message each other:
     (a) this session is named `<machine>-<repo>` — a default, not a mandate, since the namespace is
     the operator's; the name is the address and the **only** machine identifier, and the one hard
     rule is that no two live sessions share a name; (b) a message is a **hand-off, not an edit** —

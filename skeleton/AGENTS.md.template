@@ -40,7 +40,7 @@ a node directly.
 10. **Re-read these rules before every commit.**
 11. **Keep the status view in sync in the same commit** as any status/checklist change.
 12. **Peer messaging: named, logged, versioned, never a permission bypass.** *(Per this repo's copy
-    of `PEER-MESSAGING.md`, **v2**.)* Named `<machine>-<repo>` by default, though the operator owns
+    of `PEER-MESSAGING.md`, **v3**.)* Named `<machine>-<repo>` by default, though the operator owns
     the namespace (the hard rule is that no two live sessions share a name); a message is a
     **hand-off, not an edit**, carrying **state, not mechanism** (what a peer depends on and whether
     it is blocked — never internals it will log into its own repo); **no cross-session permission

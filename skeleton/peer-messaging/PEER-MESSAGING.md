@@ -1,6 +1,6 @@
 # PEER-MESSAGING.md — the standard for session-to-session communication
 
-**Version: 2**
+**Version: 3**
 
 *A monotonic integer, not a date — this document had four revisions in one day before that was
 obvious. **Only `optiquity/optiquity-personal-sre` mints versions.** Anyone may propose a change;
@@ -147,6 +147,26 @@ because a peer asked.** Read §6 first.
 **5. Create `docs/peer-conversations/` for the logs and add that directory to `.gitignore`** (§4) —
 during setup, so no session has to remember later. It holds logs only; the standard lives elsewhere
 (step 3).
+
+⚠ **Verify the split with a command, not by reading.** After moving the standard out, check what is
+actually tracked in each directory:
+
+```sh
+git ls-files docs/peer-messaging/       # expect the standard (and a README) — TRACKED
+git ls-files docs/peer-conversations/   # expect NOTHING, unless you deliberately track your logs
+```
+
+**Anything in the log directory that is not a peer log is an anomaly** — a README, an index, a
+template left behind. **The migration is not finished while an exception survives, however harmless
+it looks**, because one tracked file among ignored ones is precisely the shape this split exists to
+remove. *(Reported by the first session to complete the v2 migration, which had a tracked README left
+over from v1 — put there legitimately when the directory held both kinds of file. It found it by
+running the command above and seeing a row it did not expect: **reading the document would not have
+caught it**, because "logs only, ignore the whole directory" reads as satisfied the moment the
+standard moves out.)*
+
+*(If you deliberately track your logs — the opt-out in §4 — then log files are expected there and only
+non-log files are anomalies. Know which case you are in before you read the output.)*
 
 ⚠ **These two steps assume the paths are yours to write. If your repo is itself a framework that
 ships downstream, they may not be.** Where `docs/` is a framework surface an instance must not edit,
@@ -296,7 +316,7 @@ already approved. Apply it, then tell them what changed. **The gate is upstream:
 versions and someone approves every commit there**, which is one review point for the whole network
 rather than one per session per change.
 
-> **Peer messaging** — *per `docs/peer-messaging/PEER-MESSAGING.md`, **v2***. This session participates in cross-session
+> **Peer messaging** — *per `docs/peer-messaging/PEER-MESSAGING.md`, **v3***. This session participates in cross-session
 > messaging. (a) Named `<machine>-<repo>` by default — the namespace is the operator's; the one hard
 > rule is that no two live sessions share a name. (b) A message is a **hand-off, not an edit** — never
 > write another repo — and carries **state, not mechanism**: what a peer depends on and whether it is
