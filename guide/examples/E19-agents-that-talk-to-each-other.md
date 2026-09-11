@@ -88,11 +88,22 @@ make knowingly, not a violation.
 coordinator, no registry, no repo holding the roster — that is the difference between federated and
 hub-and-spoke.
 
-The naming convention makes it possible: a peer named `<machine>-<repo>` tells you its repo, and
-reads across repos are free. Look for its conversation-log directory and a reference to the standard
-in its rules file. Both present, talk normally. Either missing, **your first message carries the
-pointer and the setup steps** — and then says what you came to say. Onboarding is not a gate you
-impose on a peer.
+A conforming name makes it cheap — a peer named `<machine>-<repo>` tells you its repo, and reads
+across repos are free. **The signal is the peer's rules block and its version stamp.**
+
+⚠ **Not the presence of a conversation-log directory.** That appears when a session logs its *first
+deciding exchange* — it is evidence of **traffic**, not adoption, so a fully-adopted session that has
+simply been quiet has none. Reading absence as non-adoption re-onboards your newest participants, who
+are least able to tell you that you misread them.
+
+⚠ **And if the peer's block lives in a shared user-level rules file, this check cannot discriminate at
+all** — every session on the machine reads the same file, so you are checking your own. It returns no
+information while appearing to.
+
+**In both of those cases, and whenever the name does not resolve: ask.** *"Are you set up for peer
+messaging? If not, here is the standard"* costs one line, is never wrong, and is a **first-class
+answer rather than a fallback**. Then say what you came to say. Onboarding is not a gate you impose
+on a peer.
 
 ⚠ **Do not keep a list of who has adopted.** It is the obvious next step and the wrong one: a roster
 is a central artefact that goes stale like any other uncorroborated record, and it rebuilds the hub
@@ -185,9 +196,18 @@ traffic, and that is correct — expect to log a minority of exchanges.
 
 **Asked:** <the request>
 **Decided:** <the outcome, and which side owns what>
+**Verified against:** <what you checked, and its revision — omit only if nothing was verified>
 **Corrections in flight:** <anything either side got wrong and fixed>
 **Needs <operator>:** <a decision, or "nothing">
 ```
+
+⚠ **A verification without its anchor decays into a false record with nobody touching it.**
+*"Confirmed"* implies a durability it does not have — the thing you checked can change an hour later,
+and the entry then asserts something untrue while looking as trustworthy as the day it was written.
+Record **what** you checked and **at which revision**; when an entry is overtaken, mark it
+**SUPERSEDED** rather than deleting it, because the record of what was believed and when is the part
+with value. *(Reported by a session that verified a clause of the standard, logged it honestly, and
+watched that clause be reverted the same day.)*
 
 **The `Needs <operator>` line is mandatory, even when it is "nothing."** It is the field they scan.
 
@@ -205,6 +225,29 @@ your peers you did**. *(Found by two sessions writing that file four minutes apa
 operator's approval, on the day this recommendation shipped. The later write replaced the earlier
 one's clause wholesale. It was harmless — same meaning, verified by diff — and it was luck: reverse
 the order or differ in substance, and a just-approved rule vanishes with no error and no trace.)*
+
+## Step 3b — version-stamp the block, or you cannot audit your own rules
+
+**The block you paste ends up copied into N rules files that are never pulled.** Nothing links a copy
+back to the source, so **nothing can tell a current instantiation from a stale one** — not you, not
+the session running it.
+
+**Put a revision stamp in the block** — *"per PEER-MESSAGING.md, rev. `<date>`"* — and a matching
+**Revision** line in the standard. That converts *"did every instantiation follow the last change?"*
+from an audit somebody must remember to perform into **a grep any session can run on itself at
+start-up.** It also gives a peer a real adoption signal for Step 1b: not *"does a directory exist"* but
+*"which version is this session running."*
+
+⚠ **And the corollary, which is the rule that makes the stamp matter: THE BLOCK IS THE ONLY THING THAT
+REACHES A RUNNING SESSION.** Sessions read their rules file at start-up; they do not re-read your
+standard. So prose reaches people **adopting**, and only the block reaches people **already running**.
+**Any rule that binds ongoing behaviour must be in the block, or it does not exist for the sessions it
+governs** — and when you add one, the edit is not finished until the stamp is bumped.
+
+*(Both identified by an adopting session, which pointed out that the author's recurring failure —
+changing a definition and missing what instantiates it, three times in one day — was not carelessness
+but a **structural consequence of unversioned copies with no back-reference**. That is the difference
+between another instance and the cause.)*
 
 ## Step 4 — a read-only briefing command
 

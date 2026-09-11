@@ -255,8 +255,11 @@ reads is not a rule.
 
 - **Check a peer is set up before your first message to it — then talk anyway.** Step one of every
   new relationship, done by every session for every other. **No coordinator and no roster:** a central
-  list of who has adopted is itself a hub, and goes stale like any uncorroborated record. The naming
-  convention makes the check possible, since the peer's name identifies its repo and reads are free.
+  list of who has adopted is itself a hub, and goes stale like any uncorroborated record. **The signal
+  is the peer's rules block and its version stamp — never the presence of a log directory**, which
+  means only that traffic has happened. And where a peer's block lives in a *shared* user-level rules
+  file, the check cannot discriminate at all, so **ask**: asking is a first-class answer, not a
+  fallback.
   If it is not set up, your first message carries the pointer *and* your actual message — onboarding
   is not a gate you impose. This is what makes the design **federated rather than hub-and-spoke**, and
   it is deliberately more expensive than the roster it replaces: a repeated check fails loudly, a
