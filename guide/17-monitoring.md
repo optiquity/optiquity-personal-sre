@@ -102,6 +102,44 @@ the marker you verify with exists only in the new version, or a superseded versi
 string will report the change as already live. See
 [C6 · Automation runtime](examples/C6-automation-runtime.md) for the worked case.
 
+## A probe that could not answer has not told you anything
+
+The update-checker rule below — [three outcomes, never two](#three-outcomes-never-two) — is not
+a quirk of update checkers. **It applies to every check you write**, and health checks are where
+it gets violated, because the failure is so easy to write by accident:
+
+```python
+rc, out, _ = sh(["mount"], timeout=8)          # on timeout: rc=124, out=""
+ok = any(MOUNT in l and "nfs" in l for l in out.splitlines())
+```
+
+`rc` is captured and never read. `any()` over an empty list is `False`. So a probe that **timed
+out** is scored identically to a probe that **looked and found the mount gone** — and the alert
+says the share is not mounted, which is a specific, false, and alarming claim.
+
+⚠ **The direction of this error is what makes it expensive.** It fires when the system is
+*busy* — exactly when you are least able to afford a distraction, and exactly when a human is
+most likely to go looking for an outage that never happened. A few of those and the alert
+channel is trained into noise.
+
+**Three rules that fix it:**
+
+1. **Return three states, not two** — good, bad, and *could not determine*. An unknown carries
+   the previous state forward: no transition, no mail.
+2. **Retry before concluding.** Transient slowness is not an outage. Confirm a negative two or
+   three times, seconds apart, before you call it one.
+3. ⚠ **Count the unknowns, and escalate a persistent one.** This is the half people skip, and
+   skipping it replaces a noisy monitor with a blind one. A probe that has been unable to answer
+   for an hour *is* an outage — of the monitoring. Alert on the streak, with wording that says
+   so: *"could not determine state for 4 consecutive runs"*, never *"failing"*.
+
+**Be suspicious of any check whose "local" probe crosses a network.** The trap is that the
+disguise is good. `os.path.ismount()` looks like pure local state; it opens with `os.lstat()`,
+which on a network mount is a server round-trip — and it **catches the error and returns
+`False`**, so an unreachable server reads as "not a mount point." Reading the kernel mount table
+looks local too; the call behind it can block on an unresponsive server. Neither is wrong to
+use — but treat their failure as *no answer*, never as *bad answer*.
+
 ## Some things a central checker cannot see
 
 A remote prober reaches anything on the network. Three important things aren't on the network:
