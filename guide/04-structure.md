@@ -46,6 +46,21 @@ The fix is a **source-root marker**: chezmoi reads `.chezmoiroot`, and a single 
 subdirectory confines the whole managed tree to it. Everything else in the repo becomes
 invisible to the config manager, and the root is yours again.
 
+⚠ **Migrating to one is where this bites, and it bites twice.**
+
+**The marker is read at startup, before the tool pulls.** A combined "pull and apply" command
+resolves the source root *first*, so the very run that introduces the marker still applies with
+the **old** root — and your new subdirectory is treated as a *destination* directory. You get a
+full duplicate tree at `~/<subdir>/`. On the migration run only, **pull and apply as two
+separate commands**; every run after that is fine. Anything on a schedule needs the same care:
+pull ahead of it, or pause it until the marker has landed.
+
+**And a pull moves only *tracked* files.** Untracked or ignored ones — staged config awaiting a
+decision, caches, anything a machine generated locally — stay at the old root, where the ignore
+file that used to cover them no longer reaches. Check *every* machine for leftovers, not just
+the one you did the work on, and keep root-anchored ignore patterns for anything
+config-manager-shaped so a stranded file cannot become committable.
+
 ⚠ **A project's docs and its deployables cannot be co-located, and you should stop trying.**
 A service you run has design docs *and* a deployment directory that must land at a specific
 path. Nesting them under one project folder changes where it deploys. Tie them together in the
