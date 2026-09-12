@@ -21,9 +21,49 @@ Projects are **the unit of organization and the unit of memory**. When the opera
 migration, the record isn't in the chat — it's in `docs/<project>/PLAN.md`, with what was
 done, verified, and deferred. Six months later, that folder answers "what did we do and why."
 
-Keep operational config (dotfiles, install scripts, the config-manager source) at the repo
-**root** where the config manager expects it; keep **docs** under `docs/<project>/`. Design,
-plans, and status are docs; the live config they describe is not.
+## Where files live — mechanism, not topic
+
+Projects organize *work*. They do not organize *files*, and conflating the two is how a repo
+turns into a pile of top-level directories nobody can classify.
+
+**Name each top-level directory for its mechanism — what happens to files in here — not for
+its topic.** Topic lives one level down, named after a registry entry.
+
+| Mechanism | Typical name |
+|---|---|
+| **deployed to a machine** | `home/` — the config manager's source tree |
+| **read by a human** | `docs/`, `guide/` |
+| **run by the repo itself** | `scripts/` — hooks, guards, checks that never leave the repo |
+| **generated, never hand-edited** | a clearly-named output dir, gitignored or committed deliberately |
+
+⚠ **In a config manager's source tree, the source layout *is* the destination layout.** A
+top-level directory in the source maps to a top-level directory in `$HOME`. That axis is
+already spoken for, so it cannot also carry your topic grouping — and if you put the source
+tree at the repo root, every deployment target becomes a top-level directory that looks
+exactly like a project folder and is nothing of the kind.
+
+The fix is a **source-root marker**: chezmoi reads `.chezmoiroot`, and a single line naming a
+subdirectory confines the whole managed tree to it. Everything else in the repo becomes
+invisible to the config manager, and the root is yours again.
+
+⚠ **A project's docs and its deployables cannot be co-located, and you should stop trying.**
+A service you run has design docs *and* a deployment directory that must land at a specific
+path. Nesting them under one project folder changes where it deploys. Tie them together in the
+**registry** instead — give each project a `Deploys:` line naming what it owns. The registry
+is already the index; let it carry this too.
+
+⚠ **Ignore files are anchored by position, and moving one silently changes what it matches.**
+Any `.gitignore` pattern containing a slash is relative to the directory holding that file. A
+cascade like `config/*` followed by `!config/keep-this/` stops matching the moment the tree
+moves beneath it — and it fails *open*, quietly widening what can be committed. Prefer moving
+the ignore file **with** the tree it describes over rewriting its patterns, and keep repo-wide
+defences (`**/`-anchored secret and junk patterns) in a separate root-level file so they still
+cover the docs tree.
+
+**What to write down:** one table in your `README.md` saying what each top-level directory
+means, and the `Deploys:` field in the registry. Both are short. The reason they earn their
+keep is that six months later "where does this go?" has one answer instead of a judgement call.
+
 
 ## The registry — one index of everything
 
