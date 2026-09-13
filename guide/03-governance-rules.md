@@ -135,6 +135,21 @@ quietly corrosive — it makes *your attention* the only thing standing between 
 accumulated drift. Moving the burden of noticing onto the operator while keeping the decision with
 you gets the safety without the rot. See [17 · Monitoring](17-monitoring.md) for the detection side.
 
+### 14. Every completed project leaves a postmortem
+
+Not only the ones that went badly. The rule is cheap to state and easy to let slide, so it is
+worth being precise about what it demands: **the postmortem is created when the project
+opens**, not when it closes, because its most valuable sections cannot be reconstructed
+afterwards.
+
+⚠ **Make it a rule about *when to read the rule*, not merely where the document lives.** A
+pointer nobody follows is a dead rule — "see the postmortem doc" gets skipped within a month.
+Name the moments: when a project opens, before appending during the work, at close, and
+before any retroactive write-up.
+
+The mechanism, the template and the reasoning are in
+[04 · Structure](04-structure.md#what-a-finished-project-leaves-behind).
+
 ## Encoding the rules: the rules file
 
 The operator reads a **rules file** at the repo root — for Claude Code this is `CLAUDE.md`;

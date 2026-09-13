@@ -114,6 +114,81 @@ Track status **per project and per doc** — a project can be `open` while one o
 `resolved`. The distinction between `stable` and `resolved` matters: `stable` invites future
 growth ("the base config works, but I'll add to it"); `resolved` is closed.
 
+## What a finished project leaves behind
+
+A status of `resolved` is not the end of a project. **The most expensive thing a project
+produces is not the work — it is the knowledge of what else was tried.** Six months later the
+code is still there and the reasoning is gone, so the same rejected idea gets proposed again
+and costs the same argument a second time.
+
+So every completed project leaves a **postmortem**: a short, structured retrospective sitting
+beside its runbook at `docs/<project>/POSTMORTEM.md`.
+
+### It is created when the project OPENS
+
+This is the part that makes the difference, and it is counterintuitive.
+
+Three of its sections — *what else was considered*, *what went wrong*, and *what would have
+caught this sooner* — **are only knowable while the work is happening.** An option weighed at
+2am and never written down is gone. Written from memory at the end, those sections become
+reconstruction: plausible, authoritative-sounding, and partly invented.
+
+So the file is created with `status: draft` by the same action that creates the runbook, and
+**accumulates dated one-line entries** as the work proceeds:
+
+```markdown
+## 2. Solutions considered
+- **<date>** — Considered <option>. Rejected: <reason>.
+- **<date>** — Owner refused <option> outright. Do not re-propose.
+```
+
+The draft headings are identical to the finished ones, so **appending *is* drafting** — at
+close you tidy entries into prose rather than starting a document. The bar is "append one
+line when something happens", not "write a report".
+
+### The section that earns the practice
+
+Every postmortem answers **"what would have caught this sooner?"** — and that is a question
+about *detection*, not *remedy*:
+
+> Replacing a failing part is the **fix**.
+> Noticing it three weeks earlier is the **improvement**.
+
+The test for an entry: *could someone act on it before the next incident?* If not, it is
+restating the fix.
+
+The most common honest answer is also the most uncomfortable — **a signal that already
+existed, cost nothing to read, and nothing was reading.** A vendor tool that had already made
+the correct judgement. A log line. A counter. That answer is worth more than the fix, because
+it generalises: it tells you what *class* of thing you are not watching.
+
+A related case belongs here too: **an alert path that exists but has never been tested.** An
+alarm nobody has proven will fire is an assumption, not a safety net.
+
+⚠ **An empty "what would have caught this sooner" on a triage project is almost always a
+section nobody thought about.** If something broke, something failed to warn you first. For a
+clean install it can legitimately be `N/A` — but even then, *what would tell us if this
+degrades later?* usually has an answer.
+
+### Two documents, two jobs
+
+The postmortem does **not** replace the project's working notes, and those are not retired.
+The working record is open-ended and context-independent: evidence, command output,
+timestamps, dead ends. The postmortem is structured and narrow, and **links** to that record
+rather than restating it.
+
+Expect the postmortem to be much the shorter of the two.
+
+### If you publish
+
+Keep postmortems private and detailed — detail is what makes them useful for running your own
+fleet. What gets published is a **case study**: the same lesson, generalised, with hardware
+classes and versions kept only where they carry the explanation and names, addresses and
+paths stripped. See [19 · Public/shared repos](19-sharing.md).
+
+**Starter files:** [`skeleton/postmortems/`](../skeleton/postmortems/) — template, rules, and
+a three-step install.
+
 ## Why this structure earns its keep
 
 - **Legibility.** The registry is a one-screen answer to "what is going on across everything."
