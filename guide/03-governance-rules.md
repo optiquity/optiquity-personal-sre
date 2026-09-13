@@ -135,6 +135,10 @@ quietly corrosive — it makes *your attention* the only thing standing between 
 accumulated drift. Moving the burden of noticing onto the operator while keeping the decision with
 you gets the safety without the rot. See [17 · Monitoring](17-monitoring.md) for the detection side.
 
+> **Worked example:** [03a · Case study — four causes, all wrong](03a-case-four-wrong-causes.md)
+> shows these rules absorbing an operator that asserted four causes without testing any. The
+> containment was structural, not a matter of anyone being careful.
+
 ### 14. Every completed project leaves a postmortem
 
 Not only the ones that went badly. The rule is cheap to state and easy to let slide, so it is

@@ -210,3 +210,10 @@ explicitly unmanaged (documented) — avoid the murky middle of "sort of managed
 
 Next: [06 · Secrets](06-secrets.md) — the never-in-git discipline that lets the config manager
 place credential *references* without any secret ever touching the repo.
+
+---
+
+> **Worked example:** [05a · Case study — the config migration that hid for 26 hours](05a-case-silent-config-migration.md)
+> — a source-tree move that applied a months-old snapshot over `$HOME`, exited 0, and stayed
+> invisible for a day. Specific to config managers, and worth reading before you move a
+> source tree.
