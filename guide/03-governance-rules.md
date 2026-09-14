@@ -154,6 +154,23 @@ before any retroactive write-up.
 The mechanism, the template and the reasoning are in
 [04 · Structure](04-structure.md#what-a-finished-project-leaves-behind).
 
+### 15. Every project gets a design pass before the work
+
+Not a plan of steps — a record of **what this must survive**: what could silently undo it, how
+you would know if it stopped working, and how both of those get tested.
+
+⚠ **The verdict an operator must not be allowed to dodge is "remove the constraint."**
+Constraints are usually decisions you already made for reasons that outlive the project, and
+removing one always yields a tidier design — so a fluent operator will keep proposing it. The
+three honest answers are **impossible as constrained**, **possible with effort**, and
+**possible but not worth the effort**.
+
+Design and postmortem are a loop: the design's *alternatives considered* becomes the
+postmortem's §2, and the postmortem's *what would have caught this sooner* becomes a standing
+prompt in the design template.
+
+The mechanism is in [04 · Structure](04-structure.md#what-a-project-settles-before-it-starts).
+
 ## Encoding the rules: the rules file
 
 The operator reads a **rules file** at the repo root — for Claude Code this is `CLAUDE.md`;

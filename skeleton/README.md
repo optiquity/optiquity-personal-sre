@@ -17,6 +17,7 @@ where the *why* lives; this table is just the map back.
 | `installers/` | The idempotent, role-aware install-script pattern. | [07 · Tools & requirements](../guide/07-tools-requirements.md) |
 | `monitoring/` | **Ready-to-run**: health-check config + email alerting, a local probe, an update digest, install-conflict and stale-image checks, and the timers to schedule them. Has its own [README](monitoring/README.md). | [17 · Monitoring](../guide/17-monitoring.md) |
 | `repo-index/` | Enabling a repo index: an annotated exclusion template + an idempotent per-repo enablement script. | [13 · Repo comprehension](../guide/13-repo-comprehension.md) |
+| `design/` | Design-phase templates (short + long) and rules — the pass that happens *before* the work, covering durability, detection and testing. Has its own [README](design/README.md). | [04 · Structure](../guide/04-structure.md) |
 | `postmortems/` | Template + rules for the postmortem practice — created when a project *opens*, not when it closes. Has its own [README](postmortems/README.md). | [04 · Structure](../guide/04-structure.md) |
 | `onboarding/` | The seed for a brand-new personal-SRE repo (registry, playbook, first docs). | [04 · Structure](../guide/04-structure.md) |
 | `github/` | CI workflow — runs the secret-scan on every push, so the never-leak rule is enforced by a machine. | [19 · Public/shared repos](../guide/19-sharing.md) |

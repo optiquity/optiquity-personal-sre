@@ -203,6 +203,7 @@ skeleton/       # generic starter files you copy + fill (all placeholders, no se
   skills/ (2 examples) · onboarding/ (repo seed) · github/ ·
   monitoring/ (health checks, alert mail, update digest — ready to run) ·
   repo-index/ (make a repo legible to the operator) ·
+  design/ (what a project must survive — settled BEFORE the work) ·
   postmortems/ (template + rules — created when a project OPENS, not at close)
 scripts/        # grep-guard (the never-leak backstop) + pre-commit hook
 GETTING-STARTED.md # ▶ the front door: intro + requirements + step-by-step

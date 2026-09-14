@@ -114,6 +114,80 @@ Track status **per project and per doc** — a project can be `open` while one o
 `resolved`. The distinction between `stable` and `resolved` matters: `stable` invites future
 growth ("the base config works, but I'll add to it"); `resolved` is closed.
 
+## What a project settles before it starts
+
+**A project can be delivered, work correctly, and still be incomplete.**
+
+The pattern, which happens to everyone eventually: a configuration change is made, verified
+against its requirement, and closed. It works. Months later the platform has silently reverted
+it and **nothing noticed** — because there was no check that it persisted, because durability
+was never stated as a requirement, so was never designed for, so was never tested.
+
+The work was not wrong. It was **functional but not durable**, and nothing in the process
+asked the difference.
+
+So every project opens with a **design pass**: not a plan of steps, but a record of *what this
+must survive*. It lives at `docs/<project>/DESIGN.md` and is agreed before implementation
+begins.
+
+### The two questions that earn the practice
+
+**"What can silently undo this?"** OS or vendor updates — which routinely *repair* service
+configurations, policy keys, power settings and firewall rules back to defaults. Another tool
+overwriting it. A reboot, a rebuild, a restore, the machine being replaced. **If the answer is
+"it would be silently undone", the design is incomplete** until that is either prevented or
+detected.
+
+**"How would we know it stopped working?"** Name the signal. Say whether it exists yet or must
+be built. Say what looks at it, and how often.
+
+⚠ *"We'd notice"* is not an answer. And **a monitor pointed at the wrong layer is worse than
+none, because it manufactures confidence** — reachability is not function. A host answering
+pings while doing no work is the classic shape of that mistake.
+
+### Constraints, and the verdict you are not allowed to dodge
+
+Every design states the constraints it works under — platform edition, hardware, budget,
+downtime tolerance, decisions already made. Then, for the requirement *as constrained*, it
+gives one of three verdicts: **impossible as constrained**, **possible with effort**, or
+**possible but not worth the effort**.
+
+⚠ **"Remove the constraint" is not one of them.**
+
+This matters more with an AI operator than without one. Constraints are usually decisions
+someone made for reasons that outlive the project, and removing one always produces a tidier
+design — so a fluent operator will propose it, repeatedly, with increasing reasonableness.
+**Treating the constraint as the problem is the shortest path to a clean design and the
+fastest way to be useless.** Raise it once, with the cost of keeping it quantified. Then
+design within it.
+
+### Every section answered; `N/A` carries a reason
+
+A blank section means nobody thought about it. `N/A — <reason>` means somebody did and decided
+it did not apply. **Only the second is due diligence**, and the difference is the entire value
+of the form.
+
+Two forms — short for small reversible work, long for anything touching multiple machines,
+security, storage, persistence, or anything hard to undo. **Start short if unsure; switching
+to long when an answer turns out hard is the form working.**
+
+### Versioned, so changing your mind is cheap
+
+A design doc carries its own version, independent of the template's. Revising an agreed design
+is a version bump plus a line in a revision log — **not a rewrite and not an admission.**
+
+⚠ This is deliberate. **If changing a design is expensive, known-worse designs survive.** The
+cost of a refactor is visible — links, references, renames — while the cost of a worse design
+is diffuse. That asymmetry biases every operator, human or otherwise, toward the change that
+touches fewer files.
+
+**Leave known problems where impact is low; refactor where it matters** — where behaviour will
+be silently wrong, or where staying safe depends on someone remembering a quirk. And if you
+start a refactor, finish it: **a half-updated set of references is worse than none.**
+
+**Starter files:** [`skeleton/design/`](../skeleton/design/) — both forms, rules, and a
+three-step install.
+
 ## What a finished project leaves behind
 
 A status of `resolved` is not the end of a project. **The most expensive thing a project
@@ -121,7 +195,8 @@ produces is not the work — it is the knowledge of what else was tried.** Six m
 code is still there and the reasoning is gone, so the same rejected idea gets proposed again
 and costs the same argument a second time.
 
-So every completed project leaves a **postmortem**: a short, structured retrospective sitting
+So every completed project leaves a **postmortem** — the retrospective counterpart to the
+design pass above: a short, structured retrospective sitting
 beside its runbook at `docs/<project>/POSTMORTEM.md`.
 
 ### It is created when the project OPENS

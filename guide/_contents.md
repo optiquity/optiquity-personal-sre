@@ -11,7 +11,7 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 | 02 | [The operator](02-operator.md) | How you actually work with the AI operator — the propose→approve→act rhythm. |
 | 03 | [Governance rules](03-governance-rules.md) | The rules the operator obeys, and *when it must stop and ask*. |
 | 03a | [**Case study** — four causes, all wrong](03a-case-four-wrong-causes.md) | A fluent operator asserting four causes without testing any, and the rules that contained it. The least flattering page here. |
-| 04 | [Structure](04-structure.md) | Projects, the registry, the status taxonomy, **what a finished project leaves behind (postmortems)**, the optional dashboard, and the operator's `PLAYBOOK.md`. |
+| 04 | [Structure](04-structure.md) | Projects, the registry, the status taxonomy, **what a project settles before it starts (design) and leaves behind (postmortems)**, the optional dashboard, and the operator's `PLAYBOOK.md`. |
 | 05 | [chezmoi](05-chezmoi.md) | Config as source of truth: the dev-clone → prod-source → pull+apply flow, by role — and partitioning the source when one node runs a different OS. |
 | 05a | [**Case study** — the config migration that hid for 26 hours](05a-case-silent-config-migration.md) | A source-tree move that silently overwrote `$HOME` from a stale snapshot, and why version control could not clean it up. |
 | 06 | [Secrets](06-secrets.md) | Zero-secrets-in-git: allowlist ignore files, vault/keychain, the `.env` recipe. Plus credentials that live on a node, and why their expiry is silent by construction. |
