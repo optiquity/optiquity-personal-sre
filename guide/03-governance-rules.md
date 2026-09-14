@@ -229,6 +229,21 @@ pointer nobody follows is a dead rule — "see the postmortem doc" gets skipped 
 Name the moments: when a project opens, before appending during the work, at close, and
 before any retroactive write-up.
 
+⚠ **Adopt it going forward, and give it the same scope rule as the design pass.** Projects already
+open when you adopt it do not get a back-dated draft — the "created at open" trigger has already
+passed and cannot fire retroactively, so they get one at close, from the record, with the weaker
+sections accepted as the price of adopting late. **A project that is reopened or gains follow-on
+work gets one then.** ⚠ **If the two practices have different scope rules, the loop between them
+drifts until one half stops feeding the other.**
+
+⚠ **And read the neighbours before writing up new work.** The defect this prevents is specific:
+**a fix applied to the one thing that hurt, while the class it belongs to goes unexamined.** In one
+real fleet, a config-manager fix was correctly diagnosed and correctly applied to one app-owned
+file, while the sibling file two lines away in the same rules list stayed broken for **86 days** —
+then caused **20 days of silent, fleet-wide sync failure**. The question that closes it takes a
+minute: ***which other things have this property?*** Cite what you found, including "nothing
+relevant" — an unrecorded search is indistinguishable from one that never ran.
+
 The mechanism, the template and the reasoning are in
 [04 · Structure](04-structure.md#what-a-finished-project-leaves-behind).
 

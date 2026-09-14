@@ -92,6 +92,75 @@ You only need the first. The distinction matters because it forces the disciplin
 [06 · Secrets](06-secrets.md)) — the private repo is private, but it *still* never contains
 secrets, so that if any part is ever shared, the habit is already in place.
 
+## Two documents every project gets
+
+Projects are the unit of work — but a project is not just a status line and a runbook. **Two
+documents bracket it**, and they are process standards rather than paperwork:
+
+| | **Design** | **Postmortem** |
+|---|---|---|
+| **When** | **Before** the work, agreed before implementation begins | Created when the project **opens** — *not* at close |
+| **Answers** | What must this **survive**? What could silently undo it? How would we know if it stopped working? | What else was **considered**? What went **wrong**? What would have **caught it sooner**? |
+| **Not** | a plan of steps | a report written at the end |
+
+⚠ **The design pass is not a plan.** A plan says what you will do; a design says what the result
+must withstand. **A change that can be silently reverted with nobody noticing is *functional*, not
+*done*** — and that distinction is the entire reason the pass exists.
+
+⚠ **The postmortem is created at open because its best sections cannot be reconstructed later.**
+An alternative weighed at 2 a.m. and never written down is gone. A postmortem written from memory
+at the end **reconstructs its own reasoning** — it reads as authoritative while being partly
+invented, which is worse than not having one.
+
+### They are deliberate mirrors of each other
+
+This is structural, not stylistic. **Each practice is a directory with the same three parts:**
+
+```
+design/                       postmortems/
+  RULES.md      ← whether / when / where / who →      RULES.md
+  TEMPLATE.md   ← how to write each section   →      TEMPLATE.md
+  README.md     ← the index and the how-to    →      README.md
+```
+
+**The split is load-bearing: rules own *whether and when*, templates own *how*.** ⚠ **One source
+of truth** — if something tells you how to fill in a section it belongs in the template and appears
+in the rules only as a pointer. Two copies drift, then conflict.
+
+**Both carry two independent versions:** `template-version` (which template the document was
+written against) and its own document version. ⚠ **Versioning exists to make changing your mind
+cheap.** If revising means admitting the first version was wrong and rewriting around it, the
+pressure is to leave it standing.
+
+⚠ **And the scope rules match on purpose** — both are *"going forward, but a project that is
+reopened or gains follow-on work gets one then."* **A loop whose two halves have different scope
+rules will drift until one half stops feeding the other.**
+
+### The loop is the reason both exist
+
+```
+design ── alternatives considered ──►  postmortem's "what was considered"
+   ▲                                              │
+   └── a new standing question ◄── "what would have caught this sooner"
+```
+
+**Downstream saves work:** the design has already written down what was weighed, while the
+reasoning was live, so the postmortem inherits that section instead of inventing it.
+
+**Upstream compounds:** a detection gap found in one postmortem becomes a **standing question in
+the design template** — asked automatically, forever, of every future project. ⚠ **Asked once it
+is a lesson. Asked by a template it is a control.**
+
+⚠ **Watch for the loop going one-way.** Postmortems keep getting written, designs keep getting
+written, and the template has not changed in a year — that looks exactly like the practice working.
+**If no finding has changed your template recently, either nothing was learned or nothing was fed
+back.**
+
+Full treatment in [04 · Structure](04-structure.md#the-loop--how-the-two-practices-feed-each-other);
+the binding rules are principles 14 and 15 in
+[03 · Governance](03-governance-rules.md); ready-to-copy sets are in `skeleton/design/` and
+`skeleton/postmortems/`.
+
 ## Required vs optional (the shape of an adoption)
 
 You do not adopt everything at once. The framework has a **hard core** and **optional layers**:
@@ -135,6 +204,14 @@ tools.** Everything else is opt-in.
   **alert**, which fires on a state change and wants action now.
 - **Material / destructive action** — anything hard to undo or outward-facing (a deploy, a
   push, a delete, a service bootstrap); the rules gate these behind approval.
+- **Design pass** — the document agreed *before* the work, recording what the result must
+  **survive** rather than the steps to build it. Not a plan.
+- **Postmortem** — the structured retrospective, **created when a project opens** and appended to
+  as work happens, because what was considered and what went wrong are only knowable while they
+  are happening.
+- **The loop** — design feeds the postmortem's *what was considered*; the postmortem's *what would
+  have caught this sooner* feeds a new standing question into the design template. The mechanism
+  that makes the practice improve rather than merely persist.
 - **Placeholder** — a `<like-this>` token you replace with your own value; the framework's
   templates are full of them, never real values.
 

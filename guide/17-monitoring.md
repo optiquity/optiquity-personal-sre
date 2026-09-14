@@ -405,5 +405,5 @@ platform traps that cost real debugging, is
 Start with one health check and a working alert email. That single loop — something breaks, you
 find out without looking — is most of the value; everything else is refinement.
 
-Next: [18 · Setup](18-setup.md) — the onboarding journey that ties everything together into a
+Next: [17a · Case study — six green checks over one broken system](17a-case-monitoring-the-proxy.md), then [18 · Setup](18-setup.md) — the onboarding journey that ties everything together into a
 first working adoption.

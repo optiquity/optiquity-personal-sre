@@ -1,10 +1,12 @@
 # Postmortem — <project or causal thread>
 
 ```
-status:  draft | final
-kind:    triage | install | migration | policy | decommission
-opened:  <YYYY-MM-DD>
-closed:  <YYYY-MM-DD, or an em-dash while open>
+status:             draft | final
+kind:               triage | install | migration | policy | decommission
+opened:             <YYYY-MM-DD>
+closed:             <YYYY-MM-DD, or an em-dash while open>
+postmortem-version: 1          # THIS document's version — see "Revision log"
+template-version:   1.0        # which template version it was written against
 ```
 
 > **When this is created, where it lives, and how it is named are governed by
@@ -186,6 +188,32 @@ with a pointer if it became its own project and a reason where it was declined o
 
 ⚠ **A follow-on that is neither scheduled nor declined is an open loop.** Say which it is —
 *"we should probably…"* with no status is how work quietly disappears.
+
+---
+
+## Revision log
+
+**Most postmortems never leave `postmortem-version: 1`**, and that is the expected case — the
+document is a *draft that accumulates* while the project runs, so its content grows without the
+version changing. Appending during the work is **not** a revision.
+
+**Bump it when the document changes after it went `final`:**
+
+- the **project is reopened or gains follow-on work** (R8), and this postmortem gains a new thread
+- a **finding turns out to be wrong** and the conclusion changes
+- a **follow-on resolves**, changing §7's answer
+
+```markdown
+- **v2 — <date>** — <what changed> · <why> · <what it obsoletes>
+```
+
+⚠ **Never edit a `final` postmortem in place.** ⚠ **What was believed at the time IS the
+evidence** — for §6 especially, since a detection gap is only meaningful against what was known
+then. A document that quietly becomes right is worth less than one that shows where it was wrong.
+
+**Mirrors [`../design/RULES.md`](../design/RULES.md) D3/D9 deliberately**, and for the same reason:
+versioning makes changing your mind **cheap**. If revising means admitting the first version was
+wrong and rewriting around it, the pressure is to leave it standing.
 
 ---
 

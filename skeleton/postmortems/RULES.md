@@ -80,6 +80,92 @@ The public repo carries only the template and rules, for others to use.
 
 ---
 
+## R8 · Retrofit only where it will be used — **mirrors `../design/RULES.md` D8**
+
+**Projects already open when you adopt this practice do not get a back-dated draft.** R2's
+trigger — *created when the project opens* — has already passed for them and cannot fire
+retroactively. They get a postmortem **at close**, written from the record, accepting that the
+*considered / went-wrong / would-have-caught-it* sections will be weaker than a live capture.
+
+⚠ **That weakness is the price of adopting the rule late, not a defect to paper over.** A
+back-dated "draft" reconstructed today is exactly the invented-reasoning failure R2 exists to
+prevent — it would read as a live record while being written from hindsight.
+
+**A project that is REOPENED or gains FOLLOW-ON WORK gets one then** — covering either the new
+work alone or the whole thread, whichever the situation calls for.
+
+⚠ **This mirrors D8 deliberately.** The design and postmortem practices are a loop (D6/D7, R9), and
+**a loop whose two halves have different scope rules will drift until one half stops feeding the
+other.** If you change one, change both.
+
+Two limits, both hard:
+
+- ⚠ **No postmortem that will not be read.** One written to satisfy a rule is overhead pretending
+  to be diligence.
+- ⚠ **No postmortem with hollow sections.** If the load-bearing sections cannot be established from
+  the record, **either establish them or do not write the document.**
+
+## R9 · Research completed work before writing up new work
+
+**When a new project's write-up begins — design doc, postmortem draft, or both — read the completed
+projects and docs that bear on it first.**
+
+Not as a courtesy to history: **the context is load-bearing.** Most of what a new project needs to
+know about its own failure modes has already been recorded next door.
+
+⚠ **The defect this prevents is specific and common: a fix applied to the one file, probe or
+service that hurt, while the *class* it belongs to goes unexamined.** A fix's *class* is what
+should be applied, not just the fix — and the question that closes it usually takes a minute:
+***which other things have this property?***
+
+Worked instances of the cost, all from one real fleet:
+
+- A protocol's session semantics documented during one project, then rediscovered the hard way
+  **four months later** in another, because the note lived in a project folder rather than anywhere
+  a fleet-wide check would look.
+- A config-manager fix correctly diagnosed and correctly applied to one app-owned file — while
+  **the sibling file two lines away in the same rules list** stayed broken for **86 days**, then
+  caused **20 days of silent, fleet-wide sync failure**.
+- A health probe rejected in one project for *"reads cached data, calls a dead handle healthy"* —
+  the exact defect that later shipped, repeatedly, in a different subsystem's monitoring.
+
+**In practice:** before writing up work on X, read the postmortems and docs of the projects your
+registry lists as *related* to X, plus anything touching the same machine, protocol or install
+method. **Cite what you found — including when the answer is "nothing relevant."** ⚠ **An
+unrecorded search is indistinguishable from one that never ran.**
+
+⚠ **This is the only rule here that applies to work which has not gone wrong yet**, which is
+exactly why it is the easiest to skip.
+
+## R10 · Templates are versioned, and so are the documents — **mirrors `../design/RULES.md` D3/D9**
+
+Two independent versions: **`template-version`** (which template the document was written against)
+and **`postmortem-version`** (this document's own revision).
+
+**`template-version`** matters because the template *changes* — that is the upstream half of the
+loop (D7): a finding becomes a new standing question, and the template is bumped. ⚠ **Being able
+to see which documents predate a lesson is the whole point**; without it you cannot tell an
+absent section from one written before the question existed.
+
+**`postmortem-version` will usually stay at 1, and that is correct.** A postmortem is a draft that
+*accumulates* while the project runs (R2/R3), so its content grows without the version moving.
+**Appending during the work is not a revision.**
+
+**It exists for after `final`:**
+
+- the project is **reopened or gains follow-on work** (R8) and this postmortem gains a new thread
+- a finding proves **wrong** and the conclusion changes
+- a follow-on **resolves**, changing the final-state answer
+
+⚠ **Never edit a `final` postmortem in place — bump and append.** What was believed at the time
+**is the evidence**, most of all for *what would have caught this sooner*: a detection gap is only
+meaningful against what was known then. **A document that quietly becomes right is worth less than
+one that shows where it was wrong.**
+
+**The point of versioning is to make changing your mind cheap** — the same reason it exists on the
+design side. If revising means admitting the first version was wrong and rewriting around it, the
+pressure is to leave it standing.
+
 ## Retroactive backfill
 
 **Do not postmortem every completed project indiscriminately.** Research first — read each
@@ -90,3 +176,16 @@ plainly (the template says how), or **skip the project and record why**.
 
 **A postmortem that says nothing is worse than an acknowledged gap**, because it implies the
 question was asked and answered.
+
+
+---
+
+## Template revision log
+
+⚠ **Record what changed between template versions**, so a document's `template-version` resolves to
+an actual difference rather than a bare number. Without it the field is unreadable.
+
+| Version | Date | What changed |
+|---|---|---|
+| **1.1** | <date> | Added `postmortem-version` + `template-version` and a **Revision log** section (R10) |
+| **1.0** | <date> | Initial |

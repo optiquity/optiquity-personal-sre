@@ -130,3 +130,15 @@ DESIGN  ──►  WORK  ──►  POSTMORTEM
 
 Both documents are created when a project **opens**. The design is agreed before work starts;
 the postmortem accumulates entries throughout and is finalised at close.
+
+
+---
+
+## Template revision log
+
+⚠ **Record what changed between template versions**, so a document's `template-version` resolves to
+an actual difference rather than a bare number. **Mirrors the postmortem side.**
+
+| Version | Date | What changed |
+|---|---|---|
+| **1.0** | <date> | Initial |
