@@ -157,14 +157,31 @@ absent section from one written before the question existed.
 - a finding proves **wrong** and the conclusion changes
 - a follow-on **resolves**, changing the final-state answer
 
-⚠ **Never edit a `final` postmortem in place — bump and append.** What was believed at the time
-**is the evidence**, most of all for *what would have caught this sooner*: a detection gap is only
-meaningful against what was known then. **A document that quietly becomes right is worth less than
-one that shows where it was wrong.**
+⚠ **A version bump is for a MAJOR change. A small correction is an edit.**
 
-**The point of versioning is to make changing your mind cheap** — the same reason it exists on the
-design side. If revising means admitting the first version was wrong and rewriting around it, the
-pressure is to leave it standing.
+**Bumping on every small fix creates churn and conflicting histories — and an AI operator reading a
+long revision log routinely misreads which version is current.** The version must mean something,
+or it means nothing.
+
+| The change | What to do |
+|---|---|
+| **A fact is wrong** — a stale figure, a misstated tool state, a dead link, a typo | **Edit in place.** No bump, no entry |
+| **A finding or conclusion changes** | **Bump + a revision entry** |
+| **New work** — the project is reopened or gains follow-on work | **Bump + a revision entry** |
+| ⚠ **Unclear which it is** | **ASK THE OWNER.** Do not decide this one alone |
+
+**The test: does the change alter what someone would DO after reading it?** Correcting a fact that
+leaves the conclusion standing is an edit. Changing the conclusion is a revision.
+
+⚠ **What was believed at the time IS the evidence — but that protects the REASONING, not a wrong
+fact.** *What would have caught this sooner* is only meaningful against what was known then, so
+**never rewrite an analysis to match what you learned later.** Correcting a figure or a tool's
+state that the analysis merely cites is a different act, and it is an edit.
+
+⚠ **The awkward middle, stated so it does not have to be re-derived:** a postmortem says *"nothing
+monitors X"*, and something now does. **If the finding still stands — a gap existed and went
+unnoticed — that is an edit with a dated note.** If the finding itself dissolves, it is a revision.
+**When you cannot tell, ask.**
 
 ## Retroactive backfill
 
@@ -187,5 +204,6 @@ an actual difference rather than a bare number. Without it the field is unreadab
 
 | Version | Date | What changed |
 |---|---|---|
+| **1.2** | <date> | ⚠ **Raised the bump threshold.** A bump is for a MAJOR change; a small correction is an edit; **ask when unclear** |
 | **1.1** | <date> | Added `postmortem-version` + `template-version` and a **Revision log** section (R10) |
 | **1.0** | <date> | Initial |

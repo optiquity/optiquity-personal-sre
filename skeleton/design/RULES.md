@@ -86,9 +86,26 @@ Two limits, both hard:
 
 ## D9 · Revising an agreed design
 
-A design doc carries **`design-version`**, independent of `template-version`. Changing an
-agreed design means **bumping that version and appending a revision entry** — never editing
-in place, and never living with a design you now know is wrong.
+A design doc carries **`design-version`**, independent of `template-version`.
+
+⚠ **A version bump is for a MAJOR change. A small correction is an edit.**
+
+**Bumping on every small fix creates churn and conflicting histories — and an AI operator reading a
+long revision log routinely misreads which version is current.** The version must mean something,
+or it means nothing.
+
+| The change | What to do |
+|---|---|
+| **A fact is wrong** — a stale figure, a misstated tool state, a dead link, a typo | **Edit in place.** No bump, no entry |
+| **A finding or conclusion changes** | **Bump + a revision entry** |
+| **New work** — the project is reopened or gains follow-on work | **Bump + a revision entry** |
+| ⚠ **Unclear which it is** | **ASK THE OWNER.** Do not decide this one alone |
+
+**The test: does the change alter what someone would DO after reading it?** Correcting a fact that
+leaves the conclusion standing is an edit. Changing the conclusion is a revision.
+
+**Never live with a design you now know is wrong** — but *"wrong"* means the design, not a
+sentence in it.
 
 ```markdown
 ## Revision log
@@ -141,4 +158,5 @@ an actual difference rather than a bare number. **Mirrors the postmortem side.**
 
 | Version | Date | What changed |
 |---|---|---|
+| **1.1** | <date> | ⚠ **Raised the bump threshold** (D9), matching the postmortem side |
 | **1.0** | <date> | Initial |

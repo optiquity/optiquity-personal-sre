@@ -132,6 +132,11 @@ written against) and its own document version. ⚠ **Versioning exists to make c
 cheap.** If revising means admitting the first version was wrong and rewriting around it, the
 pressure is to leave it standing.
 
+⚠ **But the bump is for a MAJOR change — a small correction is just an edit.** Bumping on every
+fix creates churn and conflicting histories, and a long revision log gets misread about which
+version is current. **The test is whether the change alters what someone would *do* after reading
+it; when that is unclear, ask rather than decide alone.**
+
 ⚠ **And the scope rules match on purpose** — both are *"going forward, but a project that is
 reopened or gains follow-on work gets one then."* **A loop whose two halves have different scope
 rules will drift until one half stops feeding the other.**

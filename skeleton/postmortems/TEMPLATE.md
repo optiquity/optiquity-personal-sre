@@ -5,7 +5,7 @@ status:             draft | final
 kind:               triage | install | migration | policy | decommission
 opened:             <YYYY-MM-DD>
 closed:             <YYYY-MM-DD, or an em-dash while open>
-postmortem-version: 1          # THIS document's version — see "Revision log"
+postmortem-version: 1          # THIS document's version — bump on a MAJOR change only (R10)
 template-version:   1.0        # which template version it was written against
 ```
 
@@ -207,13 +207,15 @@ version changing. Appending during the work is **not** a revision.
 - **v2 — <date>** — <what changed> · <why> · <what it obsoletes>
 ```
 
-⚠ **Never edit a `final` postmortem in place.** ⚠ **What was believed at the time IS the
-evidence** — for §6 especially, since a detection gap is only meaningful against what was known
-then. A document that quietly becomes right is worth less than one that shows where it was wrong.
+⚠ **Only for a MAJOR change. A small correction — a wrong fact, a stale figure, a typo — is just
+an edit**, with no bump and no entry. Bumping on every fix creates churn and conflicting histories.
+**If it is unclear which one this is, ask.**
 
-**Mirrors [`../design/RULES.md`](../design/RULES.md) D3/D9 deliberately**, and for the same reason:
-versioning makes changing your mind **cheap**. If revising means admitting the first version was
-wrong and rewriting around it, the pressure is to leave it standing.
+⚠ **What was believed at the time IS the evidence — but that protects the REASONING.** Never
+rewrite an analysis to match what you learned later. Correcting a figure the analysis merely cites
+is an edit.
+
+**Mirrors [`../design/RULES.md`](../design/RULES.md) D3/D9** — same threshold, same reason.
 
 ---
 

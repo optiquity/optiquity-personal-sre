@@ -2,7 +2,7 @@
 
 ```
 status:           draft | agreed | superseded
-design-version:   1          # THIS document's version — bump when the design changes
+design-version:   1          # THIS document's version — bump on a MAJOR change only (D9)
 template-version: 1.0        # which template version it was written against
 form:             short
 opened:           <YYYY-MM-DD>
@@ -76,7 +76,9 @@ Unresolved items, who decides, by when.
 
 ## Revision log
 
-Every change to an **agreed** design bumps `design-version` and appends a line here. Do not
-edit an agreed design in place — the reasoning for the change is as valuable as the change.
+⚠ **Not every change.** A **major** change to the design bumps `design-version` and appends a line
+here; **a small correction — a wrong fact, a stale figure, a typo — is just an edit.** Bumping on
+every fix creates churn and conflicting histories, and a long revision log gets misread. **If it is
+unclear which one this is, ask.** Full rule: [`RULES.md`](RULES.md) D9.
 
 - **v1 — <date>** — initial design, agreed.
