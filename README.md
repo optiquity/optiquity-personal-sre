@@ -25,7 +25,7 @@ bootstrap from this one will help install foundational open source software to h
 and monitor the health of a single machine or a whole fleet of different machines over a
 network or the Internet. It will handle app updates, system health monitoring, system
 optimization, agentic workflows, and more all while maintaining privacy and security of your
-secrets and keys. While= you do have to give your **Personal SRE** advanced permissions for
+secrets and keys. While you do have to give your **Personal SRE** advanced permissions for
 many features, there are rules and checks in place that require it to ask you for the final go
 ahead when making big or sensitive changes. Ultimately, you decide how much control you want to
 give it. You may want to start conservatively, but after a while you'll find it quite safe to
@@ -98,6 +98,49 @@ start**; the model scales to many nodes without changing shape.
 - **It tells you when something breaks** — health checks + a scheduled digest, delivered by mail,
   so you learn about a failure or a stale package without going to look
   ([E16](guide/examples/E16-fleet-health-and-alerting.md), tools in `skeleton/monitoring/`).
+- **Every project opens with a design and closes with a postmortem**, and the two feed each other
+  — so the system gets better at the *next* project, not just finished with this one (below).
+
+## Design and postmortem — a loop, not two documents
+
+Most frameworks stop at "write things down." This one asks for two specific documents at two
+specific moments, and the value is in how they feed each other.
+
+**A design pass happens *before* the work** — and it is not a plan of steps. It records **what
+this must survive**: what could silently undo it, how you would know if it stopped working, and
+how both of those get tested. ⚠ **A change that can be silently reverted with nobody noticing is
+*functional*, not *done*.** That distinction is the whole reason the pass exists.
+
+**A postmortem is created when a project *opens*, not when it closes** — because its most valuable
+sections cannot be reconstructed afterwards. What else was considered, what went wrong, and what
+would have caught it sooner are knowable only while the work is happening. ⚠ **A postmortem
+written from memory at the end reconstructs its own reasoning — it reads as authoritative while
+being partly invented, which is worse than not having one.**
+
+**The loop is what makes the practice improve rather than merely persist:**
+
+```
+design  ─ alternatives considered ─────────────►  postmortem §2
+   ▲                                                    │
+   └──── a new prompt in the template ◄── "what would have caught this sooner"
+```
+
+A design's *alternatives considered* becomes the postmortem's record of what was weighed. The
+postmortem's *what would have caught this sooner* becomes a **standing prompt in the design
+template**, with a version bump — so the question that was missed once is asked automatically
+every time after.
+
+⚠ **One verdict the operator must not be allowed to reach: "remove the constraint."** Constraints
+are usually decisions you already made for reasons that outlive the project, and removing one
+always yields a tidier design — so a fluent operator will keep proposing it. The three honest
+answers are **impossible as constrained**, **possible with effort**, and **possible but not worth
+the effort**. Raise a constraint for revisiting *once*, with the cost quantified, then design
+within it.
+
+Templates and rules: [`skeleton/design/`](skeleton/design/) and
+[`skeleton/postmortems/`](skeleton/postmortems/). The reasoning is in
+[03 · Governance rules](guide/03-governance-rules.md) principles 14–15 and
+[04 · Structure](guide/04-structure.md).
 
 ## The playbook — the operator's entrypoint
 
@@ -203,8 +246,8 @@ skeleton/       # generic starter files you copy + fill (all placeholders, no se
   skills/ (2 examples) · onboarding/ (repo seed) · github/ ·
   monitoring/ (health checks, alert mail, update digest — ready to run) ·
   repo-index/ (make a repo legible to the operator) ·
-  design/ (what a project must survive — settled BEFORE the work) ·
-  postmortems/ (template + rules — created when a project OPENS, not at close)
+  design/ (long + short templates, rules — what a project must survive, settled BEFORE the work) ·
+  postmortems/ (template + rules — created when a project OPENS, not at close; feeds the design template)
 scripts/        # grep-guard (the never-leak backstop) + pre-commit hook
 GETTING-STARTED.md # ▶ the front door: intro + requirements + step-by-step
 bootstrap.sh    # Tier-2 onboarding (creates YOUR repo; --help for options)

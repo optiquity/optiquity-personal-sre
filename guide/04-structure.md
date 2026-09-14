@@ -264,6 +264,68 @@ paths stripped. See [19 · Public/shared repos](19-sharing.md).
 **Starter files:** [`skeleton/postmortems/`](../skeleton/postmortems/) — template, rules, and
 a three-step install.
 
+## The loop — how the two practices feed each other
+
+Design and postmortem are usually described as separate habits: one before, one after. **Treating
+them as a closed loop is what turns them from paperwork into a system that improves.**
+
+```
+        ┌──────────────────── design (before) ────────────────────┐
+        │  what must this survive?                                │
+        │  what could silently undo it?                           │
+        │  how would we know if it stopped working?               │
+        └────────────┬────────────────────────────────────────────┘
+                     │  alternatives considered, verbatim
+                     ▼
+        ┌──────────────────── postmortem (during → after) ────────┐
+        │  §2  what else was considered   ◄── inherited, not rewritten
+        │  §5  what went wrong                                    │
+        │  §6  what would have caught this sooner                 │
+        └────────────┬────────────────────────────────────────────┘
+                     │  a §6 finding becomes a standing question
+                     ▼
+              design template, version bumped
+```
+
+**Downstream: the design's *alternatives considered* becomes the postmortem's §2 directly.** This
+is the half that saves work — §2 is the section most often reconstructed from memory, and a design
+pass has already written it down while the reasoning was live. The postmortem inherits it rather
+than inventing it.
+
+**Upstream: a §6 finding becomes a prompt in the design template.** This is the half that compounds.
+⚠ **The move is to generalise the finding into a *question*, not to record the incident.** A
+postmortem that concludes *"nothing checked that the service stayed disabled"* does not produce a
+template line about that service — it produces a standing question every future design must answer:
+
+> *What could silently undo this, and what would report it if that happened?*
+
+Asked once, it is a lesson. Asked automatically, forever, by a template, it is a control.
+
+### Why the template is versioned
+
+Because the loop only works if the template is allowed to change. ⚠ **An operator's strong default
+is to preserve what exists** — so without an explicit, cheap mechanism for changing it, a template
+calcifies and the upstream arrow quietly stops carrying anything.
+
+Versioning makes the change **routine rather than a correction**: a bump, a line in the revision
+log, and the new prompt is live. The design docs themselves carry the template version they were
+written against, so you can tell at a glance which ones predate a lesson.
+
+⚠ **Watch for the loop going one-way.** Postmortems keep getting written, designs keep getting
+written, and the template has not changed in a year — that is the failure mode, and it looks
+exactly like the practice working. **If no §6 finding has changed the template recently, either
+nothing was learned or nothing was fed back.** The second is far more likely.
+
+### Where it starts, when you have neither
+
+You do not need both to begin. **Start with the postmortem**, because it is the one that generates
+content: after two or three, the §6 sections will have told you what your design template should
+ask. A design template written from first principles asks generic questions; one written from your
+own §6 findings asks the questions *your* system actually gets wrong.
+
+⚠ **The reverse order does not work as well.** A design pass with no postmortems behind it has no
+evidence about which questions matter, so it tends to become a checklist people fill in.
+
 ## Why this structure earns its keep
 
 - **Legibility.** The registry is a one-screen answer to "what is going on across everything."

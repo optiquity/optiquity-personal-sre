@@ -139,78 +139,6 @@ you gets the safety without the rot. See [17 · Monitoring](17-monitoring.md) fo
 > shows these rules absorbing an operator that asserted four causes without testing any. The
 > containment was structural, not a matter of anyone being careful.
 
-### 14. Every completed project leaves a postmortem
-
-Not only the ones that went badly. The rule is cheap to state and easy to let slide, so it is
-worth being precise about what it demands: **the postmortem is created when the project
-opens**, not when it closes, because its most valuable sections cannot be reconstructed
-afterwards.
-
-⚠ **Make it a rule about *when to read the rule*, not merely where the document lives.** A
-pointer nobody follows is a dead rule — "see the postmortem doc" gets skipped within a month.
-Name the moments: when a project opens, before appending during the work, at close, and
-before any retroactive write-up.
-
-The mechanism, the template and the reasoning are in
-[04 · Structure](04-structure.md#what-a-finished-project-leaves-behind).
-
-### 15. Every project gets a design pass before the work
-
-Not a plan of steps — a record of **what this must survive**: what could silently undo it, how
-you would know if it stopped working, and how both of those get tested.
-
-⚠ **The verdict an operator must not be allowed to dodge is "remove the constraint."**
-Constraints are usually decisions you already made for reasons that outlive the project, and
-removing one always yields a tidier design — so a fluent operator will keep proposing it. The
-three honest answers are **impossible as constrained**, **possible with effort**, and
-**possible but not worth the effort**.
-
-Design and postmortem are a loop: the design's *alternatives considered* becomes the
-postmortem's §2, and the postmortem's *what would have caught this sooner* becomes a standing
-prompt in the design template.
-
-The mechanism is in [04 · Structure](04-structure.md#what-a-project-settles-before-it-starts).
-
-## Encoding the rules: the rules file
-
-The operator reads a **rules file** at the repo root — for Claude Code this is `CLAUDE.md`;
-Codex uses `AGENTS.md`; other CLIs have their own (see
-[12 · Agents & skills](12-agents-skills.md)). The framework ships a **template** you tune:
-`skeleton/CLAUDE.md.template`.
-
-A good rules file has these parts:
-
-1. **Identity & scope** — what this repo is, which machine-roles it governs, what's in/out of
-   scope. Written in roles and placeholders, never machine names.
-2. **The locked rules** — a numbered list like the principles above. Numbered so you can
-   reference them ("Rule 2 applies here") and so "re-read rules 1–N before committing" is
-   unambiguous.
-3. **Workflow** — the standard change flow (edit in dev clone → commit → apply on nodes →
-   verify), so the operator follows one repeatable path.
-4. **File scope** — which paths the operator may edit freely vs. which are sensitive
-   (credentials, SSH config) and off-limits without instruction.
-5. **Remote-node rules** — if you have a `server`, how the operator reaches it and what still
-   requires approval there (same gates as local).
-
-Keep it **specific and locked**. Vague rules ("be careful") don't constrain; concrete ones
-("no `git add` without approval") do.
-
-## Making the rules enforceable, not aspirational
-
-Rules the operator can quietly skip aren't rules. Reinforce them structurally:
-
-- **Pair with CLI permissions** ([10 · Permissions](10-permissions.md)): the settings layer
-  can *auto-deny* or *prompt* on categories, so even a rule-lapse hits a second wall.
-- **Pair with ignore files** ([06 · Secrets](06-secrets.md)): a secret can't be committed if
-  it's ignored, regardless of the operator's judgment.
-- **Make approval the path of least resistance**: the operator asks because asking is the
-  rule *and* because the permission layer would prompt anyway.
-- **Re-read at commit time** (Rule 6): the cheapest enforcement is re-loading the rules at the
-  highest-stakes moment.
-
-The goal is **defense in depth**: judgment (these rules) + capability limits (permissions) +
-structural exclusion (ignore files). No single layer has to be perfect.
-
 ### 12. One plan, one owner — when more than one session is working
 
 The moment two AI sessions collaborate on anything — a website with a platform side and a content
@@ -288,3 +216,114 @@ Pulling a *newer version* of a block you already approved is different, and is n
 
 A ready-to-adopt standard: [`skeleton/peer-messaging/PEER-MESSAGING.md`](../skeleton/peer-messaging/PEER-MESSAGING.md).
 Worked example: [E19 · Agents that talk to each other](examples/E19-agents-that-talk-to-each-other.md).
+
+### 14. Every completed project leaves a postmortem
+
+Not only the ones that went badly. The rule is cheap to state and easy to let slide, so it is
+worth being precise about what it demands: **the postmortem is created when the project
+opens**, not when it closes, because its most valuable sections cannot be reconstructed
+afterwards.
+
+⚠ **Make it a rule about *when to read the rule*, not merely where the document lives.** A
+pointer nobody follows is a dead rule — "see the postmortem doc" gets skipped within a month.
+Name the moments: when a project opens, before appending during the work, at close, and
+before any retroactive write-up.
+
+The mechanism, the template and the reasoning are in
+[04 · Structure](04-structure.md#what-a-finished-project-leaves-behind).
+
+### 15. Every project gets a design pass before the work
+
+Not a plan of steps — a record of **what this must survive**: what could silently undo it, how
+you would know if it stopped working, and how both of those get tested.
+
+⚠ **The verdict an operator must not be allowed to dodge is "remove the constraint."**
+Constraints are usually decisions you already made for reasons that outlive the project, and
+removing one always yields a tidier design — so a fluent operator will keep proposing it. The
+three honest answers are **impossible as constrained**, **possible with effort**, and
+**possible but not worth the effort**.
+
+Design and postmortem are a loop: the design's *alternatives considered* becomes the
+postmortem's §2, and the postmortem's *what would have caught this sooner* becomes a standing
+prompt in the design template.
+
+The mechanism is in [04 · Structure](04-structure.md#what-a-project-settles-before-it-starts).
+
+### 16. Stateful services are registered, pinned, backed up, and restore-tested
+
+Before you rely on anything holding data you cannot regenerate, four things must be true. It is
+**registered with the update checker in the same commit that creates it** · **pinned** — never a
+floating `latest` tag for something holding data · **backed up on a schedule and restore-tested at
+least once** · and **upgraded only after a fresh backup**, because migration-bearing apps change
+schemas irreversibly.
+
+⚠ **"It runs in a container" is not a backup. "The backup file exists" is not a restore test.**
+Both are the comfortable version of the claim, and both are routinely believed.
+
+⚠ **Registration must reconcile an explicit list against discovery**, so a service nobody
+registered is *reported* rather than silently skipped. This is the load-bearing half: a missing
+backup produces no error, no log line and no alert. **Absence is the one failure that cannot
+announce itself** — something has to go looking.
+
+The mechanism is in [14 · Workflows & automation](14-automation.md) and
+[17 · Monitoring](17-monitoring.md); a worked example is
+[B4 · Nightly backup daemon](examples/B4-nightly-backup-daemon.md).
+
+### 17. Exposure is per-endpoint, opt-in, and monitored first
+
+Every service defaults to **private**. Making one reachable from outside requires three things,
+and they are conjunctive: **explicit approval for that specific endpoint or hostname** — never for
+the project as a whole · the service **already in monitoring, with its alert proven by an induced
+failure** · and a **rollback that does not depend on DNS propagation or a third party.**
+
+⚠ **A check that has never gone red is not a check.** Inducing the failure takes minutes and is
+the only thing that distinguishes a working alarm from a decorative one. Requiring it *before*
+exposure is what stops "we'll add monitoring after" from becoming permanent.
+
+⚠ **DNS records that carry mail or identity — `MX`, `SPF`, `DKIM`, domain verification — are never
+bundled with any other change**, and mail is verified working before *and* after any nameserver
+move. These fail in a way you discover from the people who stopped being able to reach you.
+
+The mechanism is in [08 · Networking](08-networking.md) and
+[19 · Public/shared repos](19-sharing.md); a worked example is
+[E17 · Public websites](examples/E17-public-websites.md).
+
+## Encoding the rules: the rules file
+
+The operator reads a **rules file** at the repo root — for Claude Code this is `CLAUDE.md`;
+Codex uses `AGENTS.md`; other CLIs have their own (see
+[12 · Agents & skills](12-agents-skills.md)). The framework ships a **template** you tune:
+`skeleton/CLAUDE.md.template`.
+
+A good rules file has these parts:
+
+1. **Identity & scope** — what this repo is, which machine-roles it governs, what's in/out of
+   scope. Written in roles and placeholders, never machine names.
+2. **The locked rules** — a numbered list like the principles above. Numbered so you can
+   reference them ("Rule 2 applies here") and so "re-read rules 1–N before committing" is
+   unambiguous.
+3. **Workflow** — the standard change flow (edit in dev clone → commit → apply on nodes →
+   verify), so the operator follows one repeatable path.
+4. **File scope** — which paths the operator may edit freely vs. which are sensitive
+   (credentials, SSH config) and off-limits without instruction.
+5. **Remote-node rules** — if you have a `server`, how the operator reaches it and what still
+   requires approval there (same gates as local).
+
+Keep it **specific and locked**. Vague rules ("be careful") don't constrain; concrete ones
+("no `git add` without approval") do.
+
+## Making the rules enforceable, not aspirational
+
+Rules the operator can quietly skip aren't rules. Reinforce them structurally:
+
+- **Pair with CLI permissions** ([10 · Permissions](10-permissions.md)): the settings layer
+  can *auto-deny* or *prompt* on categories, so even a rule-lapse hits a second wall.
+- **Pair with ignore files** ([06 · Secrets](06-secrets.md)): a secret can't be committed if
+  it's ignored, regardless of the operator's judgment.
+- **Make approval the path of least resistance**: the operator asks because asking is the
+  rule *and* because the permission layer would prompt anyway.
+- **Re-read at commit time** (Rule 6): the cheapest enforcement is re-loading the rules at the
+  highest-stakes moment.
+
+The goal is **defense in depth**: judgment (these rules) + capability limits (permissions) +
+structural exclusion (ignore files). No single layer has to be perfect.
