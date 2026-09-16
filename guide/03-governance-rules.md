@@ -303,6 +303,33 @@ The mechanism is in [08 · Networking](08-networking.md) and
 [19 · Public/shared repos](19-sharing.md); a worked example is
 [E17 · Public websites](examples/E17-public-websites.md).
 
+### 18. A claim about system state carries its evidence or its doubt
+
+Every assertion about what is installed, monitored, configured or running is written as either
+**`X` (verified: `<command>`, `<date>`)** or **`X` (unverified)**. There is no third option.
+
+⚠ **The difference between a fact and a memory is a command.** If the operator cannot name the
+command it ran *this session*, it is a memory — and a plausible generalisation feels exactly like
+knowledge, which is why "be careful" does not work as a control. **This rule is mechanical where an
+advisory one failed.**
+
+**Two triggers, both learned expensively:**
+
+**(a) Before generalising a fix, enumerate the candidates with a command that produces the list.**
+⚠ *"Which other things have this property?"* is answered by **output, not recall.** In one real
+fleet a config-manager fix was correctly diagnosed and then proposed for three more files matched
+**by filename similarity** — none of which had the property. The check that killed the proposal
+took one command. **A naming convention is not a property.**
+
+**(b) Treat these five phrases as requiring verification before they are written:**
+*"nothing monitors X"* · *"X is not covered"* · *"the Nth instance of"* · *"the same class as"* ·
+*"X doesn't exist."* ⚠ Each asserts something about the *whole* system from a *local* observation,
+and each is cheap to check and expensive to get wrong.
+
+⚠ **Registries, config files and live telemetry are the system speaking.** The most common shape of
+this failure is an operator writing a confident claim about coverage while the file that records
+coverage sits unread in the repo.
+
 ## Encoding the rules: the rules file
 
 The operator reads a **rules file** at the repo root — for Claude Code this is `CLAUDE.md`;
