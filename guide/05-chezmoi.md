@@ -214,6 +214,8 @@ place credential *references* without any secret ever touching the repo.
 ---
 
 > **Worked example:** [05a · Case study — the config migration that hid for 26 hours](05a-case-silent-config-migration.md)
+>
+> **Worked example:** [05b · Case study — the status command that could not see the failure](05b-case-sync-status-is-not-sync.md)
 > — a source-tree move that applied a months-old snapshot over `$HOME`, exited 0, and stayed
 > invisible for a day. Specific to config managers, and worth reading before you move a
 > source tree.

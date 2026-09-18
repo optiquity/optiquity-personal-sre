@@ -136,6 +136,8 @@ accumulated drift. Moving the burden of noticing onto the operator while keeping
 you gets the safety without the rot. See [17 · Monitoring](17-monitoring.md) for the detection side.
 
 > **Worked example:** [03a · Case study — four causes, all wrong](03a-case-four-wrong-causes.md)
+>
+> **Worked example:** [03b · Case study — auditing damage: absence is only half the question](03b-case-absence-and-overwrite.md)
 > shows these rules absorbing an operator that asserted four causes without testing any. The
 > containment was structural, not a matter of anyone being careful.
 

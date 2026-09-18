@@ -150,5 +150,7 @@ that keep it honest.
 Worked end-to-end in [E16 · Health, alerting & the update digest](examples/E16-fleet-health-and-alerting.md);
 the human runbook it feeds is [E10 · A deliberate fleet-update pass](examples/E10-fleet-update-pass.md).
 
+> **Worked example:** [07a · Case study — the fix that installed its own outage](07a-case-package-manager-config-precedence.md) — a package manager writing system-level config above your own, and a hardening that protected the wrong environment.
+
 Next: [08 · Networking](08-networking.md) — the private-network + SSH-key substrate that lets
 nodes reach each other securely.

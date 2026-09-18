@@ -11,11 +11,14 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 | 02 | [The operator](02-operator.md) | How you actually work with the AI operator — the propose→approve→act rhythm. |
 | 03 | [Governance rules](03-governance-rules.md) | The rules the operator obeys, and *when it must stop and ask*. |
 | 03a | [**Case study** — four causes, all wrong](03a-case-four-wrong-causes.md) | A fluent operator asserting four causes without testing any, and the rules that contained it. The least flattering page here. |
+| 03b | [**Case study** — auditing damage: absence is only half the question](03b-case-absence-and-overwrite.md) | An audit that asked *what is missing* and got a clean, confident, wrong-shaped answer — because an overwrite removes nothing. The two questions, and why the timestamp alone is a trap. |
 | 04 | [Structure](04-structure.md) | Projects, the registry, the status taxonomy, **what a project settles before it starts (design) and leaves behind (postmortems)**, the optional dashboard, and the operator's `PLAYBOOK.md`. |
 | 05 | [chezmoi](05-chezmoi.md) | Config as source of truth: the dev-clone → prod-source → pull+apply flow, by role — and partitioning the source when one node runs a different OS. |
 | 05a | [**Case study** — the config migration that hid for 26 hours](05a-case-silent-config-migration.md) | A source-tree move that silently overwrote `$HOME` from a stale snapshot, and why version control could not clean it up. |
+| 05b | [**Case study** — the status command that could not see the failure](05b-case-sync-status-is-not-sync.md) | Two days behind and reporting *clean*, because `status` compares source to target and never fetches. Measure the ACT, not the STATE. |
 | 06 | [Secrets](06-secrets.md) | Zero-secrets-in-git: allowlist ignore files, vault/keychain, the `.env` recipe. Plus credentials that live on a node, and why their expiry is silent by construction. |
 | 07 | [Tools & requirements](07-tools-requirements.md) | Hard vs optional tools + the idempotent, role-aware installer pattern. |
+| 07a | [**Case study** — the fix that installed its own outage](07a-case-package-manager-config-precedence.md) | A package manager quietly wrote a system-level config above the user's own, hanging every push — and the hardening turned out not to protect the job it was for. |
 | 08 | [Networking](08-networking.md) | Private mesh (Tailscale) + key-only SSH, the access-edge graph, subnet-router / exit-node gateways (+ their traps), and isolating which layer is actually slow. |
 | 09 | [Container & virtualization runtimes](09-runtimes.md) | Where services actually run: choosing a runtime, owning it as a stateful dependency, and enumerating services rather than containers. |
 | 10 | [Permissions](10-permissions.md) | The two permission layers: CLI auto-approve presets + session rules. |
@@ -27,6 +30,7 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 | 16 | [Multi-node](16-multinode.md) | The advanced layer: remote apply, session mobility, the fleet view — and the node that isn't like the others. |
 | 17 | [Monitoring](17-monitoring.md) | Knowing it works and hearing when it doesn't: health checks, coverage probes for batch work (why a runner's "success" isn't the work's), maintenance windows, self-retiring scaffolding, alerting, and the update digest. |
 | 17a | [**Case study** — six green checks over one broken system](17a-case-monitoring-the-proxy.md) | Six monitoring failures that looked unrelated are one defect: every probe measured something *adjacent* to the thing it watched. The adjacent thing is almost always healthy. |
+| 17b | [**Case study** — it failed loudly, into a file nobody reads](17b-case-loud-into-the-void.md) | Six days of skipped backups, each one correctly detected, correctly logged, and never seen. *Loud is a property of the sender; alerting is a property of the receiver.* |
 | 18 | [Setup](18-setup.md) | The onboarding journey — the three tiers and what they share. |
 | 19 | [Public/shared repos](19-sharing.md) | Publishing a scrubbed framework: derive-don't-copy + the grep-guard. |
 | 20 | [Example projects](20-example-projects.md) | A catalog of worked, end-to-end examples of the operator owning install + maintenance. |

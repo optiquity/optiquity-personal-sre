@@ -237,7 +237,7 @@ guide/          # THE HUB — platform-agnostic concepts (read these for the "wh
   01-concepts · 02-operator · 03-governance-rules · 04-structure · 05-chezmoi ·
   06-secrets · 07-tools-requirements · 08-networking · 09-runtimes · 10-permissions ·
   11-mcp · 12-agents-skills · 13-repo-comprehension · 14-automation ·
-  15-content-generation · 16-multinode · 17-monitoring · 17a-case-… · 18-setup · 19-sharing
+  15-content-generation · 16-multinode · 17-monitoring · 17a/17b-case-… · 18-setup · 19-sharing
   20-example-projects · examples/   # worked, end-to-end install+maintenance examples
 platforms/      # THE SPOKES — per-OS "how" (macos ✓ · windows ◑ · linux ◑ · raspberry-pi ◑ · cloud ○)
 skeleton/       # generic starter files you copy + fill (all placeholders, no secrets)
