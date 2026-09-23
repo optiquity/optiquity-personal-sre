@@ -1,17 +1,29 @@
 # local-checks.conf — typed checks fleet-local-check runs on THIS node (things a remote
 # health page can't reach). Copy to $HOME/.config/fleet-monitoring/local-checks.conf and edit.
 #
-#   type | name | arg
-#     service | <name> | <launchd-label | systemd-unit>   is that service running?
-#     mount   | <name> | <path>                           is <path> a mount? (kernel table, NO I/O)
-#     http    | <name> | <url>                             200 == ok (e.g. cross-ping your Gatus)
-#     command | <name> | <shell command>                  exit 0 == ok (escape hatch for anything)
+#   type | name | arg …
+#     service | <name> | <launchd-label | systemd-unit>     is that service running?
+#     mount   | <name> | <path>                             is <path> a mount? (mount point + table)
+#     http    | <name> | <url>                              200 == ok (e.g. cross-ping your Gatus)
+#     command | <name> | <shell command>                    exit 0 = OK · exit 3 = UNKNOWN · else FAIL
+#     hash    | <name> | <installed file> | <reference>     installed copy identical to its reference?
+#     synclag | <name> | <git dir> | <max hours>             last successful fetch within <max hours>?
+#
+# Every check has THREE outcomes: OK, FAIL, or UNKNOWN (the probe could not answer — a timeout, an
+# unreadable table, a command exiting 3). UNKNOWN keeps the previous state and sends no mail; four in
+# a row become a FAIL that says "could not determine state" (guide § 17). A line that doesn't parse is
+# reported as a failing check, never silently skipped.
 #
 # Replace these examples with your fleet's local-only concerns. Notes:
-#  - `mount` never does I/O — on macOS an NFS/SMB share is bound to the GUI login session, so
-#    ls/stat against it HANGS from a launchd/background run even when healthy. This catches
+#  - `mount` never reads INSIDE the share — on macOS an NFS/SMB share is bound to the GUI login
+#    session, so ls/stat inside it HANGS from a launchd/background run even when healthy. It checks
+#    the mount point + table (retried; an unreadable table is UNKNOWN, not "unmounted"). It catches
 #    "unmounted", not "hung". For hung-detection use a `command` via a login shell, e.g.:
 #       command | media reachable | ssh localhost 'ls /path/to/mount >/dev/null'
+#  - `hash` watches a file your config manager does NOT deploy — a script installed by hand on a node
+#    it doesn't manage falls behind the repo silently otherwise. Point <reference> at the repo copy.
+#  - `synclag` watches that pull-based sync is actually happening: a status command that never
+#    fetches reports "clean" while days behind (guide 05b).
 #  - `command` is the escape hatch: assert an app's workflows are active, a batch job exited 0,
 #    a container is healthy — anything a shell one-liner can decide.
 #  - a `service` with NO listening port (an outbound bridge/agent) is exactly what a remote
@@ -22,3 +34,5 @@ mount   | media share      | /path/to/your/mount
 http    | gatus cross-ping | https://<gatus-host>/
 # command | workflows active | test "$(sqlite3 ~/.app/db 'select count(*) from wf where active=1')" -ge 1
 # command | batch last-run   | test "$(docker inspect -f '{{.State.ExitCode}}' <container>)" = 0
+# hash    | gateway relay    | /usr/local/lib/<you>/relay | ~/.local/share/chezmoi/<path>/relay
+# synclag | dotfile sync     | ~/.local/share/chezmoi | 3

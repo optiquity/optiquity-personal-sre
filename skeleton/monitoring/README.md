@@ -30,7 +30,7 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 | `fleet-container-check` | pinned container images with a newer upstream release (read-only; folded into the digest) |
 | `fleet-install-audit.plist.template` | after-install WatchPaths trigger (runs the audit `--local`) |
 | `fleet-nodes.conf.template` | your node inventory (`role | ssh-target | os | methods`) |
-| `local-checks.conf.template` | typed local checks (`service | mount | http | command`) |
+| `local-checks.conf.template` | typed local checks (`service`, `mount`, `http`, `command`, `hash`, `synclag`) |
 | `fleet-local-check.plist.template` | launchd timer for the local probe (every 15 min) |
 | `mail.env.template` | SMTP secret stub for `fleet-mail` (host-local, chmod 600) |
 | `gatus-config.yaml.template` | Gatus endpoints (infra + apps) + email alerter |
@@ -116,8 +116,15 @@ Gatus checks anything reachable over the network. Some things aren't: a **servic
 listening port** (an outbound bridge/agent), a **local network mount**, the **monitor itself**
 (if Gatus is down it can't alert on its own outage), or a check that needs **local DB/CLI
 access**. `fleet-local-check` runs on the node that *can* see them, driven by
-`local-checks.conf` — typed checks (`service`, `mount`, `http`, `command`). It emails only when
-a check **transitions** (a state file dedups), so a 15-minute cadence never spams.
+`local-checks.conf` — typed checks (`service`, `mount`, `http`, `command`, `hash`, `synclag`). It
+emails when a check **transitions** or fails on its first run (a state file dedups), so a 15-minute
+cadence never spams.
+
+Every check has **three outcomes**: OK, FAIL, or **UNKNOWN**, when the probe itself could not
+answer (a timeout, an unreadable mount table, a `command` exiting 3). An unknown keeps the previous
+state and sends no mail. Four in a row become a failure that says *"could not determine state for 4
+consecutive runs"*, because an hour of blindness is itself an outage. A config line that doesn't
+parse is reported as a failing check, never skipped.
 
 ```sh
 $EDITOR ~/.config/fleet-monitoring/local-checks.conf   # seeded by bootstrap
@@ -135,10 +142,13 @@ Two gotchas worth internalizing (both cost real debugging):
   `fleet-local-check`'s `mount` type therefore checks the mount point and the mount table instead.
   ⚠ Both still touch the network. `os.path.ismount()` stats the mount point, and an unreachable
   server reads as "not a mount point". Reading the mount table can block on an unresponsive server.
-  So a mount alert on a busy night can mean *could not determine*, not *unmounted*: see guide § 17,
-  "A probe that could not answer has not told you anything". Today the tool reports that case as a
-  failure. For genuine hung-detection, use a `command` check through a login shell
-  (`ssh localhost 'ls <path>'`).
+  So the probe retries, and a table it cannot read is **UNKNOWN**, not "unmounted" (guide § 17,
+  "A probe that could not answer has not told you anything"). For genuine hung-detection, use a
+  `command` check through a login shell (`ssh localhost 'ls <path>'`).
+- **Watch what your config manager doesn't deploy.** A script installed by hand, on a node it
+  doesn't manage, falls behind the repo silently; `hash` compares it with the repo copy. And
+  `synclag` checks that sync is actually happening, since a status command that never fetches reports
+  "clean" while days behind.
 
 ## Install-method audit (catch "installed two ways")
 

@@ -8,34 +8,57 @@ when a check TRANSITIONS (ok→fail or fail→ok), and when a check is failing o
 check, or a lost state file) — a state file dedups, so a tight cadence never spams. State is saved
 only AFTER the email is sent: if sending fails, the next run retries instead of forgetting the alert.
 
+THREE STATES, NOT TWO (guide § 17, "A probe that could not answer has not told you anything").
+A check returns OK (verified good), FAIL (verified bad) or UNKNOWN (the probe itself could not
+answer: a timeout, an unreadable table). A probe that timed out has NOT told you the thing is
+broken, and scoring it as a failure is how a monitor cries wolf on exactly the busy nights you can
+least afford it. So:
+  · UNKNOWN carries the previous state forward — no transition, no mail;
+  · but it is COUNTED: after UNKNOWN_FAIL_STREAK consecutive unknowns the check FAILS, worded as
+    what it is ("could not determine state for N consecutive runs"), because a monitor that has
+    been unable to see for an hour is itself an outage. Silence must not read as health.
+
 Config (default $HOME/.config/fleet-monitoring/local-checks.conf, override --config/$FLEET_LOCAL_CHECKS):
-    type | name | arg
-      service | <name> | <launchd-label | systemd-unit>   is that service running?
-      mount   | <name> | <path>                           is <path> a mount? (mount point + table; not the share)
-      http    | <name> | <url>                             does <url> return 200? (e.g. cross-ping Gatus)
-      command | <name> | <shell command>                  exit 0 == ok (escape hatch: DB query, docker…)
+    type | name | arg …
+      service | <name> | <launchd-label | systemd-unit>     is that service running?
+      mount   | <name> | <path>                             is <path> a mount? (mount point + table)
+      http    | <name> | <url>                              does <url> return 200?
+      command | <name> | <shell command>                    exit 0 = OK · exit 3 = UNKNOWN · else FAIL
+      hash    | <name> | <installed file> | <reference>    byte-identical to its reference copy?
+      synclag | <name> | <git dir> | <max hours>            fetched successfully within <max hours>?
+A malformed line is REPORTED as a failing check, never silently skipped.
 
 IMPORTANT (the `mount` type never reads INSIDE the share): on macOS an NFS/SMB mount is bound to the
 GUI login session, so I/O (ls/stat) inside it HANGS from a launchd/background context even when the
 mount is perfectly healthy. So `mount` checks the mount point and the mount table (ismount +
 `mount`/`findmnt`) instead. ⚠ That is less I/O, not none: ismount() stats the mount point (a server
 round-trip on a network mount; an unreachable server reads as "not a mount point"), and the table
-read can block on an unresponsive server. So a failure here can mean "could not determine", not
-"unmounted" (guide § 17, "A probe that could not answer has not told you anything"). It catches
-"unmounted", not "mounted-but-hung" — use a `command` check via a login shell (e.g.
-`ssh localhost 'ls <path>'`) if you need hung-detection.
+read can block on an unresponsive server. So the probe retries, and a table it cannot read is
+UNKNOWN, never "unmounted". It catches "unmounted", not "mounted-but-hung" — use a `command` check
+via a login shell (e.g. `ssh localhost 'ls <path>'`) if you need hung-detection.
+
+WHY `hash` AND `synclag` EXIST. A config manager keeps the nodes it manages in step — and nothing
+else. A file you installed by hand (on a node it doesn't manage, or outside its tree) falls behind
+the repo silently: the fix reaches every other node and the check that would notice is the one you
+never wrote. `hash` compares the installed copy with its reference. `synclag` asks whether sync is
+actually HAPPENING: a status command that never fetches reports "clean" while days behind (guide
+05b), so it reads the age of the last successful fetch instead.
 
 Exit: 0 all ok · 1 one or more failing · 3 the alert email failed to send (state kept; next run retries).
 Flags: --dry-run (print, no email/state), --always (email regardless).
 Environment: $FLEET_MAILER (default ~/.local/bin/fleet-mail), $FLEET_LOCAL_CHECK_STATE (state file).
 """
-import argparse, json, os, platform, shutil, subprocess, sys
+import argparse, hashlib, json, os, platform, shutil, subprocess, sys, time
 
 STATE = os.environ.get("FLEET_LOCAL_CHECK_STATE",
                        os.path.expanduser("~/.config/fleet-monitoring/local-check.state"))
 DEFAULT_CONFIG = os.path.expanduser("~/.config/fleet-monitoring/local-checks.conf")
 MAILER = os.environ.get("FLEET_MAILER", os.path.expanduser("~/.local/bin/fleet-mail"))
 IS_MAC = platform.system() == "Darwin"
+UNKNOWN_FAIL_STREAK = 4    # at a 15-min cadence: an hour blind before blindness itself alerts
+MOUNT_RETRIES = 3          # transient slowness must not look like an unmount
+MOUNT_TIMEOUT = 20         # reading the mount table can block behind a busy network server
+RETRY_PAUSE = 2            # seconds between mount attempts
 
 def sh(args, timeout=15, shell=False):
     try:
@@ -46,47 +69,132 @@ def sh(args, timeout=15, shell=False):
     except Exception as e:
         return 1, "", str(e)
 
+# Each check returns (name, state, detail) with state True / False / None (= UNKNOWN).
+
 def chk_service(name, label):
     if IS_MAC:
-        rc, out, _ = sh(["launchctl", "print", f"gui/{os.getuid()}/{label}"])
-        ok = rc == 0 and "state = running" in out
+        rc, out, err = sh(["launchctl", "print", f"gui/{os.getuid()}/{label}"])
+        if rc != 0 and not out:
+            # "not loaded" prints output with a non-zero rc; NO output means launchctl itself
+            # could not answer — the probe failed, not the service.
+            if rc == 124 or not err or "could not find" not in err.lower():
+                return name, None, f"launchctl gave no answer ({err or 'rc=' + str(rc)})"
+            return name, False, "NOT loaded"
+        ok = "state = running" in out
     else:
-        rc, out, _ = sh(["systemctl", "is-active", label])
+        rc, out, err = sh(["systemctl", "is-active", label])
+        if rc == 124 or not out:
+            return name, None, f"systemctl gave no answer ({err or 'rc=' + str(rc)})"
         ok = out.strip() == "active"
     return name, ok, ("running" if ok else "NOT running")
 
 def chk_mount(name, path):
-    # kernel mount table only — never I/O (see module docstring: NFS I/O hangs off-session)
-    if not os.path.ismount(path):
-        return name, False, "NOT mounted"
-    tbl = "mount" if shutil.which("mount") else "findmnt"
-    rc, out, _ = sh([tbl] + ([] if tbl == "mount" else [path]), timeout=8)
-    ok = any(path in l for l in out.splitlines())
-    return name, ok, ("mounted" if ok else "mountpoint present but not in the mount table")
+    last = ""
+    for attempt in range(MOUNT_RETRIES):
+        if not os.path.ismount(path):
+            last = "NOT mounted"
+        else:
+            tbl = "mount" if shutil.which("mount") else "findmnt"
+            rc, out, err = sh([tbl] + ([] if tbl == "mount" else [path]), timeout=MOUNT_TIMEOUT)
+            if rc != 0 or not out:
+                # The PROBE failed, not the mount. Never report this as an unmount.
+                return name, None, f"could not read the mount table ({err or 'rc=' + str(rc)})"
+            if any(path in l for l in out.splitlines()):
+                return name, True, "mounted"
+            last = "mountpoint present but not in the mount table"
+        if attempt < MOUNT_RETRIES - 1:
+            time.sleep(RETRY_PAUSE)
+    return name, False, f"{last} (confirmed over {MOUNT_RETRIES} attempts)"
 
 def chk_http(name, url):
-    rc, out, _ = sh(["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "-m", "10", url], timeout=15)
-    return name, out.strip() == "200", f"HTTP {out.strip() or 'no response'}"
+    rc, out, err = sh(["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "-m", "10", url], timeout=15)
+    if rc in (28, 124):                 # curl timed out, or we killed it: no answer, not a "no"
+        return name, None, "no response within 10 s"
+    if rc != 0:                         # refused, unresolvable, TLS failure: a definite answer
+        return name, False, f"request failed (curl exit {rc})"
+    return name, out.strip() == "200", f"HTTP {out.strip()}"
 
 def chk_command(name, cmd):
     rc, _, err = sh(cmd, timeout=30, shell=True)
-    return name, rc == 0, ("ok" if rc == 0 else f"exit {rc}{(' — ' + err) if err else ''}")
+    if rc == 0:
+        return name, True, "ok"
+    if rc in (3, 124):                  # exit 3 = UNKNOWN (the Nagios convention); 124 = timed out
+        return name, None, f"could not determine (exit {rc}){(' — ' + err) if err else ''}"
+    return name, False, f"exit {rc}{(' — ' + err) if err else ''}"
 
-DISPATCH = {"service": chk_service, "mount": chk_mount, "http": chk_http, "command": chk_command}
+def _sha256(path):
+    with open(path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+def chk_hash(name, arg):
+    installed, _, reference = (p.strip() for p in arg.partition("|"))
+    try:
+        want = _sha256(os.path.expanduser(reference))
+    except OSError:
+        return name, False, f"reference copy missing ({reference}) — not silently skipped"
+    try:
+        got = _sha256(os.path.expanduser(installed))
+    except FileNotFoundError:
+        return name, False, f"{installed} is NOT installed"
+    except OSError as e:
+        return name, None, f"cannot read {installed} ({e})"
+    return name, got == want, ("matches its reference" if got == want
+                               else f"{installed} differs from {reference} — reinstall it")
+
+def chk_synclag(name, arg):
+    gitdir, _, hours = (p.strip() for p in arg.partition("|"))
+    try:
+        limit = float(hours)
+    except ValueError:
+        return name, False, f"max hours {hours!r} is not a number"
+    fetch_head = os.path.join(os.path.expanduser(gitdir), ".git", "FETCH_HEAD")
+    try:
+        age = (time.time() - os.path.getmtime(fetch_head)) / 3600.0
+    except OSError:
+        return name, None, f"cannot read {fetch_head} (never fetched, or not a git clone)"
+    if age > limit:
+        return name, False, (f"last successful fetch {age:.1f} h ago (limit {limit:g} h) — "
+                             "a status command that never fetches cannot see this")
+    return name, True, f"fetched {age:.1f} h ago"
+
+DISPATCH = {"service": chk_service, "mount": chk_mount, "http": chk_http, "command": chk_command,
+            "hash": chk_hash, "synclag": chk_synclag}
 
 def load_checks(path):
+    """[(type, name, arg)]; a line that cannot be read becomes a ('config', …) entry that FAILS."""
     if not os.path.isfile(path):
         sys.exit(f"fleet-local-check: config not found: {path}  (copy local-checks.conf.template)")
     checks = []
-    for line in open(path):
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        parts = [p.strip() for p in line.split("|", 2)]
-        if len(parts) != 3 or parts[0] not in DISPATCH:
-            continue
-        checks.append(tuple(parts))  # (type, name, arg)
+    with open(path) as f:
+        for n, line in enumerate(f, 1):
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = [p.strip() for p in line.split("|", 2)]
+            if len(parts) != 3 or parts[0] not in DISPATCH or not parts[1] or not parts[2]:
+                checks.append(("config", f"config line {n}", line))
+                continue
+            checks.append(tuple(parts))  # (type, name, arg)
     return checks
+
+def run_check(typ, name, arg):
+    if typ == "config":
+        return name, False, f"malformed or unknown check type — {arg[:80]!r}"
+    try:
+        return DISPATCH[typ](name, arg)
+    except Exception as e:
+        return name, None, f"check crashed: {e}"      # a crashed probe has not told us anything either
+
+def load_state():
+    """(states, unknown_streaks); tolerates the old flat {name: bool} format."""
+    try:
+        with open(STATE) as f:
+            raw = json.load(f)
+    except (OSError, ValueError):
+        return {}, {}
+    if raw and all(isinstance(v, bool) for v in raw.values()):
+        return dict(raw), {}
+    return dict(raw.get("states", {})), dict(raw.get("unknown_streaks", {}))
 
 def main():
     ap = argparse.ArgumentParser()
@@ -95,26 +203,38 @@ def main():
     ap.add_argument("--always", action="store_true")
     a = ap.parse_args()
 
-    results = []
-    for typ, name, arg in load_checks(a.config):
-        try:
-            results.append(DISPATCH[typ](name, arg))
-        except Exception as e:
-            results.append((name, False, f"check crashed: {e}"))
+    results = [run_check(*c) for c in load_checks(a.config)]
+    prev, streak = load_state()
 
-    try:
-        prev = json.load(open(STATE)) if os.path.exists(STATE) else {}
-    except Exception:
-        prev = {}
-    cur = {name: ok for name, ok, _ in results}
+    # Resolve UNKNOWN: carry the previous state forward (no transition, no mail) — but count it.
+    resolved = []   # (name, ok, detail, unknown?)
+    for name, ok, detail in results:
+        if ok is None:
+            n = streak.get(name, 0) + 1
+            streak[name] = n
+            if n >= UNKNOWN_FAIL_STREAK:
+                resolved.append((name, False, f"could not determine state for {n} consecutive runs — {detail}", False))
+            else:
+                carried = prev.get(name)
+                resolved.append((name, carried if carried is not None else True,
+                                 f"unknown ({n}/{UNKNOWN_FAIL_STREAK}) — {detail}", True))
+        else:
+            streak.pop(name, None)
+            resolved.append((name, ok, detail, False))
+
+    cur = {r[0]: r[1] for r in resolved}
     transitions = [n for n in cur if prev.get(n) is not None and prev[n] != cur[n]]
     new_failures = [n for n in cur if not cur[n] and prev.get(n, True)]
-    failing = [name for name, ok, _ in results if not ok]
+    failing = [r[0] for r in resolved if not r[1]]
+    unknowns = [r[0] for r in resolved if r[3]]
 
-    report = "\n".join(f"  [{'OK ' if ok else 'FAIL'}] {name}: {detail}" for name, ok, detail in results)
+    tag = lambda r: "????" if r[3] else ("OK  " if r[1] else "FAIL")
+    report = "\n".join(f"  [{tag(r)}] {r[0]}: {r[2]}" for r in resolved)
     if a.dry_run:
         print(report or "  (no checks configured)")
         print(f"\ntransitions since last run: {transitions or 'none'}")
+        if unknowns:
+            print(f"unknown this run (previous state kept, no mail): {unknowns}")
         return 1 if failing else 0
 
     # Mail on a transition AND on a failure with no previous state (a new check, a first run, a
@@ -129,6 +249,8 @@ def main():
         body = f"Local health checks on {os.uname().nodename}:\n\n{report}\n"
         if transitions:
             body += f"\nChanged this run: {', '.join(transitions)}\n"
+        if unknowns:
+            body += f"\nCould not be determined this run (previous state kept, not an alert): {', '.join(unknowns)}\n"
         # fleet-mail builds the subject — never a hand-made one here (guide § 17, "Alerts a human will actually read")
         p = subprocess.run([MAILER, "--kind", kind, "--source", "Health", "--text", text, "--body", body])
         if p.returncode != 0:
@@ -137,7 +259,8 @@ def main():
             return 3
     # Only now — after any needed email went out — record what was seen.
     os.makedirs(os.path.dirname(STATE), exist_ok=True)
-    json.dump(cur, open(STATE, "w"))
+    with open(STATE, "w") as f:
+        json.dump({"states": cur, "unknown_streaks": streak}, f)
     return 1 if failing else 0
 
 if __name__ == "__main__":

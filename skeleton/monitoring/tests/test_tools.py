@@ -12,7 +12,7 @@ FAKE mailer. The fake calls the REAL fleet-mail with --dry-run, so each subject 
 is built and validated by the real code — then records what it was asked to send, and can be
 told to fail (FAKE_MAIL_RC) to prove a failed send is retried rather than forgotten.
 """
-import importlib.util, json, os, shutil, subprocess, sys, tempfile, textwrap, unittest
+import importlib.util, json, os, shutil, subprocess, sys, tempfile, textwrap, time, unittest
 from importlib.machinery import SourceFileLoader
 
 sys.dont_write_bytecode = True
@@ -157,7 +157,9 @@ class FleetMail(Sandbox):
         self.assertEqual(fm.main(["--env", envf, "--kind", "Alert", "--source", "B", "--text", "x", "--body", "b"]), 1)
 
 
-class LocalCheck(Sandbox):
+class LocalCheckBase(Sandbox):
+    """Setup shared by the local-check tests (holds no tests itself)."""
+
     def setUp(self):
         super().setUp()
         self.flag = os.path.join(self.tmp, "beta-ok")
@@ -172,13 +174,15 @@ class LocalCheck(Sandbox):
         return self.run_tool("fleet-local-check", "--config", self.conf, *args,
                              FLEET_LOCAL_CHECK_STATE=self.state, **env)
 
+
+class LocalCheck(LocalCheckBase):
     def test_first_run_failure_mails_and_saves_state(self):
         r = self.check()
         self.assertEqual(r.returncode, 1, r.stderr)
         m = self.mails()
         self.assertEqual(len(m), 1)
         self.assertEqual(m[0]["subject"], "[Fleet/Alert/Health] 1 failing — beta")
-        self.assertEqual(read_json(self.state), {"alpha": True, "beta": False})
+        self.assertEqual(read_json(self.state)["states"], {"alpha": True, "beta": False})
 
     def test_steady_state_is_silent_and_recovery_reports(self):
         self.check()
@@ -195,10 +199,10 @@ class LocalCheck(Sandbox):
         os.remove(self.flag)                                # beta breaks …
         r = self.check(FAKE_MAIL_RC="1")                    # … and the mailer is down
         self.assertEqual(r.returncode, 3)
-        self.assertEqual(read_json(self.state)["beta"], True, "state must not record an unsent alert")
+        self.assertEqual(read_json(self.state)["states"]["beta"], True, "state must not record an unsent alert")
         r = self.check()                                    # mailer back: the alert goes out now
         self.assertEqual(self.mails()[-1]["subject"], "[Fleet/Alert/Health] 1 failing — beta")
-        self.assertEqual(read_json(self.state)["beta"], False)
+        self.assertEqual(read_json(self.state)["states"]["beta"], False)
 
     def test_new_failing_check_mails_even_with_existing_state(self):
         write(self.flag, "")
@@ -211,6 +215,123 @@ class LocalCheck(Sandbox):
         self.check("--dry-run")
         self.assertEqual(self.mails(), [])
         self.assertFalse(os.path.exists(self.state))
+
+
+class LocalCheckStates(LocalCheckBase):
+    """Three states, the unknown streak, state migration, config errors, and the new check types."""
+
+    def dry(self):
+        return self.check("--dry-run").stdout
+
+    def test_unknown_carries_state_then_escalates(self):
+        write(self.flag, "")                                           # beta ok
+        gamma_ok = os.path.join(self.tmp, "gamma-ok")
+        write(gamma_ok, "")
+        gamma = f"command | gamma | test -f {gamma_ok} || exit 3"      # exit 3 = UNKNOWN
+        self.write_conf(["command | alpha | true", f"command | beta | test -f {self.flag}", gamma])
+        self.check()                                                    # all OK, state saved, no mail
+        os.remove(gamma_ok)                                             # gamma now answers UNKNOWN
+        for n in (1, 2, 3):
+            r = self.check()
+            self.assertEqual(r.returncode, 0, f"unknown run {n} must not fail")
+            self.assertIs(read_json(self.state)["states"]["gamma"], True, "unknown carries the previous state")
+            self.assertEqual(read_json(self.state)["unknown_streaks"]["gamma"], n)
+        self.assertEqual(self.mails(), [], "no mail while merely unknown")
+        r = self.check()                                                # 4th consecutive unknown
+        self.assertEqual(r.returncode, 1)
+        self.assertEqual(self.mails()[-1]["subject"], "[Fleet/Alert/Health] 1 failing — gamma")
+        self.assertIn("could not determine state for 4 consecutive runs", self.mails()[-1]["argv"][-1])
+
+    def test_unknown_on_first_run_is_not_an_alert(self):
+        self.write_conf(["command | alpha | true", "command | delta | exit 3"])
+        r = self.check()
+        self.assertEqual((r.returncode, self.mails()), (0, []))
+        self.assertIn("[????] delta", self.dry())
+
+    def test_old_flat_state_is_migrated(self):
+        write(self.state, json.dumps({"alpha": True, "beta": False}))   # the pre-2026-09 format
+        r = self.check()
+        self.assertEqual(r.returncode, 1)
+        self.assertEqual(self.mails(), [], "beta was already failing: no transition, no mail")
+        self.assertEqual(read_json(self.state), {"states": {"alpha": True, "beta": False}, "unknown_streaks": {}})
+
+    def test_malformed_line_is_reported_not_skipped(self):
+        self.write_conf(["command | alpha | true", "bogus | x | y", "command | half-a-line"])
+        r = self.check()
+        self.assertEqual(r.returncode, 1)
+        self.assertEqual(self.mails()[0]["subject"], "[Fleet/Alert/Health] 2 failing — config line 2, config line 3")
+
+    def test_hash_check(self):
+        ref, inst = os.path.join(self.tmp, "ref"), os.path.join(self.tmp, "inst")
+        write(ref, "v1\n")
+        cases = [("v1\n", "[OK  ] h: matches its reference"), ("v0\n", "[FAIL] h: " + inst + " differs from"),
+                 (None, "[FAIL] h: " + inst + " is NOT installed")]
+        for content, want in cases:
+            with self.subTest(content=content):
+                if content is None:
+                    os.remove(inst)
+                else:
+                    write(inst, content)
+                self.write_conf([f"hash | h | {inst} | {ref}"])
+                self.assertIn(want, self.dry())
+        os.remove(ref)
+        write(inst, "v1\n")
+        self.assertIn("[FAIL] h: reference copy missing", self.dry(), "a missing reference must FAIL, not pass")
+
+    def test_synclag_check(self):
+        repo = os.path.join(self.tmp, "src")
+        os.makedirs(os.path.join(repo, ".git"))
+        self.write_conf([f"synclag | sync | {repo} | 3"])
+        self.assertIn("[????] sync", self.dry(), "never fetched: UNKNOWN, not OK and not FAIL")
+        fh = os.path.join(repo, ".git", "FETCH_HEAD")
+        write(fh, "")
+        self.assertIn("[OK  ] sync", self.dry())
+        old = time.time() - 5 * 3600
+        os.utime(fh, (old, old))
+        self.assertIn("[FAIL] sync: last successful fetch 5.0 h ago (limit 3 h)", self.dry())
+
+
+class LocalCheckProbes(unittest.TestCase):
+    """The probes' three-way classification, in-process with the system calls replaced."""
+
+    def setUp(self):
+        self.lc = load(os.path.join(TOOLS, "fleet-local-check"), "fleet_local_check_under_test")
+        self.lc.RETRY_PAUSE = 0
+
+    def test_mount(self):
+        lc = self.lc
+        lc.os.path.ismount = lambda p: True
+        lc.sh = lambda *a, **k: (124, "", "timed out")
+        self.assertIsNone(lc.chk_mount("m", "/mnt/x")[1], "an unreadable table is UNKNOWN, never an unmount")
+        lc.sh = lambda *a, **k: (0, "server:/share on /mnt/x (nfs)", "")
+        self.assertIs(lc.chk_mount("m", "/mnt/x")[1], True)
+        calls = []
+        lc.os.path.ismount = lambda p: calls.append(p) or False
+        r = lc.chk_mount("m", "/mnt/x")
+        self.assertIs(r[1], False)
+        self.assertEqual(len(calls), lc.MOUNT_RETRIES, "an unmount is confirmed over several attempts")
+
+    def test_http(self):
+        lc = self.lc
+        for rc, out, want in [(0, "200", True), (0, "503", False), (7, "000", False), (28, "000", None), (124, "", None)]:
+            with self.subTest(rc=rc, out=out):
+                lc.sh = lambda *a, rc=rc, out=out, **k: (rc, out, "")
+                self.assertIs(lc.chk_http("h", "https://example.invalid/")[1], want)
+
+    def test_service(self):
+        lc = self.lc
+        lc.IS_MAC = True
+        for rc, out, err, want in [(0, "state = running", "", True), (0, "state = waiting", "", False),
+                                   (113, "", "Could not find service", False), (124, "", "timed out", None),
+                                   (1, "", "", None)]:
+            with self.subTest(rc=rc, err=err):
+                lc.sh = lambda *a, rc=rc, out=out, err=err, **k: (rc, out, err)
+                self.assertIs(lc.chk_service("s", "com.example.x")[1], want)
+        lc.IS_MAC = False
+        for rc, out, want in [(0, "active", True), (3, "inactive", False), (124, "", None)]:
+            with self.subTest(linux=out):
+                lc.sh = lambda *a, rc=rc, out=out, **k: (rc, out, "")
+                self.assertIs(lc.chk_service("s", "x.service")[1], want)
 
 
 class InstallAudit(Sandbox):

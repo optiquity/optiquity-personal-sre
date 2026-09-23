@@ -3,6 +3,20 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-23 — `fleet-local-check`: three states, and two new check types
+
+- **Changed: every check has three outcomes, OK, FAIL or UNKNOWN,** as guide § 17 teaches.
+  - A timeout or an unreadable mount table is UNKNOWN. It keeps the previous state and sends no
+    mail. Four in a row become a FAIL worded as blindness.
+  - Mount checks retry before concluding.
+  - `command` checks can exit 3 to mean "could not determine" (the Nagios convention).
+  - Your state file is migrated automatically.
+- **Fixed:** a malformed config line was silently skipped. It is now reported as a failing check.
+- **New: `hash`** (an installed file must match its reference copy) and **`synclag`** (the last
+  successful fetch must be recent). These watch what a config manager doesn't: a script installed
+  by hand on a node it doesn't manage, and a sync that has quietly stopped.
+- **Tests:** 26, including in-process probe classification; 7 mutants caught.
+
 ## 2026-09-23 — rules, presets and practices agree with the guide
 
 **If you seeded a repo from `CLAUDE.md.template` or `AGENTS.md.template`, compare your Rules section
