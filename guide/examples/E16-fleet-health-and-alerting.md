@@ -88,7 +88,7 @@ nothing.
 always-on | local          | macos    | brew,npm,softwareupdate
 laptop    | <laptop-host>  | macos    | brew,npm,softwareupdate
 gateway   | <gateway-host> | linux    | apt
-windows   | <win-host>     | windows  | manual        # winget needs an interactive session
+windows   | <win-host>     | windows  | manual        # no winget checker yet; detection itself works over SSH
 nas       | <nas-host>     | synology | manual        # updates go through the NAS UI
 ```
 
@@ -198,12 +198,22 @@ you want.
 [MyFleet/Report/Health]   all checks recovered
 ```
 
-**Your health checker probably won't cooperate — that's fine.** Gatus hardcodes its subject
-(`[<group>/<name>] Alert triggered|resolved`); there's no prefix setting. Renaming its groups to
-force the prefix would pollute its dashboard to fix an email cosmetic. Better: accept its native
-format (already a clean `[area/endpoint]` hierarchy) and write **two** filter rules — one for your
-prefix, one for the checker's fixed phrasing. **Verify both with real test emails**; a filter you
-assumed works is a filter that silently drops alerts.
+**Your health checker probably won't cooperate.** Gatus, for example (checked on v5.36), hardcodes its
+email subject as `<group>/<name>: Alert triggered` (and `…: Alert resolved`): no brackets, and no
+setting to change it. You have two honest options:
+
+- **Route its alerts through your own mailer.** Gatus has a `custom` alert provider that POSTs each
+  alert (group, name, state, errors) to a URL. A tiny relay on the same host, listening on
+  localhost only, can build the subject with the **same** builder as everything else and send it,
+  so one code path formats every email you get. The relay is now a single point for every
+  health-check email, so watch it **from another node, through a different mail path**.
+- **Or accept its phrasing** and write a second filter rule for it.
+
+Either way, **verify with real test emails, in the client you actually read.** One subtlety only
+that turns up: in one widely used mail client, two *different* alerts whose subjects differed only
+inside the leading `[tag]` were grouped into a single conversation. Make the text *after* the tag
+identify the source on its own, e.g. `[MyFleet/Alert/Apps/api] api: triggered`, and a
+merged thread can't hide a second alert.
 
 ### 8. Coverage probes — the check that lies most convincingly
 

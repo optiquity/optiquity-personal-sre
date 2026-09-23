@@ -52,19 +52,32 @@ the LAN subnet **and** the exit-node route. Then **approve** the routes in the m
 they advertise but don't carry traffic until approved. Advertising + the bootstrap are **gated**
 ([Rule 1](../03-governance-rules.md)); the console approval is yours to do.
 
-### 3. Keep the old host as a hot standby (don't just rip it out)
+### 3. Retire the old host's route; don't keep it as a "standby"
 
-Leave the previous gateway **advertising the same routes**. A good mesh designates **one** node as
-the **active/primary** router and the others as **standby**, failing over automatically if the
-primary drops. So the new node carries the traffic (verify it's the **primary** — it should show as
-*actively serving* the route), while the old one sits idle (advertising, but *not* primary) as a
-**zero-cost hot spare**. You get HA for free, and a one-command rollback if the new node misbehaves.
+It is tempting to leave the previous gateway advertising the same routes as a hot spare. **First
+find out how your mesh chooses the primary.** In one widely used mesh VPN the primary subnet router
+is chosen by **join date: the oldest node wins**, with no priority, preference or failback setting.
+The old gateway is almost certainly the older node, so it takes the route back at the first
+re-election. That happens silently, and the upgrade quietly reverts itself. Nothing fails, so
+nothing alerts ([17a](../17a-case-monitoring-the-proxy.md), probe 3).
+
+So once the new node is verified as primary, **stop the old one advertising the subnet route**. It
+can keep its other roles, such as exit node. Rollback stays one command: re-advertise on the old
+node. If you genuinely need automatic failover, the only way to express a preference under
+oldest-wins is to make the *preferred* node the older one, by re-joining the other. Decide that
+deliberately, and first ask whether the fallback hardware can carry the load: **a failover that
+silently degrades the service is worse than one that never happens.**
 
 ### 4. Verify from a genuinely-remote peer, then close the hairpin
 
 - From a **remote** device (a phone on cellular, a laptop away from home), confirm you can reach a
   LAN-only device (the printer) via the new gateway, and that the exit node works.
-- Confirm the new node is **primary** and the old one is **standby** (not carrying traffic).
+- Confirm the new node is **primary**, and that nothing else advertises the route. ⚠ Ask the right
+  source for each question. A node's *own* view says whether its route is approved. *Peers'* views
+  say who is routing, and a standby router's route is absent from them exactly as if it were
+  unapproved.
+- **Assert the role, not reachability.** Add a check that the intended node holds the route. A
+  gateway can answer every health check while routing nothing.
 - **Close Trap 1:** set **accept-routes off** on every always-on node that lives **on** this LAN
   ([08 · Networking](../08-networking.md)) — they don't need the tunnel to reach their own network,
   and accepting it is what causes the hairpin. Roaming laptops keep accept-routes on.
@@ -79,9 +92,8 @@ primary drops. So the new node carries the traffic (verify it's the **primary** 
   years behind if that channel stalls. Know where the vendor's own latest lives, and treat it as a
   **manually-tracked** update if the built-in channel doesn't advance it (the
   [E10](E10-fleet-update-pass.md) lesson generalizes).
-- **Reboots interrupt the edge.** A gateway reboot (kernel/OS update) briefly drops routing — the
-  standby takes over automatically, but time updates for a quiet window and re-verify the primary
-  afterward.
+- **Reboots interrupt the edge.** A gateway reboot (kernel/OS update) briefly drops remote access
+  to the LAN, so time updates for a quiet window and re-verify the primary afterward.
 - **Re-audit accept-routes** as you add nodes: any new always-on on-LAN node needs accept-routes
   **off**, or it reintroduces the hairpin.
 
@@ -89,8 +101,9 @@ primary drops. So the new node carries the traffic (verify it's the **primary** 
 
 - **Dedicate the edge.** Routing/exit is important, contended, and security-sensitive — give it a
   small right-sized node, not a corner of a busy one.
-- **Standby, don't discard.** Leaving the old host advertising the same routes buys automatic HA
-  failover for zero effort — and a reversible cutover.
+- **Know how your mesh picks the primary.** Under oldest-wins, an old gateway left advertising is
+  not a spare. It is the node that will quietly take the route back. Retire its route, and keep
+  rollback as one command.
 - **The hairpin is the non-obvious trap.** On-LAN nodes must *not* accept the tunnel route for
   their own LAN; that discipline keeps local traffic local.
 

@@ -11,15 +11,19 @@ only AFTER the email is sent: if sending fails, the next run retries instead of 
 Config (default $HOME/.config/fleet-monitoring/local-checks.conf, override --config/$FLEET_LOCAL_CHECKS):
     type | name | arg
       service | <name> | <launchd-label | systemd-unit>   is that service running?
-      mount   | <name> | <path>                           is <path> a mount? (kernel table, NO I/O)
+      mount   | <name> | <path>                           is <path> a mount? (mount point + table; not the share)
       http    | <name> | <url>                             does <url> return 200? (e.g. cross-ping Gatus)
       command | <name> | <shell command>                  exit 0 == ok (escape hatch: DB query, docker…)
 
-IMPORTANT (the `mount` type does NO I/O): on macOS an NFS/SMB mount is bound to the GUI login
-session, so I/O (ls/stat) against it HANGS from a launchd/background context even when the mount
-is perfectly healthy. So `mount` checks only the kernel mount table (ismount + `mount`/`findmnt`),
-which is reliable everywhere. It catches "unmounted", not "mounted-but-hung" — use a `command`
-check via a login shell (e.g. `ssh localhost 'ls <path>'`) if you need hung-detection.
+IMPORTANT (the `mount` type never reads INSIDE the share): on macOS an NFS/SMB mount is bound to the
+GUI login session, so I/O (ls/stat) inside it HANGS from a launchd/background context even when the
+mount is perfectly healthy. So `mount` checks the mount point and the mount table (ismount +
+`mount`/`findmnt`) instead. ⚠ That is less I/O, not none: ismount() stats the mount point (a server
+round-trip on a network mount; an unreachable server reads as "not a mount point"), and the table
+read can block on an unresponsive server. So a failure here can mean "could not determine", not
+"unmounted" (guide § 17, "A probe that could not answer has not told you anything"). It catches
+"unmounted", not "mounted-but-hung" — use a `command` check via a login shell (e.g.
+`ssh localhost 'ls <path>'`) if you need hung-detection.
 
 Exit: 0 all ok · 1 one or more failing · 3 the alert email failed to send (state kept; next run retries).
 Flags: --dry-run (print, no email/state), --always (email regardless).

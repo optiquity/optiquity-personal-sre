@@ -96,11 +96,16 @@ Two gotchas worth internalizing (both cost real debugging):
 - **Enumerate services, not containers.** It's easy to build a monitoring list from
   `docker ps` (or your container UI) and silently miss **native** services — a launchd/systemd
   agent, a gateway daemon. List what's *running*, by role, not what's *containerized*.
-- **`mount` checks do NO I/O.** On macOS an NFS/SMB share is bound to the GUI login session, so
-  `ls`/`stat` against it **hangs from a launchd/background run even when the mount is healthy** —
-  a guaranteed false alarm on a schedule. `fleet-local-check`'s `mount` type reads only the
-  kernel mount table (reliable everywhere); for genuine hung-detection, use a `command` check
-  through a login shell (`ssh localhost 'ls <path>'`).
+- **`mount` checks avoid reading the share, but they are not free of I/O.** On macOS an NFS/SMB
+  share is bound to the GUI login session, so `ls`/`stat` *inside* it **hangs from a
+  launchd/background run even when the mount is healthy**, a guaranteed false alarm on a schedule.
+  `fleet-local-check`'s `mount` type therefore checks the mount point and the mount table instead.
+  ⚠ Both still touch the network. `os.path.ismount()` stats the mount point, and an unreachable
+  server reads as "not a mount point". Reading the mount table can block on an unresponsive server.
+  So a mount alert on a busy night can mean *could not determine*, not *unmounted*: see guide § 17,
+  "A probe that could not answer has not told you anything". Today the tool reports that case as a
+  failure. For genuine hung-detection, use a `command` check through a login shell
+  (`ssh localhost 'ls <path>'`).
 
 ## Install-method audit (catch "installed two ways")
 
@@ -205,12 +210,13 @@ should call `fleet-mail` the same way, so every message you send lands under you
 mailer that records what would have been sent. That exercises the **send path**, which `--dry-run`
 never reaches. See guide § 17, "Syntax-checked is not correct".
 
-**Expect your health-check tool to ignore all this.** Gatus, for example, **hardcodes its subject**
-(`[<group>/<name>] Alert triggered` / `... Alert resolved`) with no prefix setting — the only lever
-is what you name the group and endpoint. Don't contort the tool's UI to force cosmetic consistency:
-its subjects are already a usable `[area/endpoint]` hierarchy. Just write **two** filter rules
-instead of one — one matching your prefix, one matching the health checker's fixed phrasing — and
-confirm both with real test emails before you rely on them.
+**Expect your health-check tool to ignore all this.** Gatus, for example (checked on v5.36),
+**hardcodes its subject** as `<group>/<name>: Alert triggered` / `…: Alert resolved`: no brackets and
+no setting to change it. Either route its alerts through a small localhost relay (its `custom`
+provider POSTs each alert to a URL) that builds the subject with `fleet-mail`, or accept its phrasing
+and add a second filter rule. **Confirm with real test emails in the client you read.** A client may
+group different alerts into one conversation if they differ only inside the leading `[tag]`, so make
+the text after the tag name the source. See guide E16 §7.
 
 ## Coverage probes — for batch work, count the artifact
 

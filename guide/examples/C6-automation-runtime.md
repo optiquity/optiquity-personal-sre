@@ -91,8 +91,14 @@ success:
 
 Worse, most automation runtimes now separate the workflow you *edit* from the workflow that *runs* —
 a draft and a published version, with a pointer between them. Under that model a direct database
-edit, an API `PUT`, or a restart each change the draft and leave the pointer alone. The editor shows
-your change. The scheduler keeps running the old one. Nothing errors.
+edit or a restart changes the draft and leaves the pointer alone. The editor shows your change. The
+scheduler keeps running the old one. Nothing errors.
+
+⚠ **And the rules differ by route, so measure rather than assume.** In the runtime this documents, a
+*public-API* `PUT` on an **active** workflow turned out to save **and publish** in one call. It moved
+the pointer by itself, the opposite of the database edit it resembles (an earlier version of this
+page said otherwise). After any change, by any route, check the edited version against the
+published pointer.
 
 ⚠ **Find out whether your runtime has a draft/published split before you deploy anything.** If it
 does, publishing is a **separate step** and skipping it is silent.
@@ -135,6 +141,19 @@ sanity-check it against the old one before you trust the result.
 Then check the whole set, not the one you touched: **reconcile every committed export against the
 running definitions.** Drift is silent, and it accumulates in the workflows you are not currently
 thinking about.
+
+Two traps in that reconciliation, both found by getting a wrong answer:
+
+- **Not everything is versioned.** In the runtime this documents, a workflow's *settings* (its
+  timeout, for one) live on the workflow row, not in the version history that holds the nodes and
+  wiring. A check that compares nodes and connections **cannot see a settings change**. Compare the
+  settings directly, and confirm them from the execution snapshot, which records what the run
+  actually used.
+- **Know the stored timestamp format before you filter on it.** The execution table stored times
+  as `2026-01-05 18:03:30`, with a space. A query comparing against an ISO string with a `T`
+  sorts after every stored time that day, and answered "no runs since the deploy" while every
+  workflow had run a dozen times. A result that is impossible given the poll interval is a bug in
+  the query.
 
 ## Traps in the workflows themselves
 

@@ -29,11 +29,13 @@ winget install --id RedHat.Podman           # container runtime
 ```
 Prefer **winget** for system tools, **scoop** where you want no-admin userspace installs.
 
-**Gotcha — non-interactive install:** over SSH/automation, `winget` frequently needs an
-**elevated, interactive** session — it can return *"Access is denied"* from a plain
-non-interactive SSH shell. Run package updates from an **elevated PowerShell on the box** (local
-console or RDP), not from the fleet's SSH automation. This is a real constraint: Windows package
-management doesn't drive cleanly headless the way `brew`/`apt` do.
+**Gotcha — non-interactive *install*:** over SSH/automation, `winget` *installs and upgrades*
+frequently need an **elevated, interactive** session. They can return *"Access is denied"* from a
+plain non-interactive SSH shell, so run them from an **elevated PowerShell on the box** (local
+console or RDP). **Detecting is different:** `winget list --disable-interactivity` reports available
+upgrades fine over SSH. It cannot refresh its source index without elevation, so results come from
+cache; say so wherever you report them. Installing needs privilege, detecting usually does not
+([16](../guide/16-multinode.md)): don't let the first become an excuse for skipping the second.
 
 ## SSH with keys (OpenSSH for Windows)
 
@@ -82,6 +84,19 @@ schedule:
 - This is the Windows equivalent of "don't auto-update everything" — the OS just fights you
   harder about it.
 
+⚠ **The OS repairs this, so a one-time pin is not done.** Windows ships a service whose job is to
+detect and undo tampering with Windows Update. In one fleet the pin silently reverted twice over
+ten weeks, and each reversion was found by an audit, not an alert. So:
+
+- **Make the scripts verify their own result.** The update-orchestration scheduled tasks are
+  ACL-protected: a disable can fail with *"Access is denied"* behind a swallowed error while the
+  script prints *"Windows Update is OFF"*. Read the state back and fail loudly.
+- **Check the live values on a schedule** (service start types, task states) and alert when they
+  drift. A setting the platform actively repairs needs a persistence check, or it is *functional*,
+  not *done*.
+- **Also set the policy against auto-restart while a user is logged on.** A pinned service is not
+  the only path to a reboot. An update restart can still land in the middle of work.
+
 Also worth doing on a fresh Windows node: **remove vendor bloat/AV** (OEM "security" add-ons)
 that interferes with a clean setup.
 
@@ -97,10 +112,10 @@ chezmoi runs on Windows, but templating and script hooks differ:
 
 ## ⛏ Service manager on Windows — TODO
 
-For fleet monitoring, the practical note today: Windows nodes are **digest-only**. `winget` needs
-an elevated *interactive* session, so an update pass can't be driven over SSH the way `apt`/`brew`
-can — the framework's update digest therefore reports Windows as a **manual** node (it tells you to
-go run it, rather than pretending it can). Metrics are fine: `windows_exporter` scrapes like any
+For fleet monitoring, the practical note today: **detecting** Windows updates works over SSH
+(`winget list --disable-interactivity`, cached results); **applying** them needs an elevated
+interactive session. The skeleton's update checker has no winget method yet, so it lists a Windows
+node as `manual` with a reminder. That is a gap in the checker, not a property of Windows. Metrics are fine: `windows_exporter` scrapes like any
 other node. Task Scheduler is the launchd/systemd-timer analog if you want local scheduled checks.
 
 The launchd equivalent is **Task Scheduler** (for scheduled jobs) and **Windows Services** (for

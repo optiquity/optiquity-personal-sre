@@ -205,8 +205,12 @@ An alert nobody reads is worse than no alert: it trains you to ignore the channe
   --text "…"`), and only the mailer assembles the subject. It **refuses** a malformed one, with
   a non-zero exit, rather than sending it. Otherwise each script hand-builds its own, and one typo
   quietly moves a whole class of alerts outside your filters.
-- **Expect one tool to refuse.** Health checkers often hardcode their subject line. Don't contort
-  its config to force cosmetic consistency — accept its format and write a second filter rule.
+- **Expect one tool to refuse — and route it through your builder rather than around it.** Health
+  checkers often hardcode their subject line (Gatus v5.36 sends `<group>/<name>: Alert triggered`,
+  with no setting to change it). If the tool can call a URL on alert, a small localhost relay can
+  format and send those alerts with the same builder as everything else. Otherwise accept its
+  phrasing and add a second filter rule. Then test in the client you actually read: see
+  [E16 §7](examples/E16-fleet-health-and-alerting.md).
 
 ## Prove the alert path — an induced failure, not a green page
 

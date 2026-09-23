@@ -3,6 +3,26 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-23 — corrections: six things this guide taught that were wrong
+
+No code behaviour changes. If you followed any of these, re-check your setup:
+
+- **Gatus's subject** (E16, monitoring README, § 17): it is `<group>/<name>: Alert triggered`, with no
+  brackets, not `[<group>/<name>] …`. New advice: route it through a localhost relay into your own
+  mailer, or add a second filter. Test in the client you read, because clients may group alerts that
+  differ only inside the leading `[tag]`.
+- **Subnet-router "hot standby"** (E12): under oldest-wins primary selection, the old gateway takes
+  the route back at the first re-election, silently. Retire its route instead, and assert the role.
+- **Automation-runtime deploys** (C6): a public-API `PUT` on an active workflow *publishes*. Only a
+  database edit or a restart leaves the pointer alone. New traps: settings aren't versioned, and the
+  stored timestamp format matters.
+- **Windows updates** (windows.md, E16, `fleet-update-check`): *detecting* works over SSH. Only
+  *installing* needs elevation.
+- **Windows Update pinned to manual** (windows.md): the OS repairs this. Verify the scripts' own
+  result, check the live values on a schedule, and set no-auto-restart-with-logged-on-users.
+- **"`mount` checks do no I/O, reliable everywhere"** (monitoring README, `fleet-local-check`): false.
+  The mount point and table both touch the network, so a failure can mean *could not determine*.
+
 ## 2026-09-23 — the monitoring tools' alert mail works again
 
 **If you installed `skeleton/monitoring/`, re-run `bootstrap-monitoring.sh` (or copy the four tools),

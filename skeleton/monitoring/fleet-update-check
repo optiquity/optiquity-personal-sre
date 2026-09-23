@@ -18,8 +18,8 @@ with --config or $FLEET_NODES) — one line per node:
     nas       | <nas-host>      | synology | manual
 
 Local macos/linux nodes run via a login shell (to pick up brew/npm); remote nodes over SSH
-(key auth, BatchMode). "manual" emits an OS-specific reminder (winget/DSM etc. can't be driven
-safely non-interactively). Emails via a mailer command (default: fleet-mail) when there are
+(key auth, BatchMode). "manual" emits an OS-specific reminder: this checker has no winget/DSM method
+yet (detecting often works over SSH; INSTALLING needs an elevated or UI session — guide § 16). Emails via a mailer command (default: fleet-mail) when there are
 updates OR errors; silent when all-current (--always forces, --dry-run prints instead).
 --refresh also refreshes indexes first (brew update / apt-get update) for exact counts.
 
@@ -30,7 +30,7 @@ import argparse, os, re, shlex, subprocess, sys, datetime
 SSH = ["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes"]
 DEFAULT_CONFIG = os.path.expanduser("~/.config/fleet-monitoring/fleet-nodes.conf")
 MANUAL_HINT = {
-    "windows":  "winget needs an interactive elevated session: winget upgrade --all --include-unknown --accept-source-agreements",
+    "windows":  "detect over SSH: winget list --disable-interactivity (cached index); install from an elevated session: winget upgrade --all --include-unknown --accept-source-agreements",
     "synology": "DSM → Package Center → Installed → Update. Sideloaded packages (e.g. a mesh-VPN .spk) update manually.",
     "nas":      "check the NAS admin UI for package/OS updates.",
 }
