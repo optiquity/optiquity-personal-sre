@@ -3,6 +3,31 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-23 — rules, presets and practices agree with the guide
+
+**If you seeded a repo from `CLAUDE.md.template` or `AGENTS.md.template`, compare your Rules section
+with the new template.** Rule numbers changed.
+
+- **Changed: the rules templates now number rules 1–18 exactly as `guide/03-governance-rules.md`
+  does, with the same titles.** They had 12 rules, numbered differently: "Rule 7" meant symmetry
+  in the guide but deferral in the template. The six missing principles (updates, one plan/one
+  owner, postmortems, the design pass, stateful services, exposure, evidence-or-doubt) are added.
+  Your own rules start at 19. CI (`scripts/check-rules-templates.py`) keeps them in sync.
+- **Changed: principle 1 covers writes outside the repo.** Any overwrite there counts, and the AI
+  CLI's live settings change only through the config manager.
+- **Fixed: permission presets that were less safe than described.**
+  - `cautious` ("reads only") allowed `find` (`-delete`).
+  - `standard` and `trusting` allowed `sed` and `awk` (which write), and `trusting` allowed
+    `git branch` (`-D`).
+  - `standard` allowed unscoped `Edit`.
+  - `/tmp/*` meant `~/.claude/tmp/*`. It is now `//tmp/**`.
+  - `.env` was denied only at the repo root.
+- **Fixed:** the design-practice rule D8 now mirrors the postmortem rule R8 (no back-dated design
+  for work already under way). The template-version stamps now match the rules' revision logs
+  (1.1, 1.2). The concepts diagram names the real design templates. `AGENTS.md` counts were
+  corrected, as were two wrong rule citations (§ 02, § 14). A sentence in § 10 was cut in half by
+  another paragraph.
+
 ## 2026-09-23 — setup works for a new user
 
 - **Fixed: `bootstrap.sh` was not executable** (`./bootstrap.sh` gave *Permission denied*).

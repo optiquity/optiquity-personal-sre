@@ -59,8 +59,15 @@ is exactly where people give away safety without noticing.** The framework's gui
 
 - **Auto-approve reads freely.** They can't hurt you; frictionless reading makes the operator's
   proposals better.
-- **Auto-approve writes only in scratch.** A `Write(/scratch/*)` grant is safe; a blanket
-  `Write` grant means the operator can silently overwrite anything.
+- **Auto-approve writes only in scratch.** A scratch grant is safe, and a blanket `Write` grant
+  means the operator can silently overwrite anything. ⚠ Mind the path syntax. In Claude Code rules,
+  `//tmp/**` is the absolute `/tmp`, while a single leading slash (`/tmp/*`) anchors at the
+  *settings file's* directory, so in your user settings it silently means `~/.claude/tmp/*`.
+- **Be wary of shell allow rules.** A Bash allow rule matches everything after its prefix:
+  `Bash(find *)` also allows `find . -delete`, `Bash(sed *)` allows `sed -i`, and
+  `Bash(git branch *)` allows `git branch -D`, a version-control change. Claude Code already runs a
+  built-in set of read-only commands without prompting, and still prompts for their write-capable
+  forms. An explicit allow rule removes that protection, so the presets add almost none.
 - **Never auto-approve the outward-facing/material set** — pushes, deploys, deletes, service
   bootstraps — *at the permission layer*, even if you trust the operator. These stay `ask` (or
   are gated by the rules, ideally both). The cost of one wrong auto-approved push outweighs the
@@ -76,15 +83,17 @@ instead of hand-building one:
 
 | Preset | Auto-runs | Prompts | Best for |
 |---|---|---|---|
-| **cautious** | reads only | everything else (all writes, all shell, all network) | Building trust; a new setup; a sensitive `server`. |
-| **standard** | reads + scratch writes + common safe shell tools | real writes, network, installs, VC, material actions | The default day-to-day posture. |
-| **trusting** | the above + more low-risk shell/edit categories | still prompts VC pushes, deletes, deploys, service bootstraps | An interactive `workstation` where you're present and want flow. |
+| **cautious** | reads only (plus the CLI's built-in read-only shell commands) | everything else (all writes, all other shell, all network) | Building trust; a new setup; a sensitive `server`. |
+| **standard** | the above + scratch writes under `/tmp` | real writes, other shell, network, installs, VC, material actions | The default day-to-day posture. |
+| **trusting** | the above + edits and new files **inside the working directory** | anything outside the repo, VC changes, deletes, pushes, deploys, service bootstraps | An interactive `workstation` where you're present and want flow. |
 
 **Every preset still prompts (or denies) the outward-facing/material set.** "Trusting" trims
 friction on *low-risk* actions; it never hands over the dangerous ones. That invariant is the
 point — presets differ in convenience, not in whether a push can happen silently (it can't).
 
 Pick per role: a `server` that runs unattended deserves **cautious**; a `workstation` you sit
+at can run **standard** or **trusting**. Because permissions are per-machine config, the config
+manager can render the right preset per role ([05 · chezmoi](05-chezmoi.md)).
 
 **Scheduled checks live outside this model entirely.** A timer-driven health probe or update
 inventory runs under launchd/systemd with no session and no CLI, so neither preset nor session
@@ -93,8 +102,6 @@ notify-only** — they report, they never change a node. Two consequences worth 
 that *would* change a node must come back through a session and Rule 1; and the credential such a
 job needs (e.g. SMTP) is a host-local `chmod 600` file, not a permission grant
 ([06](06-secrets.md), [E16](examples/E16-fleet-health-and-alerting.md)).
-at can run **standard** or **trusting**. Because permissions are per-machine config, the config
-manager can render the right preset per role ([05 · chezmoi](05-chezmoi.md)).
 
 ## MCP servers are a permission grant too
 

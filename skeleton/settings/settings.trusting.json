@@ -1,34 +1,23 @@
 {
-  "//": "TRUSTING preset (guide/09-permissions.md). Standard + more low-risk shell/edit auto-run, for an INTERACTIVE workstation where you are present and want flow. STILL prompts VC pushes, deletes, deploys, and service bootstraps — the invariant across every preset. Do NOT use on an unattended server.",
+  "//": "TRUSTING preset (guide/10-permissions.md). Standard + edits and new files INSIDE the working directory without a prompt (git is the backup there). Everything outside the repo, all VC state changes, deletes, pushes, deploys and service bootstraps still prompt — no Bash allow rules, because a prefix rule allows every option too (sed -i, git branch -D, find -delete). For an interactive workstation where you're present.",
   "permissions": {
     "allow": [
-      "Bash(grep:*)",
-      "Bash(find:*)",
-      "Bash(cat:*)",
-      "Bash(ls:*)",
-      "Bash(sed:*)",
-      "Bash(awk:*)",
-      "Bash(head:*)",
-      "Bash(tail:*)",
-      "Bash(wc:*)",
-      "Bash(diff:*)",
-      "Bash(git status:*)",
-      "Bash(git log:*)",
-      "Bash(git diff:*)",
-      "Bash(git show:*)",
-      "Bash(git branch:*)",
       "Read",
-      "Edit",
-      "Write",
-      "Write(/tmp/*)",
-      "Edit(/tmp/*)"
+      "Edit(./**)",
+      "Write(./**)",
+      "Write(//tmp/**)",
+      "Edit(//tmp/**)"
     ],
     "deny": [
-      "Read(./.env)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
       "Read(./**/*.key)",
+      "Read(./**/*.pem)",
       "Read(./**/id_ed25519*)",
+      "Read(./**/id_rsa*)",
       "Read(./**/*.kdbx)",
-      "Bash(rm -rf:*)"
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)"
     ]
   },
   "//invariant": "Even 'trusting' NEVER auto-approves: git push, git reset/clean, deletes of tracked paths, deploys, remote-artifact creation, or service bootstraps. Presets trade friction on LOW-RISK actions only — never on the dangerous set. A wrong auto-approved push outweighs the saved prompts.",

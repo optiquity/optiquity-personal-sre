@@ -6,7 +6,7 @@ kind:               triage | install | migration | policy | decommission
 opened:             <YYYY-MM-DD>
 closed:             <YYYY-MM-DD, or an em-dash while open>
 postmortem-version: 1          # THIS document's version — bump on a MAJOR change only (R10)
-template-version:   1.0        # which template version it was written against
+template-version:   1.2        # which template version it was written against
 ```
 
 > **When this is created, where it lives, and how it is named are governed by

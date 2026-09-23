@@ -35,6 +35,14 @@ The operator must stop and ask before anything hard to reverse or outward-facing
 **Why:** these are the actions whose blast radius exceeds the current file. Reversible,
 local, in-repo work does **not** need this gate — that's what keeps friction low.
 
+⚠ **Outside the repo is where this bites.** In the repo, git is the backup. Outside it, much of
+what the operator can reach — its own config directory, app state, per-host settings — is
+untracked and unrecoverable. So there, **any overwrite counts**, including a one-file one: `cp`
+onto an existing path, `mv`, a `>` redirect. And the AI CLI's own live settings change **only
+through the config manager** (edit the repo copy → apply), never by editing them in place.
+Creating a *new* file, scratch under `/tmp`, and backup copies need no approval: there is nothing
+there to destroy.
+
 ### 2. No version-control state changes without explicit approval
 **Every** git/host mutation is gated — not just the scary ones. That includes **staging**
 (`git add`), commit, push (to *any* remote), branch/tag deletion, resets, and any host-side
@@ -337,7 +345,10 @@ coverage sits unread in the repo.
 The operator reads a **rules file** at the repo root — for Claude Code this is `CLAUDE.md`;
 Codex uses `AGENTS.md`; other CLIs have their own (see
 [12 · Agents & skills](12-agents-skills.md)). The framework ships a **template** you tune:
-`skeleton/CLAUDE.md.template`.
+`skeleton/CLAUDE.md.template`. Its rules 1–18 are the principles above, **in the same order and
+with the same titles**, so "Rule 7" means the same thing in your rules file, in this guide, and in
+anyone else's repo built from it. Your own rules go after them. A check in the framework's CI
+(`scripts/check-rules-templates.py`) keeps the template's numbering matched to this chapter.
 
 A good rules file has these parts:
 

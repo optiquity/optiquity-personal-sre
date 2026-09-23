@@ -3,7 +3,7 @@
 ```
 status:           draft | agreed | superseded
 design-version:   1          # THIS document's version — bump on a MAJOR change only (D9)
-template-version: 1.0        # which template version it was written against
+template-version: 1.1        # which template version it was written against
 form:             long
 opened:           <YYYY-MM-DD>
 agreed:           <YYYY-MM-DD or em-dash>

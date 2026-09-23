@@ -1,20 +1,16 @@
 {
-  "//": "CAUTIOUS preset (guide/09-permissions.md). Auto-runs READS ONLY; everything else prompts. Best for a new setup, an unattended server, or while building trust. Copy the block you want into your CLI's settings (e.g. ~/.claude/settings.json).",
+  "//": "CAUTIOUS preset (guide/10-permissions.md). Auto-approves READS ONLY; everything else prompts. Common read-only shell commands (ls, cat, grep, git status/log/diff, …) need no rule: Claude Code runs its built-in read-only set without prompting and STILL prompts for their write-capable forms. An explicit Bash allow rule would remove that protection (Bash(find *) also allows `find . -delete`). Best for a new setup, an unattended server, or while building trust. Copy the block into your CLI's settings.",
   "permissions": {
     "allow": [
-      "Bash(grep:*)",
-      "Bash(find:*)",
-      "Bash(cat:*)",
-      "Bash(ls:*)",
-      "Bash(git status:*)",
-      "Bash(git log:*)",
-      "Bash(git diff:*)",
       "Read"
     ],
     "deny": [
-      "Read(./.env)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
       "Read(./**/*.key)",
+      "Read(./**/*.pem)",
       "Read(./**/id_ed25519*)",
+      "Read(./**/id_rsa*)",
       "Read(./**/*.kdbx)"
     ]
   },

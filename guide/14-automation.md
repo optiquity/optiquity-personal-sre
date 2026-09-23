@@ -69,7 +69,7 @@ feels like a tool rather than a database.
 
 **It holds things you cannot reproduce from the repo** — the workflows themselves, the credentials
 they use, the history of what ran. Back it up on a schedule, and **restore-test it at least once**.
-A backup you have not restored is a hypothesis ([Rule 4](03-governance-rules.md)).
+A backup you have not restored is a hypothesis ([Rule 16](03-governance-rules.md)).
 
 ⚠ **A committed export is not a deployment.** This is the single most expensive trap in the
 category. You export a workflow, commit it, see it in `git log`, and believe the running system

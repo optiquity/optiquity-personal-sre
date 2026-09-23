@@ -1,27 +1,18 @@
 {
-  "//": "STANDARD preset (guide/09-permissions.md). Auto-runs reads + scratch writes + common safe shell tools; prompts real writes, network, installs, VC, and material actions. The sensible day-to-day posture. Copy into your CLI's settings.",
+  "//": "STANDARD preset (guide/10-permissions.md). Reads + scratch writes under /tmp; every real write, all other shell, network, installs, VC and material actions prompt. Paths: `//tmp/**` is the absolute /tmp — a single leading `/` would anchor at the settings file's own directory. Read-only shell commands run via Claude Code's built-in read-only set (see cautious). The default day-to-day posture.",
   "permissions": {
     "allow": [
-      "Bash(grep:*)",
-      "Bash(find:*)",
-      "Bash(cat:*)",
-      "Bash(ls:*)",
-      "Bash(sed:*)",
-      "Bash(awk:*)",
-      "Bash(git status:*)",
-      "Bash(git log:*)",
-      "Bash(git diff:*)",
-      "Bash(git show:*)",
       "Read",
-      "Edit",
-      "Write(/tmp/*)",
-      "Edit(/tmp/*)",
-      "Read(/tmp/*)"
+      "Write(//tmp/**)",
+      "Edit(//tmp/**)"
     ],
     "deny": [
-      "Read(./.env)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
       "Read(./**/*.key)",
+      "Read(./**/*.pem)",
       "Read(./**/id_ed25519*)",
+      "Read(./**/id_rsa*)",
       "Read(./**/*.kdbx)"
     ]
   },

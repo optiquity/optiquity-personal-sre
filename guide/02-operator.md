@@ -90,7 +90,7 @@ a new session picks up exactly where the last left off by reading them.
   ([12 · Agents & skills](12-agents-skills.md) has the config-location table). Keep the rule
   *content* in sync across them so the operator behaves identically whichever you invoke.
 - **You can run it on more than one node.** Same rules everywhere (symmetry —
-  [Rule 5](03-governance-rules.md)); role-appropriate permission posture per node
+  [Rule 7](03-governance-rules.md)); role-appropriate permission posture per node
   ([16 · Multi-node](16-multinode.md)).
 
 ## Delegation and parallelism (briefly)

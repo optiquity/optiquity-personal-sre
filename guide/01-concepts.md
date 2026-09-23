@@ -117,10 +117,11 @@ invented, which is worse than not having one.
 This is structural, not stylistic. **Each practice is a directory with the same three parts:**
 
 ```
-design/                       postmortems/
-  RULES.md      ← whether / when / where / who →      RULES.md
-  TEMPLATE.md   ← how to write each section   →      TEMPLATE.md
-  README.md     ← the index and the how-to    →      README.md
+design/                           postmortems/
+  RULES.md            ← whether / when / where / who →      RULES.md
+  TEMPLATE-SHORT.md   ← how to write each section   →      TEMPLATE.md
+  TEMPLATE-LONG.md      (the design side has two forms)
+  README.md           ← the index and the how-to    →      README.md
 ```
 
 **The split is load-bearing: rules own *whether and when*, templates own *how*.** ⚠ **One source

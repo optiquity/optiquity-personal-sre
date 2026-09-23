@@ -68,9 +68,12 @@ phase should have forced, **that becomes a prompt in the template** — with a v
 
 **This is the loop that makes the practice improve rather than merely persist.**
 
-## D8 · Retrofit only where it will be used
+## D8 · Retrofit only where it will be used — **mirrors `../postmortems/RULES.md` R8**
 
-**Existing completed projects do not get design documents.**
+**Existing completed projects do not get design documents.** **Projects already open when you
+adopt this practice do not get a back-dated one either**: a design doc exists to settle
+questions *before* the work, and for work already under way that moment has passed. A design
+written afterwards would be reconstruction dressed as foresight.
 
 A project that is **reopened** or gains **follow-on work** gets one — covering either the new
 work alone or the whole system, whichever the situation calls for.
@@ -83,6 +86,9 @@ Two limits, both hard:
   constraint answers cannot be established for pre-existing work, **either establish them or
   do not write the document.** A design doc with hollow sections is worse than none: it
   implies the questions were answered.
+
+⚠ **This mirrors R8 deliberately.** The design and postmortem practices are a loop (D6/D7); two
+halves with different scope rules drift until one stops feeding the other.
 
 ## D9 · Revising an agreed design
 
