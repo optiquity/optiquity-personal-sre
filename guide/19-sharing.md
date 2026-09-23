@@ -141,3 +141,7 @@ what lets you share the work at all.
 
 *This is the last section of the master guide. For platform-specific commands, see the spokes
 (`platforms/`); for starter files, see `skeleton/`; to begin, see [18 · Setup](18-setup.md).*
+
+---
+
+Next: [20 · Example projects](20-example-projects.md) — the catalogue of worked examples.

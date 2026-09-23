@@ -144,10 +144,13 @@ accumulated drift. Moving the burden of noticing onto the operator while keeping
 you gets the safety without the rot. See [17 · Monitoring](17-monitoring.md) for the detection side.
 
 > **Worked example:** [03a · Case study — four causes, all wrong](03a-case-four-wrong-causes.md)
->
-> **Worked example:** [03b · Case study — auditing damage: absence is only half the question](03b-case-absence-and-overwrite.md)
 > shows these rules absorbing an operator that asserted four causes without testing any. The
 > containment was structural, not a matter of anyone being careful.
+>
+> **Worked example:** [03b · Case study — auditing damage: absence is only half the question](03b-case-absence-and-overwrite.md)
+> — an audit asked *"what is missing?"* and got a clean, confident, wrong-shaped answer, because an
+> overwrite removes nothing. The two questions, and why a timestamp sweep alone produces false
+> positives you stop reading.
 
 ### 12. One plan, one owner — when more than one session is working
 
@@ -382,3 +385,7 @@ Rules the operator can quietly skip aren't rules. Reinforce them structurally:
 
 The goal is **defense in depth**: judgment (these rules) + capability limits (permissions) +
 structural exclusion (ignore files). No single layer has to be perfect.
+
+---
+
+Next: [04 · Structure](04-structure.md) — where the status these rules require actually lives. (Case studies: [03a](03a-case-four-wrong-causes.md), [03b](03b-case-absence-and-overwrite.md).)

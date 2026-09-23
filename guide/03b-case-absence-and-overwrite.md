@@ -125,3 +125,7 @@ two-file conclusion. **The damage really was two files.**
 But that outcome was luck, not process. ⚠ **The audit would have reported exactly the same clean
 result whether or not an overwrite existed**, and the only reason anyone knows the difference is
 that a human asked a better question than the tool had been pointed at.
+
+---
+
+Next: [04 · Structure](04-structure.md).

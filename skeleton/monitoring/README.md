@@ -333,7 +333,7 @@ the text after the tag name the source. See guide E16 §7.
 
 The probes above answer *"is it working right now?"*. Long-running batch work needs a different
 question: *"how much of it is actually done?"* — and the naive version of that check is the most
-dangerous probe you can write. See guide **§ 14 (Liveness is not completion)** for the full case.
+dangerous probe you can write. See guide **§ 17 (Liveness is not completion)** for the full case.
 
 The failure: a watcher that tests whether the job's process is running, and reports success when it
 exits. A process exits on success, on failure, on being killed, and when it had nothing queued —
@@ -361,7 +361,7 @@ Write these instead as **coverage probes**:
 
 Platform background work (reindex, analysis, compaction) usually runs inside a **maintenance
 window**, which caps its runtime — a backlog needing 240 hours finishes in ten days if run
-continuously and **two months** in a four-hour nightly window. See guide **§ 14 (Background work
+continuously and **two months** in a four-hour nightly window. See guide **§ 17 (Background work
 has a window)** for how to spot it; a manual trigger often bypasses the window's *start* but not
 its *end*, which is what makes one daily nudge effective.
 

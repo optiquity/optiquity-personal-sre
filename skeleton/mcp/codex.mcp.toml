@@ -1,7 +1,7 @@
-# Codex MCP servers (guide/10-mcp.md) — the [mcp_servers] section of ~/.codex/config.toml.
+# Codex MCP servers (guide/11-mcp.md) — the [mcp_servers] section of ~/.codex/config.toml.
 # PLACEHOLDERS ONLY: tokens via env, paths $HOME-relative. Claude-first framework — this is the
 # Codex equivalent of skeleton/mcp/claude.mcp.json; enable only what a project needs, and treat
-# each server as a capability grant (guide/09-permissions.md).
+# each server as a capability grant (guide/10-permissions.md).
 
 # GitHub's OFFICIAL MCP server (github/github-mcp-server). The old community
 # @modelcontextprotocol/server-github is deprecated/archived (Apr 2025) — use this.

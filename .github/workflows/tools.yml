@@ -26,5 +26,7 @@ jobs:
         run: RELAY_FLEET_MAIL=$PWD/skeleton/monitoring/fleet-mail python3 skeleton/monitoring/gatus-mail-relay --self-test
       - name: Rules templates numbered like chapter 03
         run: python3 scripts/check-rules-templates.py
+      - name: Guide links, link labels, chapter names and reading order
+        run: python3 scripts/check-guide-links.py
       - name: Shell scripts parse
         run: for f in $(git ls-files '*.sh'); do bash -n "$f" || exit 1; done

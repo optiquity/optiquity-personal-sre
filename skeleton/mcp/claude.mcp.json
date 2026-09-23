@@ -1,7 +1,7 @@
 {
-  "//": "Claude Code MCP servers (guide/10-mcp.md). Merge the servers you want into your CLI settings' mcpServers block. PLACEHOLDERS ONLY — no real tokens (use ${ENV_VAR}) and no real paths (use $HOME-relative). Enable only what a project needs.",
+  "//": "Claude Code MCP servers (guide/11-mcp.md). Merge the servers you want into your CLI settings' mcpServers block. PLACEHOLDERS ONLY — no real tokens (use ${ENV_VAR}) and no real paths (use $HOME-relative). Enable only what a project needs.",
   "mcpServers": {
-    "//github": "GitHub's OFFICIAL MCP server (github/github-mcp-server). A capability grant: scope with --toolsets + use --read-only to gate mutations (guide/09-permissions.md). PAT from the environment, never inline. NOTE: the old community @modelcontextprotocol/server-github is deprecated/archived (Apr 2025) — use this. Two modes: (a) LOCAL binary below (brew install github-mcp-server, or Docker ghcr.io/github/github-mcp-server), PAT auth; (b) REMOTE hosted at https://api.githubcopilot.com/mcp/ (OAuth) — see mcp/README.md.",
+    "//github": "GitHub's OFFICIAL MCP server (github/github-mcp-server). A capability grant: scope with --toolsets + use --read-only to gate mutations (guide/10-permissions.md). PAT from the environment, never inline. NOTE: the old community @modelcontextprotocol/server-github is deprecated/archived (Apr 2025) — use this. Two modes: (a) LOCAL binary below (brew install github-mcp-server, or Docker ghcr.io/github/github-mcp-server), PAT auth; (b) REMOTE hosted at https://api.githubcopilot.com/mcp/ (OAuth) — see mcp/README.md.",
     "github": {
       "command": "github-mcp-server",
       "args": ["stdio", "--toolsets=repos,issues,pull_requests"],
@@ -19,6 +19,6 @@
     },
 
     "//optional-docs": "Optional: a docs/context fetcher so the operator cites current docs, not training memory.",
-    "//optional-browser": "Optional: browser automation for tasks with no API (guide/11-agents-skills.md). Enable per project."
+    "//optional-browser": "Optional: browser automation for tasks with no API (guide/12-agents-skills.md). Enable per project."
   }
 }

@@ -38,4 +38,4 @@ is a much bigger grant than a read-only one — grant deliberately (guide/10-per
 - What can it *do* — read-only or can it mutate external state? Prefer least-capable variants.
 - Scope it (a filesystem server → specific dirs, never `$HOME` root or a secret path).
 - Provenance — prefer official/well-known servers; audit unknowns.
-- Keep the CLI permission layer (guide/09) gating its dangerous tools on *ask*.
+- Keep the CLI permission layer (guide/10) gating its dangerous tools on *ask*.

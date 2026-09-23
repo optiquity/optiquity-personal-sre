@@ -142,3 +142,7 @@ all inside the session that was cleaning up an unrelated incident.
 ⚠ **The most expensive part was not the hang.** It was believing the original problem was solved for
 several hours while the scheduled job — the thing the change existed to protect — was still running
 the old binary.
+
+---
+
+Next: [08 · Networking](08-networking.md).

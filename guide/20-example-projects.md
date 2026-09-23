@@ -10,6 +10,13 @@ in **your own** repo.
 
 Each example lives in its own doc under [`examples/`](examples/). This page is the catalog.
 
+**About the IDs.** Each is a category letter plus one running number across the whole catalogue
+(A1, A3, B4 … E19), so an ID never changes when an example is added elsewhere. **A2 and D8 were
+planned and never published.** Their numbers stay unused rather than being reassigned, because a
+reused ID makes two documents describe different things under one name (the rule from
+[03 · Governance](03-governance-rules.md), principle 12). Example *D9* is unrelated to the
+design-practice rule *D9* in `skeleton/design/RULES.md`.
+
 > **Read the concepts first.** Every example leans on the installer pattern
 > ([07 · Tools](07-tools-requirements.md)), the config-manager flow
 > ([05 · chezmoi](05-chezmoi.md)), the governance gates ([03 · Governance](03-governance-rules.md)),

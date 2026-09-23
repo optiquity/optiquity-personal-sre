@@ -3,6 +3,24 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-23 — navigation: every cross-reference points where it says
+
+- **New: `scripts/check-guide-links.py`, run in CI.** It checks four things a renumbering breaks:
+  relative links resolve; a numbered link label matches its target (`[14](19-sharing.md)` was
+  wrong); chapter files named in plain text exist (templates cited `09-permissions.md`,
+  `10-mcp.md`, `13-setup.md`); and the "Next:" reading order holds, including case studies.
+- **Fixed, all 21 problems it found:** 5 mislabelled links, 6 stale chapter names in templates,
+  and 10 broken or missing "Next:" links. The case-study chain now reads 03 → 03a → 03b → 04,
+  05 → 05a → 05b → 06, and 17 → 17a → 17b → 18.
+- **Fixed by hand:**
+  - three "§ 14" references meaning monitoring (now 17);
+  - two bare `guide/NN` references;
+  - the 03a/05a descriptions attached to the 03b/05b links;
+  - a sentence in § 12 cut in half by another bullet;
+  - the README's Linux status.
+
+  The example catalogue now explains its ID gaps.
+
 ## 2026-09-23 — `fleet-container-check`: every stack, every registry, no silent errors
 
 - **Fixed: every non-ghcr image was looked up on Docker Hub,** so `lscr.io` and `quay.io` images

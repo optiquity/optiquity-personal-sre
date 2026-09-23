@@ -1,5 +1,6 @@
-# .graphifyignore (or your indexer's equivalent) — what the repo INDEX must not read.
-# Copy to your repo root and edit. This controls the index only; it never affects git.
+# .graphifyignore — what THIS repo's index must not read. Tailored from the teaching copy at
+# skeleton/repo-index/indexignore.template (use that one for your own repo, not this file).
+# This controls the index only; it never affects git.
 #
 # ── MATCHER ─────────────────────────────────────────────────────────────────
 # Read your indexer's CURRENT docs before trusting anything here: matcher syntax

@@ -47,6 +47,8 @@ Editing one when you meant the other is the easiest mistake to make here.
    insert or renumber a chapter, sweep every reference, fix the in-file `# NN · Title` heading,
    fix the `Next:` chain, and update `guide/_contents.md`. Verify with a link check — and check
    that a link's *label* number matches its *target* filename, which a filename-only sweep misses.
+   `scripts/check-guide-links.py` does all of that (links, labels, plain-text chapter names, the
+   `Next:` chain) and runs in CI.
 4. **Cite rules by number carefully.** Chapter `03-governance-rules.md` defines rules 1–18, and the
    rules templates number them identically (CI checks it).
    Citing a number outside that range, or attaching the wrong label to a real one (calling

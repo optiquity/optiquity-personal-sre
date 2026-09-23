@@ -121,7 +121,7 @@ say "1. Checking hard-core requirements (guide/07-tools-requirements.md)…"
 MISSING=()
 for t in git chezmoi; do have "$t" && info "✓ $t" || { info "✗ $t (missing)"; MISSING+=("$t"); }; done
 have gh   && info "✓ gh (GitHub CLI — enables repo creation below)" || info "• gh not found (optional, but needed to auto-create your repo)"
-have node && info "✓ node ($(node --version 2>/dev/null))" || info "• node not found — needed for the AI CLI + most MCP servers (guide/07, guide/10)"
+have node && info "✓ node ($(node --version 2>/dev/null))" || info "• node not found — needed for the AI CLI + most MCP servers (guide/07, guide/11)"
 have claude && info "✓ claude (AI CLI)" || info "• AI CLI (Claude Code) not on PATH — install per $SPOKE; you'll also need an account/subscription"
 info "• Secret store: set up per $SPOKE (Keychain / Credential Manager / libsecret / a vault) — guide/06-secrets.md"
 

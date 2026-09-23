@@ -133,3 +133,7 @@ that cannot be regenerated — watch history, curated collections, hand-made org
 Nothing was lost, because nothing failed during those six days. ⚠ **The exposure was total and the
 damage was zero, and only the second of those was ever visible.** A backup gap is invisible right
 up until the moment it is the only thing that matters.
+
+---
+
+Next: [18 · Setup](18-setup.md).

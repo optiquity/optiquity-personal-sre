@@ -185,4 +185,4 @@ original — here, a config entry that would have made operations fail outright.
 
 ---
 
-Next: [06 · Secrets](06-secrets.md).
+Next: [05b · Case study — the status command that could not see the failure](05b-case-sync-status-is-not-sync.md).

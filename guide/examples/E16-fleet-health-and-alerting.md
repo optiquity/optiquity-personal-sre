@@ -253,7 +253,7 @@ alert covers both "finished" and "died at 12%", with neither able to impersonate
 - **The maintenance window.** The sweep wasn't running continuously — the platform killed it at the
   window's end hour nightly. Four hours a day instead of twenty-four is the difference between ~11
   days and ~2 months, and nothing announced it. Completion timestamps clustered at a wall-clock
-  hour are the tell. See § 14 for the pattern, including why a *manual* trigger often escapes the
+  hour are the tell. See § 17 for the pattern, including why a *manual* trigger often escapes the
   window's start but not its end — and why the daily nudge that exploits that should
   **retire itself** once the backlog clears.
 - **The remote store, not the local box.** The client sat at 3.6% CPU and 32% of its link, which

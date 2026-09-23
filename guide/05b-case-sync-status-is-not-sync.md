@@ -132,3 +132,7 @@ an unrelated fault that had been pushed specifically to reach it.**
 Nothing was corrupted and nothing was lost; the machine simply stopped moving while every
 instrument said it was fine. ⚠ **That is the expensive kind of failure**, because there is no
 moment at which anyone is prompted to look.
+
+---
+
+Next: [06 · Secrets](06-secrets.md).

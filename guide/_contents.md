@@ -35,7 +35,7 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 | 19 | [Public/shared repos](19-sharing.md) | Publishing a scrubbed framework: derive-don't-copy + the grep-guard. |
 | 20 | [Example projects](20-example-projects.md) | A catalog of worked, end-to-end examples of the operator owning install + maintenance. |
 
-**Worked examples** — [`examples/`](examples/), catalogued in [15](20-example-projects.md): the
+**Worked examples** — [`examples/`](examples/), catalogued in [20](20-example-projects.md): the
 A/B/C/D/E series, each an end-to-end project the operator owns. Several ship starter files in
 [`../skeleton/`](../skeleton/) — notably **[E16 · Health, alerting & the update digest](examples/E16-fleet-health-and-alerting.md)**,
 whose tools live in [`../skeleton/monitoring/`](../skeleton/monitoring/), and

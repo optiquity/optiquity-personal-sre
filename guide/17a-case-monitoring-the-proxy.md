@@ -289,4 +289,4 @@ workflow prompts it.
 
 ---
 
-Next: [18 · Setup](18-setup.md).
+Next: [17b · Case study — it failed loudly, for six days, into a file nobody reads](17b-case-loud-into-the-void.md).

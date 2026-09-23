@@ -206,4 +206,4 @@ uncorrectable reads, and here are six crashes within ninety seconds of one" is.
 
 ---
 
-Next: [04 · Structure](04-structure.md).
+Next: [03b · Case study — auditing damage: absence is only half the question](03b-case-absence-and-overwrite.md).

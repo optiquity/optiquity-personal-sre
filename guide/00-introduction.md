@@ -160,9 +160,13 @@ projects need them* — never preemptively.
 2. [01 · Concepts](01-concepts.md) — the model + vocabulary in depth.
 3. [02 · The operator](02-operator.md) — how you actually work with the operator.
 4. [03 · Governance](03-governance-rules.md) — the rules that make it safe.
-5. Skim [04](04-structure.md)–[14](19-sharing.md) for the pieces you'll use; see
+5. Skim [04](04-structure.md)–[19](19-sharing.md) for the pieces you'll use; see
    [`_contents.md`](_contents.md) for the one-line index.
 6. Worked, end-to-end examples of the operator owning install *and* maintenance:
    [20 · Example projects](20-example-projects.md).
 7. Then your platform spoke (`platforms/<os>.md`) and a setup tier in
    [`GETTING-STARTED.md`](../GETTING-STARTED.md).
+
+---
+
+Next: [01 · Concepts](01-concepts.md) — the vocabulary the rest of the guide uses.

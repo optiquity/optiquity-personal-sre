@@ -2,7 +2,7 @@
 #
 # Copy to the config manager's config location on each node and fill in. This file
 # is LOCAL and UNTRACKED (it holds this node's identity) — never commit it.
-# See guide/05-chezmoi.md (roles) and guide/13-setup.md (onboarding).
+# See guide/05-chezmoi.md (roles) and guide/18-setup.md (onboarding).
 #
 # The [data] block is what your templated files read (e.g. {{ if eq .role "server" }}).
 # Keep it to non-secret facts; secrets come from the vault at runtime (guide/06-secrets.md).

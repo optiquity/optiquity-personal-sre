@@ -32,7 +32,7 @@ give it. You may want to start conservatively, but after a while you'll find it 
 allow it to do more.
 
 > **Status:** the concepts (the guide), the starter files (the skeleton), and the platform maps
-> are complete for macOS, partial for Windows, stubbed for Linux/Cloud — and grow over time.
+> are complete for macOS, partial for Windows, Linux and Raspberry Pi, a stub for Cloud — and grow over time.
 > See the maturity banners in `platforms/`.
 
 ## ▶ Start here
@@ -267,7 +267,7 @@ bootstrap.sh    # Tier-2 onboarding (creates YOUR repo; --help for options)
 
 The framework's own disciplines are load-bearing: **zero secrets in git**
 (`guide/06-secrets.md`) and — because this is a public repo — **zero personal info**
-(`guide/19-sharing.md`), enforced by the `scripts/grep-guard` (pre-commit + CI). If you publish
+(`guide/19-sharing.md`), enforced by the `scripts/grep-guard.sh` (pre-commit + CI). If you publish
 your own generalized version, use the same guard: derive-don't-copy, and let a fail-closed
 scanner be the backstop.
 

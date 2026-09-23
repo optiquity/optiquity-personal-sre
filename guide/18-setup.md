@@ -24,7 +24,7 @@ A minimal but complete **single-node** adoption:
 - A **secret store** wired up, with **zero secrets in git**.
 - Your first **project** tracked in the registry.
 
-From there, multi-node ([12](16-multinode.md)) and optional layers are additive.
+From there, multi-node ([16](16-multinode.md)) and optional layers are additive.
 
 ## The requirements checklist (before you start)
 
