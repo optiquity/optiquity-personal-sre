@@ -3,9 +3,9 @@
 # hits each endpoint and asserts CONDITIONS, then alerts when they fail. Runs great native on a
 # gateway/Pi with in-memory storage (zero disk writes).
 #
-# Install to the Gatus config path on the node running it (e.g. /etc/gatus/config.yaml), supply
-# SMTP creds via an env file + a service drop-in (see gatus.env.template + gatus-smtp.dropin.conf),
-# and fill every <placeholder>. Conditions verify FUNCTION (status + body + latency), not just a
+# Install to the Gatus config path on the node running it (e.g. /etc/gatus/config.yaml) and fill
+# every <placeholder>. Alerts go through gatus-mail-relay (README § Gatus), which needs the SMTP
+# settings in /etc/gatus/gatus.env (see gatus.env.template). Conditions verify FUNCTION (status + body + latency), not just a
 # ping — that's what catches "up but broken".
 storage:
   type: memory                       # no disk writes; history lives in RAM
@@ -19,22 +19,37 @@ ui:
   title: "fleet health"
   header: "fleet health — infra + apps"
 
-# ── Email alerting ──────────────────────────────────────────────────────────
-# Credentials come from the environment (systemd EnvironmentFile / a wrapper), NOT this file:
-#   ${SMTP_USERNAME}, ${SMTP_PASSWORD}  ->  see gatus.env.template.
-# from/to are not secret, so they live here. A plus-tagged sender you own is handy for filtering.
+# ── Alerting: through gatus-mail-relay ──────────────────────────────────────
+# Gatus hard-codes its email subject (v5.36: "<group>/<name>: Alert triggered") and has no setting to
+# change it. Its `custom` provider POSTs each alert to a URL instead; the relay on this host
+# (127.0.0.1 only) builds the subject with fleet-mail, so health-check mail matches the rest:
+#   [Fleet/Alert/Metrics/node_exporter] node_exporter (gateway): triggered
+# The placeholders below are substituted as raw text — the relay copes with quotes/newlines in
+# [RESULT_ERRORS]. No credential lives here or in Gatus's environment: the relay holds it.
 alerting:
-  email:
-    from: "<sender-address>"
-    to: "<recipient-address>"
-    host: "smtp.gmail.com"           # example: Gmail app-password SMTP
-    port: 587
-    username: ${SMTP_USERNAME}       # resolved from the environment (see gatus.env.template)
-    password: ${SMTP_PASSWORD}       # never a literal here — env-injected, unquoted plain scalar
+  custom:
+    url: "http://127.0.0.1:8099/alert"
+    method: "POST"
+    headers:
+      Content-Type: "application/json"
+    body: |
+      {"group": "[ENDPOINT_GROUP]", "name": "[ENDPOINT_NAME]", "state": "[ALERT_TRIGGERED_OR_RESOLVED]", "description": "[ALERT_DESCRIPTION]", "url": "[ENDPOINT_URL]", "errors": "[RESULT_ERRORS]", "conditions": "[RESULT_CONDITIONS]"}
     default-alert:
-      failure-threshold: 3           # N consecutive failures before it emails (dampens blips)
+      failure-threshold: 3           # N consecutive failures before it alerts (dampens blips)
       success-threshold: 2
-      send-on-resolved: true         # also email when it recovers
+      send-on-resolved: true         # also alert when it recovers
+
+# The ALTERNATIVE — Gatus's own email provider (its fixed subject; add a second mail filter), with
+# SMTP creds from the environment via gatus-smtp.dropin.conf. Use it INSTEAD of `custom` above, and
+# change every endpoint's alerts to [{type: email}]:
+#  email:
+#    from: "<sender-address>"
+#    to: "<recipient-address>"
+#    host: "smtp.gmail.com"
+#    port: 587
+#    username: ${SMTP_USERNAME}      # resolved from the environment — never a literal here
+#    password: ${SMTP_PASSWORD}
+#    default-alert: {failure-threshold: 3, success-threshold: 2, send-on-resolved: true}
 
 endpoints:
   # ── Infra: reachability (TCP/ICMP/DNS) ────────────────────────────────────
@@ -43,7 +58,7 @@ endpoints:
     url: "https://1.1.1.1"
     interval: 60s
     conditions: ["[STATUS] == 200"]
-    alerts: [{type: email}]
+    alerts: [{type: custom}]
 
   - name: DNS
     group: Core
@@ -51,28 +66,28 @@ endpoints:
     interval: 60s
     dns: {query-name: "example.com", query-type: "A"}
     conditions: ["[DNS_RCODE] == NOERROR"]
-    alerts: [{type: email}]
+    alerts: [{type: custom}]
 
   - name: Router
     group: LAN
     url: "tcp://<router-ip>:80"
     interval: 2m
     conditions: ["[CONNECTED] == true"]
-    alerts: [{type: email}]
+    alerts: [{type: custom}]
 
   - name: NAS
     group: LAN
     url: "tcp://<nas-ip>:5000"
     interval: 2m
     conditions: ["[CONNECTED] == true"]
-    alerts: [{type: email}]
+    alerts: [{type: custom}]
 
   - name: Always-on host
     group: LAN
     url: "tcp://<server-ip>:22"
     interval: 2m
     conditions: ["[CONNECTED] == true"]
-    alerts: [{type: email}]
+    alerts: [{type: custom}]
 
   # ── Apps: functional checks (status + body + latency), not just up/down ───
   # Repeat this shape per self-hosted service. Pick a no-auth health path and a body marker.
@@ -84,7 +99,7 @@ endpoints:
       - "[STATUS] == 200"
       - "[BODY].status == ok"            # JSON field assertion
       - "[RESPONSE_TIME] < 3000"
-    alerts: [{type: email}]
+    alerts: [{type: custom}]
 
   - name: Media server                   # e.g. Plex /identity (no auth, returns server id)
     group: Apps
@@ -94,9 +109,9 @@ endpoints:
       - "[STATUS] == 200"
       - "[BODY] == pat(*machineIdentifier*)"   # substring/glob match on the raw body
       - "[RESPONSE_TIME] < 3000"
-    alerts: [{type: email}]
+    alerts: [{type: custom}]
 
-  - name: Metrics/dashboards             # e.g. Grafana /api/health -> {"database":"ok"}
+  - name: Dashboards                     # e.g. Grafana /api/health -> {"database":"ok"}
     group: Apps
     url: "https://<service-host>/api/health"
     interval: 2m
@@ -104,7 +119,7 @@ endpoints:
       - "[STATUS] == 200"
       - "[BODY].database == ok"
       - "[RESPONSE_TIME] < 3000"
-    alerts: [{type: email}]
+    alerts: [{type: custom}]
 
   - name: Login-walled UI                # e.g. a UI that 200s on its login page
     group: Apps
@@ -114,4 +129,4 @@ endpoints:
       - "[STATUS] == 200"
       - "[BODY] == pat(*<expected-marker>*)"
       - "[RESPONSE_TIME] < 3000"
-    alerts: [{type: email}]
+    alerts: [{type: custom}]

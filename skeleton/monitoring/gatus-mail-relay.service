@@ -1,0 +1,35 @@
+# /etc/systemd/system/gatus-mail-relay.service — sends Gatus alerts through fleet-mail (see README § Gatus).
+[Unit]
+Description=Gatus -> fleet-mail relay (fleet subject format)
+After=network-online.target
+Wants=network-online.target
+# Gatus posts to it; start it first so no alert finds it absent
+Before=gatus.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/lib/fleet-monitoring/gatus-mail-relay
+Environment=RELAY_PORT=8099
+Environment=RELAY_FLEET_MAIL=/usr/local/lib/fleet-monitoring/fleet-mail
+Environment=PYTHONDONTWRITEBYTECODE=1
+# The SMTP settings (gatus.env) are handed to this service READ-ONLY as a private credential,
+# $CREDENTIALS_DIRECTORY/smtp.env. The file stays root:600; no second copy of the secret exists.
+LoadCredential=smtp.env:/etc/gatus/gatus.env
+# A throwaway user per run: the relay owns nothing and can write nowhere.
+DynamicUser=yes
+Restart=on-failure
+RestartSec=5
+MemoryMax=96M
+TasksMax=32
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+# It LISTENS on 127.0.0.1 only — enforced in the code (make_server) and tested. Outbound it must
+# reach your SMTP server (IPv4 or IPv6), so no IP allow-list is set here.
+
+[Install]
+WantedBy=multi-user.target

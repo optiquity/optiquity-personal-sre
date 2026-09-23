@@ -205,8 +205,10 @@ setting to change it. You have two honest options:
 - **Route its alerts through your own mailer.** Gatus has a `custom` alert provider that POSTs each
   alert (group, name, state, errors) to a URL. A tiny relay on the same host, listening on
   localhost only, can build the subject with the **same** builder as everything else and send it,
-  so one code path formats every email you get. The relay is now a single point for every
-  health-check email, so watch it **from another node, through a different mail path**.
+  so one code path formats every email you get. The skeleton ships one
+  ([`gatus-mail-relay`](../../skeleton/monitoring/gatus-mail-relay), with a hardened unit and a
+  self-test). The relay is now a single point for every health-check email, so watch it **from
+  another node, through a different mail path**.
 - **Or accept its phrasing** and write a second filter rule for it.
 
 Either way, **verify with real test emails, in the client you actually read.** One subtlety only

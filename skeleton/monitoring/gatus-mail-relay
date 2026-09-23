@@ -1,0 +1,261 @@
+#!/usr/bin/env python3
+"""gatus-mail-relay — send Gatus alerts through fleet-mail, so they use your subject format.
+
+WHY. Gatus hard-codes its email subject (v5.36: `<group>/<name>: Alert triggered`, no setting to
+change it), so its mail never matches the `[<Tag>/<Kind>/<Source>] text` shape every other fleet
+email uses (guide § 17, "Alerts a human will actually read"). Gatus's `custom` alert provider POSTs
+each alert to a URL instead; this relay, on the same host and listening on 127.0.0.1 only, builds
+the subject with fleet-mail's own build_subject() — one owner of the format — and sends it with
+fleet-mail:
+
+    [Fleet/Alert/Metrics/node_exporter] node_exporter (gateway): triggered
+    [Fleet/Report/Metrics/node_exporter] node_exporter (gateway): resolved
+    [Fleet/Alert/Apps/api] api: triggered
+
+Kind: triggered -> Alert, resolved -> Report. The bracket carries the path: group, then the endpoint
+name without a trailing "(…)". The FULL name is repeated after the bracket, because at least one
+widely used mail client groups conversations while ignoring a leading "[…]" tag — with only
+"…]: triggered" after it, two different alerts merged into one thread. A "/" or bracket inside a
+group or name would break the path, so it becomes "-" there (the full name after the bracket keeps
+it) — a naming choice must never cost you an alert.
+
+It reads no secret itself: fleet-mail reads the SMTP settings from the file systemd hands this
+service read-only (LoadCredential -> $CREDENTIALS_DIRECTORY/smtp.env). Your tag comes from
+SUBJECT_TAG in that file (or $FLEET_SUBJECT_TAG), exactly as for fleet-mail itself.
+
+  POST /alert    JSON body from Gatus (see gatus-config.yaml.template)
+  GET  /health   "ok <sent> sent, <failed> failed, <rejected> rejected"
+  --self-test    runs its tests against a fake fleet-mail built on the real one; sends nothing
+
+Replies to Gatus: 200 sent · 400 payload unusable · 502 fleet-mail failed to send (Gatus logs it).
+It is a single point for every health-check email, so watch it from ANOTHER node (README § Gatus).
+"""
+import importlib.util, json, os, re, socket, subprocess, sys, threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from importlib.machinery import SourceFileLoader
+
+FLEET_MAIL = os.environ.get("RELAY_FLEET_MAIL", "/usr/local/lib/fleet-monitoring/fleet-mail")
+PORT = int(os.environ.get("RELAY_PORT", "8099"))
+SMTP_ENV = os.path.join(os.environ.get("CREDENTIALS_DIRECTORY", "/nonexistent"), "smtp.env")
+TRAILING_PAREN = re.compile(r"^(.*?)\s*\(([^()]+)\)\s*$")
+COUNTS = {"sent": 0, "failed": 0, "rejected": 0}
+_lock = threading.Lock()
+
+
+def _fleet_mail():
+    """fleet-mail is imported, never copied: its build_subject() is the one owner of the format."""
+    sys.dont_write_bytecode = True
+    spec = importlib.util.spec_from_loader("fleet_mail", SourceFileLoader("fleet_mail", FLEET_MAIL))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _segment(text):
+    """A path segment for the bracket: no "/" or brackets (build_subject would refuse them)."""
+    return re.sub(r"[\[\]/]", "-", text).strip() or "-"
+
+
+def parse(raw):
+    """Gatus substitutes placeholders into the JSON body as RAW text, so an error message containing
+    a quote or a newline can make the JSON invalid. Parse strictly first; if that fails, recover the
+    three fields that decide the subject (group, name, state) and keep the rest as raw text."""
+    try:
+        d = json.loads(raw)
+        if isinstance(d, dict):
+            return d
+    except ValueError:
+        pass
+    d = {}
+    for key in ("group", "name", "state"):
+        m = re.search(r'"%s"\s*:\s*"([^"\n]*)"' % key, raw)
+        if m:
+            d[key] = m.group(1)
+    d["details"] = raw
+    return d
+
+
+def build(fm, tag, d):
+    """(subject, body) for one Gatus alert, or raise ValueError."""
+    group, name = (d.get("group") or "").strip(), (d.get("name") or "").strip()
+    state = (d.get("state") or "").strip().lower()
+    if not group or not name or state not in ("triggered", "resolved"):
+        raise ValueError(f"need group, name and state triggered|resolved; got {group!r} {name!r} {state!r}")
+    kind = "Alert" if state == "triggered" else "Report"
+    m = TRAILING_PAREN.match(name)
+    base = m.group(1) if m else name
+    subject = fm.build_subject([kind, _segment(group), _segment(base)], f"{name}: {state}", tag)
+    lines = [f"Endpoint:    {group} / {name}", f"State:       {state.upper()}"]
+    for label, key in (("Description", "description"), ("URL", "url"), ("Errors", "errors"),
+                       ("Conditions", "conditions"), ("Raw payload", "details")):
+        if d.get(key):
+            lines.append(f"{label + ':':<12} {d[key]}")
+    lines.append(f"\nSent by gatus-mail-relay on {socket.gethostname()}.")
+    return subject, "\n".join(lines)
+
+
+class Handler(BaseHTTPRequestHandler):
+    fm = None
+    tag = None
+
+    def _reply(self, code, text):
+        self.send_response(code)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write((text + "\n").encode())
+
+    def do_GET(self):
+        if self.path != "/health":
+            return self._reply(404, "not found")
+        with _lock:
+            c = dict(COUNTS)
+        self._reply(200, f"ok {c['sent']} sent, {c['failed']} failed, {c['rejected']} rejected")
+
+    def do_POST(self):
+        if self.path != "/alert":
+            return self._reply(404, "not found")
+        raw = self.rfile.read(int(self.headers.get("Content-Length") or 0)).decode("utf-8", "replace")
+        try:
+            subject, body = build(self.fm, self.tag, parse(raw))
+        except ValueError as e:
+            with _lock:
+                COUNTS["rejected"] += 1
+            print(f"REJECTED: {e} — payload {raw[:300]!r}", flush=True)
+            return self._reply(400, f"rejected: {e}")
+        r = subprocess.run([sys.executable, FLEET_MAIL, "--subject", subject, "--body", body, "--env", SMTP_ENV],
+                           capture_output=True, text=True, timeout=60)
+        with _lock:
+            COUNTS["sent" if r.returncode == 0 else "failed"] += 1
+        if r.returncode != 0:
+            print(f"SEND FAILED ({r.returncode}): {subject} — {r.stderr.strip()[:300]}", flush=True)
+            return self._reply(502, "fleet-mail failed")
+        print(f"sent: {subject}", flush=True)
+        return self._reply(200, "sent")
+
+    def log_message(self, *a):          # quiet: the lines above are the useful log
+        pass
+
+
+def make_server(port):
+    """The ONE place the listening address is decided: loopback only — never reachable off-box."""
+    return ThreadingHTTPServer(("127.0.0.1", port), Handler)
+
+
+def _tag(fm):
+    """The same tag fleet-mail would use: $FLEET_SUBJECT_TAG, else SUBJECT_TAG in the env file."""
+    try:
+        file_env = fm.load_env(SMTP_ENV)
+    except Exception:
+        file_env = {}
+    return fm.resolve_tag(file_env)
+
+
+def serve():
+    Handler.fm = _fleet_mail()          # fail at start, loudly, if fleet-mail is missing
+    Handler.tag = _tag(Handler.fm)
+    srv = make_server(PORT)
+    print(f"gatus-mail-relay listening on 127.0.0.1:{PORT}; fleet-mail {FLEET_MAIL}; tag {Handler.tag}", flush=True)
+    srv.serve_forever()
+
+
+def self_test():
+    """Every mapping and every failure path, through a real HTTP server and a FAKE fleet-mail that
+    re-uses the real one's builder and validator, then records instead of sending. Nothing is sent."""
+    import tempfile, urllib.request, urllib.error, shutil
+    global FLEET_MAIL, PORT, SMTP_ENV
+    ok = True
+
+    def check(label, cond, got=""):
+        nonlocal ok
+        print(f"  {'PASS' if cond else 'FAIL'}  {label}" + ("" if cond else f"   got: {got!r}"))
+        ok = ok and bool(cond)
+
+    real = FLEET_MAIL
+    d = tempfile.mkdtemp(prefix="relay-selftest-")
+    log = os.path.join(d, "sent.jsonl")
+    fake = os.path.join(d, "fleet-mail")
+    with open(fake, "w") as fh:
+        fh.write(f'''import importlib.util, json, sys
+from importlib.machinery import SourceFileLoader
+sys.dont_write_bytecode = True
+_spec = importlib.util.spec_from_loader("fm_real", SourceFileLoader("fm_real", {real!r}))
+real = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(real)
+build_subject, valid_subject, resolve_tag, load_env = real.build_subject, real.valid_subject, real.resolve_tag, real.load_env
+if __name__ == "__main__":
+    a = sys.argv
+    s = a[a.index("--subject") + 1]
+    if "FAIL-SEND" in s:
+        sys.exit(1)
+    if not valid_subject(s, "Fleet"):
+        sys.exit(2)
+    with open({log!r}, "a") as out:
+        out.write(json.dumps({{"subject": s, "body": a[a.index("--body") + 1]}}) + "\\n")
+''')
+    FLEET_MAIL, PORT, SMTP_ENV = fake, 18099, os.path.join(d, "smtp.env")
+    Handler.fm = _fleet_mail()
+    Handler.tag = "Fleet"
+    srv = make_server(PORT)             # the same constructor serve() uses
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+
+    def post(payload):
+        open(log, "a").close()
+        with open(log) as f:
+            before = len(f.read().splitlines())
+        data = payload if isinstance(payload, bytes) else json.dumps(payload).encode()
+        req = urllib.request.Request(f"http://127.0.0.1:{PORT}/alert", data=data, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=10) as r:
+                code = r.status
+        except urllib.error.HTTPError as e:
+            code = e.code
+            e.close()
+        with open(log) as f:
+            lines = f.read().splitlines()[before:]
+        return code, [json.loads(l)["subject"] for l in lines]
+
+    try:
+        cases = [
+            ({"group": "Metrics", "name": "node_exporter (gateway)", "state": "triggered"},
+             "[Fleet/Alert/Metrics/node_exporter] node_exporter (gateway): triggered"),
+            ({"group": "Metrics", "name": "node_exporter (gateway)", "state": "resolved"},
+             "[Fleet/Report/Metrics/node_exporter] node_exporter (gateway): resolved"),
+            ({"group": "Apps", "name": "api", "state": "triggered"}, "[Fleet/Alert/Apps/api] api: triggered"),
+            ({"group": "LAN", "name": "NAS (storage)", "state": "TRIGGERED"}, "[Fleet/Alert/LAN/NAS] NAS (storage): triggered"),
+            ({"group": "Websites", "name": "site (staging) — contact form", "state": "triggered"},
+             "[Fleet/Alert/Websites/site (staging) — contact form] site (staging) — contact form: triggered"),
+            ({"group": "Apps", "name": "Metrics/dashboards", "state": "triggered"},
+             "[Fleet/Alert/Apps/Metrics-dashboards] Metrics/dashboards: triggered"),
+        ]
+        for payload, want in cases:
+            code, got = post(payload)
+            check(f"{payload['group']}/{payload['name']} {payload['state']}", code == 200 and got == [want], (code, got))
+        raw = (b'{"group":"Core","name":"DNS","state":"triggered","errors":"lookup "x" failed\n'
+               b'second line","conditions":"[DNS_RCODE] == NOERROR"}')
+        code, got = post(raw)
+        check("errors with a raw quote and newline (invalid JSON) still produce the right subject",
+              code == 200 and got == ["[Fleet/Alert/Core/DNS] DNS: triggered"], (code, got))
+        _, a = post({"group": "Websites", "name": "tracker script", "state": "triggered"})
+        _, b = post({"group": "Test", "name": "relay-proof", "state": "triggered"})
+        after = lambda s: s.split("] ", 1)[1] if "] " in s else s
+        check("two endpoints in the same state differ AFTER the bracket (mail-client threading)",
+              len(a) == len(b) == 1 and after(a[0]) != after(b[0]), (a, b))
+        code, got = post({"group": "Core", "name": "", "state": "triggered"})
+        check("missing name -> 400, nothing sent", code == 400 and got == [], (code, got))
+        code, got = post({"group": "Core", "name": "DNS", "state": "flapping"})
+        check("unknown state -> 400, nothing sent", code == 400 and got == [], (code, got))
+        code, got = post({"group": "Core", "name": "FAIL-SEND", "state": "triggered"})
+        check("fleet-mail failing to send -> 502 (Gatus logs it)", code == 502, code)
+        with urllib.request.urlopen(f"http://127.0.0.1:{PORT}/health", timeout=5) as r:
+            h = r.read().decode()
+        check("/health counts sent / failed / rejected", h.startswith("ok 9 sent, 1 failed, 2 rejected"), h)
+        check("listens on 127.0.0.1 only", srv.server_address[0] == "127.0.0.1", srv.server_address)
+    finally:
+        srv.shutdown(); srv.server_close(); shutil.rmtree(d, ignore_errors=True)
+    print("\nself-test:", "ALL PASS" if ok else "FAILURES ABOVE")
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    if "--self-test" in sys.argv:
+        sys.exit(self_test())
+    serve()

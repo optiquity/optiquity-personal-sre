@@ -33,6 +33,7 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 | `local-checks.conf.template` | typed local checks (`service`, `mount`, `http`, `command`, `hash`, `synclag`) |
 | `fleet-local-check.plist.template` | launchd timer for the local probe (every 15 min) |
 | `mail.env.template` | SMTP secret stub for `fleet-mail` (host-local, chmod 600) |
+| `gatus-mail-relay` + `.service` | sends Gatus alerts through `fleet-mail` (your subject format); localhost only, hardened unit |
 | `gatus-config.yaml.template` | Gatus endpoints (infra + apps) + email alerter |
 | `gatus.env.template` | SMTP secret stub for Gatus (root-owned on the Gatus node) |
 | `gatus-smtp.dropin.conf` | systemd drop-in so Gatus loads the SMTP env |
@@ -57,25 +58,55 @@ SSH keys, so the scheduled run reaches them the same way. Unreachable nodes are 
 ## Gatus (health checks + alerts)
 
 Gatus usually runs on a small always-reachable node (a **gateway/Pi**) so it can see the fleet
-independently. Native install (a single Go binary + `config.yaml`), then:
+independently. Native install (a single Go binary + `config.yaml`).
+
+**Its alerts go through `gatus-mail-relay`**, so they carry your subject format like every other
+fleet email. Gatus hard-codes its own subject (v5.36: `<group>/<name>: Alert triggered`), so its
+`custom` provider POSTs each alert to the relay on the same host (127.0.0.1 only). The relay builds
+the subject with `fleet-mail` and sends it:
+`[Fleet/Alert/Apps/api] api: triggered`. The endpoint name is repeated after the bracket because a
+mail client may group conversations while ignoring a leading `[tag]`.
 
 ```sh
-# 0. the config directory
-sudo install -d -m 755 /etc/gatus
+# 0. directories
+sudo install -d -m 755 /etc/gatus /usr/local/lib/fleet-monitoring
 
-# 1. config (fill every <placeholder>; conditions verify function, not just reachability)
+# 1. the relay + the fleet-mail it imports (the same file your other nodes run)
+sudo install -m 755 gatus-mail-relay fleet-mail /usr/local/lib/fleet-monitoring/
+
+# 2. SMTP secret (root:600; systemd hands it to the relay read-only — no copy, no user access)
+sudo install -m 600 gatus.env.template /etc/gatus/gatus.env             # then fill every line
+
+# 3. prove the relay, then start it BEFORE Gatus points at it (the reverse is a window of lost alerts)
+RELAY_FLEET_MAIL=/usr/local/lib/fleet-monitoring/fleet-mail \
+  python3 /usr/local/lib/fleet-monitoring/gatus-mail-relay --self-test    # must be ALL PASS; sends nothing
+sudo install -m 644 gatus-mail-relay.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now gatus-mail-relay
+curl -s http://127.0.0.1:8099/health                                      # "ok 0 sent, 0 failed, 0 rejected"
+
+# 4. config (fill every <placeholder>; conditions verify function, not just reachability)
 sudo install -m 644 gatus-config.yaml.template /etc/gatus/config.yaml   # then edit
-
-# 2. SMTP secret (root-owned; systemd reads it at unit load, so the service user needn't)
-sudo install -m 600 gatus.env.template /etc/gatus/gatus.env             # then fill SMTP_PASSWORD
-
-# 3. let the service see the credential env, then reload
-sudo mkdir -p /etc/systemd/system/gatus.service.d
-sudo install -m 644 gatus-smtp.dropin.conf /etc/systemd/system/gatus.service.d/10-smtp-env.conf
-sudo systemctl daemon-reload && sudo systemctl restart gatus
+sudo systemctl restart gatus
 ```
 
-Step 3 extends a `gatus.service` unit, which a bare binary does not bring with it. If you have none,
+Prefer Gatus's own email provider (its fixed subject; add a second mail filter)? Use the commented
+`email:` block in the template instead, and give *Gatus* the credential with the drop-in:
+`sudo install -m 644 gatus-smtp.dropin.conf /etc/systemd/system/gatus.service.d/10-smtp-env.conf`.
+
+**Watch the relay from another node.** It is now a single point for every health-check email, and a
+dead relay cannot report its own death. From your always-on node, through *its* mail path, add to
+`local-checks.conf` (a `command` exiting 3 is UNKNOWN, so an unreadable journal never passes as clean):
+
+```
+command | gatus relay up     | ssh <gatus-host> 'systemctl is-active --quiet gatus-mail-relay && curl -sf http://127.0.0.1:8099/health >/dev/null'
+command | gatus alerts sent  | ssh <gatus-host> 'J=$(sudo -n journalctl -u gatus --since -20min --no-pager) || exit 3; ! printf %s "$J" | grep -q "Failed to send an alert"'
+```
+
+And because the relay's two files were installed **by hand**, compare them with your repo copies
+after every change to `fleet-mail`. A fix that reaches every other node through the config manager
+never reaches this one on its own.
+
+Gatus needs a `gatus.service` unit, which a bare binary does not bring with it. If you have none,
 this minimal one (hardened; fine with the template's in-memory storage) goes at
 `/etc/systemd/system/gatus.service`, run as a dedicated system user
 (`sudo useradd --system --no-create-home --shell /usr/sbin/nologin gatus`):

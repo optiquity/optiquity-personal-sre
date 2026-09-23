@@ -3,6 +3,22 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-23 — Gatus alerts in your subject format: `gatus-mail-relay`
+
+- **New: `skeleton/monitoring/gatus-mail-relay`** and a hardened systemd unit. Gatus hard-codes its
+  email subject, so its `custom` provider now POSTs each alert to this localhost relay, which builds
+  the subject with `fleet-mail` (`[Fleet/Alert/Apps/api] api: triggered`) and sends it.
+  - The endpoint name is repeated after the bracket, because a mail client may thread while
+    ignoring a leading `[tag]`.
+  - A `/` or bracket in a group or name no longer costs an alert.
+  - The self-test runs in CI.
+- **Changed: `gatus-config.yaml.template` alerts through the relay by default.** Gatus's own
+  `email` provider remains as a commented alternative. `gatus.env.template` gains `MAIL_FROM`,
+  `MAIL_TO` and an optional `SUBJECT_TAG`. The drop-in is only for the alternative. The
+  `Metrics/dashboards` endpoint is renamed `Dashboards`.
+- **Docs:** install order (relay first, so no alert finds it absent), and how to watch the relay
+  from another node.
+
 ## 2026-09-23 — `fleet-local-check`: three states, and two new check types
 
 - **Changed: every check has three outcomes, OK, FAIL or UNKNOWN,** as guide § 17 teaches.
