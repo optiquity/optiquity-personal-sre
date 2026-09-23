@@ -1,0 +1,26 @@
+# Tools CI — the skeleton's monitoring tools must be more than well-formed.
+#
+# A parse passes code that crashes: an undefined name sat on the alert-sending line of three
+# tools for four weeks while every documented check passed (guide/17-monitoring.md, "Syntax-checked
+# is not correct"). So, on every push: a static undefined-name check, the tools' tests (which drive
+# the real send path through a fake mailer), and `bash -n` on every shell script.
+name: tools
+on:
+  push:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Undefined names and other static errors (pyflakes, pinned)
+        run: |
+          pip install pyflakes==4.0.0
+          pyflakes $(git ls-files | xargs grep -l -m1 '^#!/usr/bin/env python3')
+      - name: Tool tests — the send path, through a fake mailer
+        run: python3 skeleton/monitoring/tests/test_tools.py </dev/null
+      - name: Shell scripts parse
+        run: for f in $(git ls-files '*.sh'); do bash -n "$f" || exit 1; done

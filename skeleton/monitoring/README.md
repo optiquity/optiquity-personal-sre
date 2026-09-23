@@ -47,7 +47,7 @@ On your **always-on** node (the one that can SSH to the rest of the fleet):
 ./bootstrap-monitoring.sh --with-timer          # installs the 5 tools, seeds config, loads the timers
 $EDITOR ~/.config/fleet-monitoring/mail.env         # SMTP_PASSWORD + from/to (chmod 600)
 $EDITOR ~/.config/fleet-monitoring/fleet-nodes.conf # your nodes
-fleet-mail -s "test" --body "hello"                 # confirm mail works
+fleet-mail --kind Report --source Test --text "hello" --body "it works"   # confirm mail works
 fleet-update-check --dry-run                        # preview; drop --dry-run to email
 ```
 
@@ -187,11 +187,23 @@ different axes; collapsing them into one (`Alert` next to `Plex` in the same pos
 filter ambiguous. As a bonus, alphabetical sort puts `Alert` above `Digest`/`Report` — the order you
 want to read them in.
 
-Set your tag once; the tools read `FLEET_SUBJECT_PREFIX` (default `[Fleet`):
+Set your tag once: `SUBJECT_TAG=MyFleet` in `mail.env`, or `FLEET_SUBJECT_TAG=MyFleet` in the timer's
+environment. The default is `Fleet`. The older documented `FLEET_SUBJECT_PREFIX='[MyFleet'` form is
+accepted too.
+
+**Only `fleet-mail` builds subjects.** The tools pass the parts, and `fleet-mail` assembles them:
 
 ```sh
-export FLEET_SUBJECT_PREFIX='[MyFleet'      # in the timer's env, or leave the default
+fleet-mail --dry-run --kind Alert --source Health --text "2 failing — backup, mount"
+# [Fleet/Alert/Health] 2 failing — backup, mount
 ```
+
+A pre-built `--subject` that is not in the shape is **refused** (exit 2), never sent. Your own scripts
+should call `fleet-mail` the same way, so every message you send lands under your filters.
+
+**Tests.** `python3 tests/test_tools.py` runs every tool for real in a throwaway `$HOME`, with a fake
+mailer that records what would have been sent. That exercises the **send path**, which `--dry-run`
+never reaches. See guide § 17, "Syntax-checked is not correct".
 
 **Expect your health-check tool to ignore all this.** Gatus, for example, **hardcodes its subject**
 (`[<group>/<name>] Alert triggered` / `... Alert resolved`) with no prefix setting — the only lever

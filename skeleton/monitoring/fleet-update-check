@@ -210,7 +210,7 @@ def check_node(node, refresh):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default=os.environ.get("FLEET_NODES", DEFAULT_CONFIG))
-    ap.add_argument("--mailer", default=os.environ.get("FLEET_MAILER", "fleet-mail"))
+    ap.add_argument("--mailer", default=os.environ.get("FLEET_MAILER", os.path.expanduser("~/.local/bin/fleet-mail")))
     ap.add_argument("--refresh", action="store_true", help="refresh package indexes first (brew/apt update)")
     ap.add_argument("--always", action="store_true", help="email even when nothing is outdated")
     ap.add_argument("--dry-run", action="store_true", help="print the digest; do not email")
@@ -290,8 +290,9 @@ def main():
     if audit_conflict: tags.append("install conflicts")
     if any_errs: tags.append("check errors")
     tag = " + ".join(tags) or "summary"
-    subj = f"{SUBJECT_PREFIX}/Digest/Updates] {tag} ({stamp})"
-    p = subprocess.run([a.mailer, "--subject", subj, "--body", digest])
+    # fleet-mail builds the subject — never a hand-made one here (guide § 17, "Alerts a human will actually read")
+    p = subprocess.run([a.mailer, "--kind", "Digest", "--source", "Updates", "--text", f"{tag} ({stamp})",
+                        "--body", digest])
     if p.returncode != 0:
         sys.stderr.write("fleet-update-check: mailer failed to send the digest\n")
         return 1

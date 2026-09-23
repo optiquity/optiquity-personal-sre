@@ -65,7 +65,7 @@ next steps:
   1) SMTP secret:   \$EDITOR $CFG/mail.env          # SMTP_PASSWORD + from/to; keep it chmod 600
   2) node list:     \$EDITOR $CFG/fleet-nodes.conf   # roles, ssh-targets, os, methods (digest)
   3) local checks:  \$EDITOR $CFG/local-checks.conf  # service/mount/http/command probes
-  4) test mail:     fleet-mail -s "test" --body "hello from \$(hostname)"
+  4) test mail:     fleet-mail --kind Report --source Test --text "hello" --body "from \$(hostname)"
   5) test digest:   fleet-update-check --dry-run     # then drop --dry-run to email
   6) test local:    fleet-local-check  --dry-run     # then drop --dry-run to email on transitions
   7) schedule:      re-run with --with-timer (macOS) or add systemd timers/cron (Linux)

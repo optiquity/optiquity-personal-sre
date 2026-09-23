@@ -19,11 +19,15 @@ node's python3 over SSH, so nothing needs to be pre-installed remotely.
 
 Two intended triggers: after any install (a launchd WatchPaths / systemd .path unit runs it
 `--local`) and weekly (fleet-update-check folds it into the digest). Emails via fleet-mail,
-STATE-DEDUPED (only when a conflict appears or clears). Exit 0 clean · 1 conflicts.
+STATE-DEDUPED (only when a conflict appears or clears); state is saved only AFTER the email is sent,
+so a failed send is retried next run rather than forgotten.
+Exit 0 clean · 1 conflicts · 3 the email failed to send (state kept; next run retries).
+Environment: $FLEET_MAILER, $FLEET_NODES, $FLEET_INSTALL_AUDIT_STATE (state file).
 """
 import argparse, json, os, subprocess, sys
 
-STATE = os.path.expanduser("~/.config/fleet-monitoring/install-audit.state")
+STATE = os.environ.get("FLEET_INSTALL_AUDIT_STATE",
+                       os.path.expanduser("~/.config/fleet-monitoring/install-audit.state"))
 DEFAULT_CONFIG = os.path.expanduser("~/.config/fleet-monitoring/fleet-nodes.conf")
 MAILER = os.environ.get("FLEET_MAILER", os.path.expanduser("~/.local/bin/fleet-mail"))
 SSH = ["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes"]
@@ -154,12 +158,17 @@ def main():
     except Exception:
         prev = set()
     cur = set(conflicts)
+    if cur != prev or a.always:
+        kind, text = (("Alert", f"{len(cur)} conflict(s) — {', '.join(sorted(cur))[:60]}")
+                      if cur else ("Report", "audit all clear"))
+        # fleet-mail builds the subject — never a hand-made one here (guide § 17, "Alerts a human will actually read")
+        p = subprocess.run([MAILER, "--kind", kind, "--source", "Installs", "--text", text, "--body", report])
+        if p.returncode != 0:
+            sys.stderr.write(f"fleet-install-audit: email FAILED (mailer exit {p.returncode}); "
+                             "state not saved, so the next run retries\n")
+            return 3
     os.makedirs(os.path.dirname(state_path), exist_ok=True)
     json.dump(sorted(cur), open(state_path, "w"))
-    if cur != prev or a.always:
-        subj = (f"{SUBJECT_PREFIX}/Alert/Installs] {len(cur)} conflict(s) — {', '.join(sorted(cur))[:60]}"
-                if cur else f"{SUBJECT_PREFIX}/Report/Installs] audit all clear")
-        subprocess.run([MAILER, "--subject", subj, "--body", report])
     return 1 if conflicts else 0
 
 if __name__ == "__main__":

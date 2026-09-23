@@ -201,6 +201,10 @@ An alert nobody reads is worse than no alert: it trains you to ignore the channe
   `Digest` = scheduled summary, `Report` = finished, FYI) and **Source** is the subsystem. Keep
   Kind and Source as separate slots — "what kind of message" and "what it's about" are different
   axes, and merging them makes every filter ambiguous.
+- **Build every subject in one place.** Scripts pass the parts (`--kind Alert --source Backup
+  --text "…"`), and only the mailer assembles the subject. It **refuses** a malformed one, with
+  a non-zero exit, rather than sending it. Otherwise each script hand-builds its own, and one typo
+  quietly moves a whole class of alerts outside your filters.
 - **Expect one tool to refuse.** Health checkers often hardcode their subject line. Don't contort
   its config to force cosmetic consistency — accept its format and write a second filter rule.
 
@@ -214,6 +218,35 @@ So exercise it deliberately: add a throwaway check guaranteed to fail (point it 
 threshold 1), confirm the mail lands in the inbox you actually read, then remove it. Do this when
 you set it up, and again whenever you change the credential or the recipient. Until you have seen
 a real failure email arrive, you have an untested alarm.
+
+## Syntax-checked is not correct — test the branch that sends
+
+A monitoring script is mostly a path you run constantly, plus one you almost never run: the one
+that fires the alert. The rare path is where the bugs live, because nothing exercises it until
+the night it matters.
+
+This framework's own tools carried exactly that bug for four weeks. An undefined name sat on
+the line that sends the email.
+- Every documented check passed. The quick start ran `--dry-run`, which prints the would-be email
+  and never reaches the send.
+- Meanwhile every real alert crashed.
+- Worse, two of the tools saved their "already seen" state *before* that line, so the alert that
+  crashed was recorded as delivered and never retried.
+
+Three habits close this:
+
+- **Test the send path with a fake at the boundary.** Point the tool at a fake mailer that records
+  what it was asked to send, and can be told to fail, then run the tool for real. `--dry-run`
+  tests the report, not the alarm.
+- **Run a static undefined-name check in CI** (for Python, `pyflakes`). A parse (`py_compile`,
+  `bash -n`) proves the file is well-formed, not that its rarely taken branch can run.
+- **Record "seen" only after the notification succeeded.** A failed send should leave state
+  untouched so the next run retries. Otherwise one bad night of SMTP silently swallows the alert
+  it was carrying.
+
+The skeleton now does all three: see [`skeleton/monitoring/tests/`](../skeleton/monitoring/tests/)
+and the `tools` CI workflow. Each test was proven by deliberately breaking the code it guards and
+watching the test fail. A test nobody has seen fail is the same untested alarm as above.
 
 ## Updates: automate the noticing, not the upgrading
 

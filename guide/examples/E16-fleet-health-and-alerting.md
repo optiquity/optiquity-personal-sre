@@ -101,7 +101,7 @@ reminder rather than a silent gap.
 
 Both pieces send through the same **host-local SMTP credential** (e.g. a Gmail *app password*):
 Gatus's native email alerter for endpoint failures, and the `fleet-mail` helper for the digest
-and any script-level failure (`some_job || fleet-mail -s "job failed" --body "…"`). The secret
+and any script-level failure (`some_job || fleet-mail --kind Alert --source Jobs --text "nightly job failed" --body "…"`). The secret
 lives only in a `chmod 600` env file on each sending node and is **never committed** (§ 06).
 
 ### 4. Local checks — the things a remote prober can't reach
@@ -263,7 +263,7 @@ skeleton/monitoring/bootstrap-monitoring.sh --with-timer
 $EDITOR ~/.config/fleet-monitoring/mail.env           # SMTP_PASSWORD + from/to
 $EDITOR ~/.config/fleet-monitoring/fleet-nodes.conf   # your fleet (the digest)
 $EDITOR ~/.config/fleet-monitoring/local-checks.conf  # your local-only checks
-fleet-mail -s "test" --body "hello"                   # confirm mail
+fleet-mail --kind Report --source Test --text "hello" --body "it works"   # confirm mail
 fleet-update-check --dry-run                          # preview the digest (folds in the audit)
 fleet-local-check  --dry-run                          # preview the local probes
 fleet-install-audit --dry-run                         # preview the install-method audit

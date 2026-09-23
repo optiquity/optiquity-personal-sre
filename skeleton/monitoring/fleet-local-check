@@ -4,8 +4,9 @@
 Some things aren't reachable from a central health page: a service with no listening port, a
 local network mount, "is my monitor itself up?", or a check that needs local DB/CLI access. Run
 this ON the node that can see them. It reads a config of typed checks, and emails (via fleet-mail)
-ONLY when a check TRANSITIONS (ok→fail or fail→ok) — a state file dedups, so a tight cadence
-never spams.
+when a check TRANSITIONS (ok→fail or fail→ok), and when a check is failing on its FIRST run (a new
+check, or a lost state file) — a state file dedups, so a tight cadence never spams. State is saved
+only AFTER the email is sent: if sending fails, the next run retries instead of forgetting the alert.
 
 Config (default $HOME/.config/fleet-monitoring/local-checks.conf, override --config/$FLEET_LOCAL_CHECKS):
     type | name | arg
@@ -20,11 +21,14 @@ is perfectly healthy. So `mount` checks only the kernel mount table (ismount + `
 which is reliable everywhere. It catches "unmounted", not "mounted-but-hung" — use a `command`
 check via a login shell (e.g. `ssh localhost 'ls <path>'`) if you need hung-detection.
 
-Exit: 0 all ok · 1 one or more failing. Flags: --dry-run (print, no email/state), --always (email regardless).
+Exit: 0 all ok · 1 one or more failing · 3 the alert email failed to send (state kept; next run retries).
+Flags: --dry-run (print, no email/state), --always (email regardless).
+Environment: $FLEET_MAILER (default ~/.local/bin/fleet-mail), $FLEET_LOCAL_CHECK_STATE (state file).
 """
 import argparse, json, os, platform, shutil, subprocess, sys
 
-STATE = os.path.expanduser("~/.config/fleet-monitoring/local-check.state")
+STATE = os.environ.get("FLEET_LOCAL_CHECK_STATE",
+                       os.path.expanduser("~/.config/fleet-monitoring/local-check.state"))
 DEFAULT_CONFIG = os.path.expanduser("~/.config/fleet-monitoring/local-checks.conf")
 MAILER = os.environ.get("FLEET_MAILER", os.path.expanduser("~/.local/bin/fleet-mail"))
 IS_MAC = platform.system() == "Darwin"
@@ -109,20 +113,27 @@ def main():
         print(f"\ntransitions since last run: {transitions or 'none'}")
         return 1 if failing else 0
 
-    os.makedirs(os.path.dirname(STATE), exist_ok=True)
-    json.dump(cur, open(STATE, "w"))
-
-    if transitions or a.always:
+    # Mail on a transition AND on a failure with no previous state (a new check, a first run, a
+    # lost state file) — otherwise a check that starts red never says so.
+    if transitions or new_failures or a.always:
         if new_failures:
-            subj = f"{SUBJECT_PREFIX}/Alert/Health] {len(failing)} failing — {', '.join(failing)[:60]}"
+            kind, text = "Alert", f"{len(failing)} failing — {', '.join(failing)[:60]}"
         elif failing:
-            subj = f"{SUBJECT_PREFIX}/Alert/Health] {len(failing)} still failing — {', '.join(failing)[:60]}"
+            kind, text = "Alert", f"{len(failing)} still failing — {', '.join(failing)[:60]}"
         else:
-            subj = f"{SUBJECT_PREFIX}/Report/Health] all checks recovered"
+            kind, text = "Report", "all checks recovered"
         body = f"Local health checks on {os.uname().nodename}:\n\n{report}\n"
         if transitions:
             body += f"\nChanged this run: {', '.join(transitions)}\n"
-        subprocess.run([MAILER, "--subject", subj, "--body", body])
+        # fleet-mail builds the subject — never a hand-made one here (guide § 17, "Alerts a human will actually read")
+        p = subprocess.run([MAILER, "--kind", kind, "--source", "Health", "--text", text, "--body", body])
+        if p.returncode != 0:
+            sys.stderr.write(f"fleet-local-check: alert email FAILED (mailer exit {p.returncode}); "
+                             "state not saved, so the next run retries\n")
+            return 3
+    # Only now — after any needed email went out — record what was seen.
+    os.makedirs(os.path.dirname(STATE), exist_ok=True)
+    json.dump(cur, open(STATE, "w"))
     return 1 if failing else 0
 
 if __name__ == "__main__":
