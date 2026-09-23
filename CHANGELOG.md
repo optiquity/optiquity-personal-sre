@@ -3,6 +3,27 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-23 — `fleet-update-check`: coverage you can trust
+
+- **Fixed: gaps reported as "current".**
+  - A declared method with no checker (gem, cargo, pipuser …) is now reported as **NO CHECKER**
+    every run.
+  - `not-audited` is reported as NOT AUDITED, instead of being treated as a method name.
+  - New: `?name` records a known gap.
+- **Fixed: brew was never discovered on macOS.** Its count came from padded `wc -l` output.
+- **Fixed: every Windows node read as unreachable.** The probe was `ssh … true`, and a Windows SSH
+  shell has no `true`. It is now `echo ok`.
+- **Fixed: an offline node sent a weekly error.** It is now noted and skipped, since a laptop
+  asleep is not an error.
+- **Fixed: malformed rows in `fleet-nodes.conf` were silently skipped.** They are reported.
+- **New: `winget` method.** Detection works over SSH (cached index; the digest says so). The parser
+  follows the table's structure; a first version counted a progress-spinner line as a package.
+- **New: `fleet-binaries.conf`.** Executables no package manager owns are discovered and
+  reconciled: UNREGISTERED, MISSING, and `upstream` rows version-checked against GitHub.
+- **New: `fleet-update-decisions.conf`.** Decisions with a reason and a revisit date; overdue ones
+  are flagged.
+- **Tests:** 35 in the suite (9 new for this tool).
+
 ## 2026-09-23 — Gatus alerts in your subject format: `gatus-mail-relay`
 
 - **New: `skeleton/monitoring/gatus-mail-relay`** and a hardened systemd unit. Gatus hard-codes its

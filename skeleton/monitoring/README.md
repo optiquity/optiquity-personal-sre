@@ -29,6 +29,8 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 | `fleet-install-audit` | generalized install-method conflict detector across nodes; email on state change |
 | `fleet-container-check` | pinned container images with a newer upstream release (read-only; folded into the digest) |
 | `fleet-install-audit.plist.template` | after-install WatchPaths trigger (runs the audit `--local`) |
+| `fleet-binaries.conf.template` | hand-placed binaries registry (reconciled against discovery; `upstream` rows version-checked) |
+| `fleet-update-decisions.conf.template` | update decisions with a reason and a revisit date |
 | `fleet-nodes.conf.template` | your node inventory (`role | ssh-target | os | methods`) |
 | `local-checks.conf.template` | typed local checks (`service`, `mount`, `http`, `command`, `hash`, `synclag`) |
 | `fleet-local-check.plist.template` | launchd timer for the local probe (every 15 min) |
@@ -53,7 +55,26 @@ fleet-update-check --dry-run                        # preview; drop --dry-run to
 ```
 
 Remote nodes are reached over SSH (key auth, `BatchMode`); the launchd context inherits your
-SSH keys, so the scheduled run reaches them the same way. Unreachable nodes are noted, not fatal.
+SSH keys, so the scheduled run reaches them the same way. Unreachable nodes are noted and
+skipped, not an error: a laptop asleep is normal.
+
+The digest answers two questions. The weak one is *"is anything I check out of date?"*. The one
+that matters is *"what is installed that **nothing** checks?"*
+- **Coverage.** Declared methods are reconciled against what is actually installed:
+  - **UNDECLARED:** installed, but nothing checks it.
+  - **NO CHECKER:** declared, but the tool has no code for it. It is never reported as
+    "current".
+  - **GAP (`?name`):** a known gap.
+  - **NOT AUDITED:** nobody has looked.
+  - **Excluded (`!name`):** stays counted.
+- **Hand-placed binaries** (`fleet-binaries.conf`): executables no package manager owns are
+  discovered and reconciled against the registry, and `upstream` ones are version-checked against
+  GitHub. An unregistered one is reported, and so is a registered one that's gone.
+- **Decisions** (`fleet-update-decisions.conf`): what you decided not to take, and why. One whose
+  revisit date has passed is flagged again.
+- **Windows:** declare `winget`. Detection works over SSH, from the cached index.
+
+A malformed row in any of these files is reported, never skipped.
 
 ## Gatus (health checks + alerts)
 

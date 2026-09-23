@@ -6,11 +6,16 @@
 #     role         a label for the digest (your choice: always-on, laptop, gateway, nas, ...)
 #     ssh-target   "local" for the node this runs on, else an SSH host/alias (key auth)
 #     os           macos | linux | windows | synology   (chooses shell + manual hint)
-#     methods      comma list: brew, npm, softwareupdate (macos); apt (linux);
-#                  uvtool, pipx (Python tool installers — a common blind spot);
-#                  pipuser, gem, cargo, gobin, deno, nodeversion, vscode, snap,
-#                  flatpak, pnpm, yarn; manual; not-audited
+#     methods      comma list. CHECKED by this tool: brew, npm, softwareupdate (macos);
+#                  apt (linux); winget (windows); uvtool, pipx (Python tool installers —
+#                  a common blind spot); manual (prints the OS's reminder).
+#                  Recognised but NOT yet checked — declaring one plainly reports
+#                  NO CHECKER every run, never "current": pipuser, gem, cargo, gobin,
+#                  deno, nodeversion, vscode, snap, flatpak, pnpm, yarn.
+#                  `not-audited` — nobody has looked at how this node updates (reported).
 #
+#                  Prefix with ? for a KNOWN GAP you have not closed yet (e.g. ?gem):
+#                  reported every run as GAP, so it cannot fade from view.
 #                  Prefix with ! to EXCLUDE a method you deliberately don't check
 #                  (e.g. !gem for a vendor-shipped system Ruby, !vscode for an
 #                  editor that auto-updates its own extensions). Excluded methods
@@ -33,9 +38,10 @@
 #
 # Two premises worth checking, because both are commonly wrong:
 #   · "needs an elevated session" is usually true of INSTALLING and false of
-#     DETECTING. Windows `winget list --disable-interactivity` reports available
-#     upgrades fine over SSH; only the install needs elevation. (It cannot refresh
-#     its source index unprivileged, so results are cached — say so in the digest.)
+#     DETECTING. Windows `winget upgrade --disable-interactivity` lists available
+#     upgrades fine over SSH; only the install needs elevation — so declare `winget`,
+#     not `manual`. (It cannot refresh its source index unprivileged, so results are
+#     cached; the digest says so.)
 #   · a CLI that looks absent may just not be on the non-interactive PATH.
 #     Synology's `synopkg` lives under /usr/syno/bin/ and is easily missed.
 #     Prefer its per-package read-only query; some "check everything" subcommands
@@ -44,5 +50,5 @@
 always-on | local           | macos    | brew,npm,softwareupdate,uvtool,pipx
 laptop    | <laptop-host>   | macos    | brew,npm,softwareupdate
 gateway   | <gateway-host>  | linux    | apt
-windows   | <windows-host>  | windows  | manual
-nas       | <nas-host>      | synology | manual
+windows   | <windows-host>  | windows  | winget
+nas       | <nas-host>      | synology | not-audited

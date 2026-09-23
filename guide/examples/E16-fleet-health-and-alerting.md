@@ -88,7 +88,7 @@ nothing.
 always-on | local          | macos    | brew,npm,softwareupdate
 laptop    | <laptop-host>  | macos    | brew,npm,softwareupdate
 gateway   | <gateway-host> | linux    | apt
-windows   | <win-host>     | windows  | manual        # no winget checker yet; detection itself works over SSH
+windows   | <win-host>     | windows  | winget        # detection works over SSH (cached index)
 nas       | <nas-host>     | synology | manual        # updates go through the NAS UI
 ```
 

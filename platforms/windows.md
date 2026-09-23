@@ -114,8 +114,9 @@ chezmoi runs on Windows, but templating and script hooks differ:
 
 For fleet monitoring, the practical note today: **detecting** Windows updates works over SSH
 (`winget list --disable-interactivity`, cached results); **applying** them needs an elevated
-interactive session. The skeleton's update checker has no winget method yet, so it lists a Windows
-node as `manual` with a reminder. That is a gap in the checker, not a property of Windows. Metrics are fine: `windows_exporter` scrapes like any
+interactive session. So the skeleton's update checker has a `winget` method: declare it for a Windows
+node and the digest lists what is available (from the cached index, and it says so), while you run
+the upgrade itself from an elevated session. Metrics are fine: `windows_exporter` scrapes like any
 other node. Task Scheduler is the launchd/systemd-timer analog if you want local scheduled checks.
 
 The launchd equivalent is **Task Scheduler** (for scheduled jobs) and **Windows Services** (for

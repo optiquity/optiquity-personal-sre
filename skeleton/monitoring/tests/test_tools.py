@@ -366,5 +366,130 @@ class UpdateCheck(Sandbox):
         self.assertEqual(r.returncode, 1)
 
 
+
+WINGET_FIXTURE = """   -    \\    |
+Failed in attempting to update the source: winget
+Name                 Id                      Version   Available Source
+-----------------------------------------------------------------------
+Some Editor          Vendor.SomeEditor       1.2.0     1.3.1     winget
+Runtime Pack         Vendor.Runtime.8        8.0.1     8.0.4     winget
+2 upgrades available.
+"""
+
+
+class UpdateCheckRegistry(unittest.TestCase):
+    """Coverage statuses, registries and parsers — in-process, the SSH layer replaced."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="fleet-uc-test-")
+        self.uc = load(os.path.join(TOOLS, "fleet-update-check"), "fleet_update_check_under_test")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def node(self, methods, os_="linux", role="gateway"):
+        return {"role": role, "target": "gw", "os": os_, "methods": methods}
+
+    def test_reachability_is_echo_ok(self):
+        uc = self.uc
+        uc.sh = lambda *a, **k: (0, "ok", "")
+        self.assertTrue(uc.reachable(self.node([])))
+        uc.sh = lambda *a, **k: (0, "", "")                   # connected, but no answer to `echo ok`
+        self.assertFalse(uc.reachable(self.node([])))
+        seen = []
+        uc.sh = lambda args, *a, **k: seen.append(args) or (0, "ok", "")
+        uc.reachable(self.node([]))
+        self.assertEqual(seen[0][-1], "echo ok", "not `true` — a Windows SSH shell has no `true`")
+
+    def test_coverage_statuses(self):
+        uc = self.uc
+        uc.run_on = lambda node, cmd, timeout=300: (0, "brew=0npm=5gem=2cargo=1vscode=4apt=1", "")
+        lines, count, errs = uc.reconcile_node(self.node(["apt", "gem", "?cargo", "!vscode", "not-audited"]))
+        text = "\n".join(lines)
+        self.assertIn("NOT AUDITED", text)
+        self.assertIn("NO CHECKER  gem", text)
+        self.assertIn("GAP         cargo", text)
+        self.assertIn("UNDECLARED  npm (5 installed)", text)
+        self.assertIn("excluded (1): vscode", text)
+        self.assertNotIn("UNDECLARED  vscode", text, "an exclusion is counted, not reported as undeclared")
+        self.assertEqual((count, errs), (4, []))              # not-audited + gem + cargo + npm
+
+    def test_windows_skips_posix_discovery(self):
+        uc = self.uc
+        uc.run_on = lambda *a, **k: self.fail("no POSIX probe may run on a Windows node")
+        lines, count, _ = uc.reconcile_node(self.node(["winget"], os_="windows"))
+        self.assertIn("discovery not supported", "\n".join(lines))
+        self.assertEqual(count, 0)
+
+    def test_malformed_rows_are_reported(self):
+        conf = os.path.join(self.tmp, "fleet-nodes.conf")
+        write(conf, "gateway | gw | linux | apt\nbroken | only-two\nlaptop | | macos | brew\n")
+        nodes, errs = self.uc.load_nodes(conf)
+        self.assertEqual([n["role"] for n in nodes], ["gateway"])
+        self.assertEqual(len(errs), 2, errs)
+
+    def test_brew_probe_count_is_unpadded(self):
+        """Run the REAL probe against a fake `brew` — wc -l's padding is what hid brew entirely."""
+        bindir = os.path.join(self.tmp, "bin")
+        os.makedirs(bindir)
+        write(os.path.join(bindir, "brew"), "#!/bin/sh\nprintf 'git\\njq\\n'\n")
+        os.chmod(os.path.join(bindir, "brew"), 0o755)
+        r = subprocess.run(["sh", "-c", self.uc.METHOD_PROBES["brew"]], capture_output=True, text=True,
+                           env=dict(os.environ, PATH=bindir + os.pathsep + os.environ["PATH"]))
+        # parse it exactly as reconcile_node does — no strip(): the padding IS the bug
+        self.assertRegex("brew=" + r.stdout, r"^brew=2\b", "the count must be parseable as the probe emits it")
+
+    def test_winget_parser(self):
+        rows = self.uc.parse_winget(WINGET_FIXTURE)
+        self.assertEqual(len(rows), 2, rows)
+        self.assertTrue(rows[0].startswith("Some Editor"))
+
+    def test_binaries_registry(self):
+        uc = self.uc
+        reg = os.path.join(self.tmp, "fleet-binaries.conf")
+        write(reg, "gateway | /usr/local/bin/gatus | upstream | example/gatus | v5\\.[0-9]+\\.[0-9]+\n"
+                   "gateway | /usr/local/bin/backup.sh | local | - | -\n"
+                   "gateway | /usr/local/bin/gone | local | - | -\n")
+        uc.BINARIES_CONF = reg
+        def run_on(node, cmd, timeout=300):
+            if cmd.startswith("strings"):
+                return 0, "v5.36.0", ""
+            return 0, "/usr/local/bin/gatus\n/usr/local/bin/backup.sh\n/usr/local/bin/mystery\n", ""
+        uc.run_on = run_on
+        uc.github_latest = lambda repo: "v5.37.0"
+        lines, count, errs = uc.binaries_block([self.node(["apt"])], {"gateway": True})
+        text = "\n".join(lines)
+        self.assertIn("UNREGISTERED  gateway: /usr/local/bin/mystery", text)
+        self.assertIn("gatus v5.36.0 -> v5.37.0", text)
+        self.assertIn("MISSING     gateway: /usr/local/bin/gone", text)
+        self.assertEqual((count, errs), (3, []))
+        uc.run_on = lambda node, cmd, timeout=300: (0, "", "") if cmd.startswith("strings") else (0, "/usr/local/bin/gatus\n", "")
+        self.assertIn("UNREADABLE", "\n".join(uc.binaries_block([self.node(["apt"])], {"gateway": True})[0]))
+
+    def test_decisions(self):
+        uc = self.uc
+        dec = os.path.join(self.tmp, "fleet-update-decisions.conf")
+        write(dec, "gateway | old-db | frozen | major migrates the schema | 2000-01-01\n"
+                   "laptop | editor | declined | self-updates | 2999-01-01\n"
+                   "laptop | thing | declined | reason | someday\n")
+        uc.DECISIONS_CONF = dec
+        lines, count, errs = uc.decisions_block()
+        text = "\n".join(lines)
+        self.assertIn("REVISIT DUE  gateway: old-db", text)
+        self.assertNotIn("REVISIT DUE  laptop: editor", text)
+        self.assertEqual(count, 1)
+        self.assertEqual(len(errs), 1, "a date that isn't YYYY-MM-DD is reported")
+
+
+class UpdateCheckReachability(Sandbox):
+    def test_unreachable_node_is_skipped_not_an_error(self):
+        conf = os.path.join(self.tmp, "fleet-nodes.conf")
+        write(conf, "gateway | nohost.invalid | linux | apt\n")
+        r = self.run_tool("fleet-update-check", "--config", conf, "--dry-run")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("gateway (linux) — unreachable, skipped", r.stdout)
+        self.assertIn("gateway skipped", r.stdout)
+        self.assertNotIn("method discovery failed", r.stdout)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

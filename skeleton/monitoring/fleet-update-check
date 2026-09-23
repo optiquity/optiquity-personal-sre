@@ -14,21 +14,40 @@ with --config or $FLEET_NODES) — one line per node:
     always-on | local          | macos    | brew,npm,softwareupdate,uvtool,pipx
     laptop    | <laptop-host>   | macos    | brew,npm,softwareupdate
     gateway   | <gateway-host>  | linux    | apt
-    windows   | <win-host>      | windows  | manual
+    windows   | <win-host>      | windows  | winget
     nas       | <nas-host>      | synology | manual
 
 Local macos/linux nodes run via a login shell (to pick up brew/npm); remote nodes over SSH
-(key auth, BatchMode). "manual" emits an OS-specific reminder: this checker has no winget/DSM method
-yet (detecting often works over SSH; INSTALLING needs an elevated or UI session — guide § 16). Emails via a mailer command (default: fleet-mail) when there are
-updates OR errors; silent when all-current (--always forces, --dry-run prints instead).
---refresh also refreshes indexes first (brew update / apt-get update) for exact counts.
+(key auth, BatchMode); Windows nodes get the command as-is (their SSH shell is cmd/PowerShell).
+"manual" emits an OS-specific reminder (guide § 16: detecting often works over SSH even where
+INSTALLING needs an elevated or UI session). Emails via a mailer command (default: fleet-mail)
+when there are updates, coverage findings OR errors; silent when all-current (--always forces,
+--dry-run prints instead). --refresh also refreshes indexes first (brew/apt) for exact counts.
+
+COVERAGE — the question a list of checks cannot answer is "what is installed that NOTHING checks?"
+  · methods: `name` = checked · `!name` = excluded on purpose (still counted, never silent) ·
+    `?name` = a known gap, not checked yet (reported every run) · `not-audited` = nobody has looked.
+  · a declared method this checker has no code for is reported as NO CHECKER — never as "current".
+  · discovery reconciles declared methods against what is ACTUALLY installed (macos/linux).
+  · fleet-binaries.conf: binaries installed by hand, outside any package manager (a tool you
+    downloaded, your own scripts). Discovery walks /usr/local/bin (+ /opt on Linux); anything
+    found but unregistered is REPORTED. `upstream` rows are version-checked against GitHub.
+  · fleet-update-decisions.conf: recorded decisions ("frozen", "declined", …) with a revisit date;
+    a denial is a durable answer, but one whose date has passed surfaces again.
+  · a malformed row in any of these files is REPORTED, never silently skipped.
+An unreachable node is noted and skipped — a laptop asleep is not an error.
 
 Exit: 0 ok · 1 the digest email failed to send · 2 config error
 """
 import argparse, os, re, shlex, subprocess, sys, datetime
 
 SSH = ["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes"]
-DEFAULT_CONFIG = os.path.expanduser("~/.config/fleet-monitoring/fleet-nodes.conf")
+CONF_DIR = os.path.expanduser("~/.config/fleet-monitoring")
+DEFAULT_CONFIG = os.path.join(CONF_DIR, "fleet-nodes.conf")
+BINARIES_CONF = os.environ.get("FLEET_BINARIES", os.path.join(CONF_DIR, "fleet-binaries.conf"))
+DECISIONS_CONF = os.environ.get("FLEET_DECISIONS", os.path.join(CONF_DIR, "fleet-update-decisions.conf"))
+# Methods this checker has code for. A declared method outside this set is reported as NO CHECKER.
+CHECKERS = {"brew", "npm", "softwareupdate", "apt", "uvtool", "pipx", "winget", "manual"}
 MANUAL_HINT = {
     "windows":  "detect over SSH: winget list --disable-interactivity (cached index); install from an elevated session: winget upgrade --all --include-unknown --accept-source-agreements",
     "synology": "DSM → Package Center → Installed → Update. Sideloaded packages (e.g. a mesh-VPN .spk) update manually.",
@@ -44,28 +63,56 @@ def sh(args, timeout=300):
     except Exception as e:
         return 1, "", str(e)
 
-def load_nodes(path):
-    if not os.path.isfile(path):
-        sys.exit(f"fleet-update-check: node config not found: {path}  (copy fleet-nodes.conf.template)")
-    nodes = []
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
+def read_conf(path, fields):
+    """(rows, errors) for a pipe-delimited registry. A malformed row is RETURNED as an error rather
+    than skipped: silently dropping a line is how a registered thing becomes unregistered without
+    anyone being told — the blind spot these registries exist to close."""
+    rows, errs = [], []
+    with open(path) as fh:
+        for n, raw in enumerate(fh, 1):
+            line = raw.split("#", 1)[0].strip()
+            if not line:
                 continue
             parts = [p.strip() for p in line.split("|")]
-            if len(parts) < 4:
+            if len(parts) != fields or not all(parts):
+                errs.append(f"{os.path.basename(path)}:{n}: expected {fields} non-empty fields, got {len(parts)}")
                 continue
-            role, target, os_, methods = parts[0], parts[1], parts[2], parts[3]
-            nodes.append({"role": role, "target": target, "os": os_,
-                          "methods": [m.strip() for m in methods.split(",") if m.strip()]})
-    return nodes
+            rows.append(tuple(parts))
+    return rows, errs
+
+def load_nodes(path):
+    """(nodes, errors)."""
+    if not os.path.isfile(path):
+        sys.exit(f"fleet-update-check: node config not found: {path}  (copy fleet-nodes.conf.template)")
+    rows, errs = read_conf(path, 4)
+    nodes = [{"role": role, "target": target, "os": os_,
+              "methods": [m.strip() for m in methods.split(",") if m.strip()]}
+             for role, target, os_, methods in rows]
+    return nodes, errs
 
 def run_on(node, cmd, timeout=300):
+    if node["os"] == "windows":            # the SSH shell is cmd/PowerShell: no POSIX login shell
+        return sh(SSH + [node["target"], cmd], timeout)
     shell = "zsh -lc" if node["os"] == "macos" else "bash -lc"
     if node["target"] == "local":
         return sh(shell.split() + [cmd], timeout)
     return sh(SSH + [node["target"], f"{shell} {shlex.quote(cmd)}"], timeout)
+
+def reachable(node):
+    """`echo ok`, not `true`: a Windows node's SSH shell has no `true`, so the old probe read every
+    Windows node as unreachable."""
+    if node["target"] == "local":
+        return True
+    rc, out, _ = sh(SSH + [node["target"], "echo ok"], 12)
+    return rc == 0 and out.strip() == "ok"
+
+def method_sets(node):
+    """(checked, excluded, gaps, not_audited) from a node's methods column."""
+    ms = node["methods"]
+    return ({m for m in ms if m[:1] not in "!?" and m != "not-audited"},
+            {m[1:] for m in ms if m.startswith("!")},
+            {m[1:] for m in ms if m.startswith("?")},
+            "not-audited" in ms)
 
 # ── Coverage reconciliation ──────────────────────────────────────────────────
 # How to detect that an install method is PRESENT AND HOLDING PACKAGES on a node.
@@ -80,7 +127,9 @@ def run_on(node, cmd, timeout=300):
 #
 # Adding a method is ONE line here plus the method name in fleet-nodes.conf.
 METHOD_PROBES = {
-    "brew":      'command -v brew >/dev/null && brew list --formula 2>/dev/null | wc -l || echo 0',
+    # grep -c, never wc -l: macOS pads wc's output ("       2"), which the parser cannot read,
+    # so brew was never discovered at all.
+    "brew":      'command -v brew >/dev/null && brew list --formula 2>/dev/null | grep -c . || echo 0',
     "npm":       'command -v npm >/dev/null && npm ls -g --depth=0 2>/dev/null | tail -n +2 | grep -c . || echo 0',
     "pnpm":      'command -v pnpm >/dev/null && pnpm ls -g --depth=0 2>/dev/null | grep -cE "^[a-z@]" || echo 0',
     "yarn":      'command -v yarn >/dev/null && yarn global list 2>/dev/null | grep -c "info " || echo 0',
@@ -110,15 +159,27 @@ def reconcile_node(node):
     Returns (lines, count, errs). A finding here is not an error — it means
     something is installed that nothing is watching.
     """
-    declared = {m.lstrip("!") for m in node["methods"]}
-    excluded = {m.lstrip("!") for m in node["methods"] if m.startswith("!")}
+    checked, excluded, gaps, not_audited = method_sets(node)
+    declared = checked | excluded | gaps
+    lines, count = [], 0
+    if not_audited:
+        lines.append("  NOT AUDITED  nobody has assessed how this node updates — look, then declare methods")
+        count += 1
+    for m in sorted(checked - CHECKERS):
+        lines.append(f"  NO CHECKER  {m} — declared, but this checker has no code for it: it is NOT checked")
+        count += 1
+    for m in sorted(gaps):
+        lines.append(f"  GAP         {m} — a known gap, not checked yet")
+        count += 1
+    if node["os"] not in ("macos", "linux"):
+        lines.append(f"  (discovery not supported for os '{node['os']}' — declare its methods by hand)")
+        return lines, count, []
 
     probe = "; ".join(f'printf "%s=" {shlex.quote(m)}; ({c})' for m, c in METHOD_PROBES.items())
     rc, out, err = run_on(node, probe, timeout=180)
     if rc != 0 and not out.strip():
-        return [], 0, [f"method discovery failed ({err.strip()[:80] or 'no output'})"]
+        return lines, count, [f"method discovery failed ({err.strip()[:80] or 'no output'})"]
 
-    lines, count = [], 0
     for m in METHOD_PROBES:
         match = re.search(rf"{re.escape(m)}=(\d+)", out)
         if not match:
@@ -134,17 +195,15 @@ def reconcile_node(node):
     if excluded:
         lines.append(f"  excluded ({len(excluded)}): {', '.join(sorted(excluded))}")
     if not count and not excluded:
-        lines.append("  every install method in use is declared")
+        lines.append("  every install method in use is declared and checked")
     return lines, count, []
 
 
 def check_node(node, refresh):
     """Return (lines, count, errors) for one node across its methods."""
     lines, count, errs = [], 0, []
-    if node["target"] != "local":
-        if sh(SSH + [node["target"], "true"], 12)[0] != 0:
-            return ["unreachable over SSH — skipped this run"], 0, []
-    for m in node["methods"]:
+    checked = method_sets(node)[0]
+    for m in [m for m in node["methods"] if m in checked]:
         if m == "brew":
             upd = "brew update >/dev/null 2>&1; " if refresh else ""
             rc, out, err = run_on(node, f'{upd}echo "==F=="; brew outdated --formula --verbose 2>/dev/null; '
@@ -201,11 +260,117 @@ def check_node(node, refresh):
             items = [l for l in out.splitlines() if l.strip() and not l.lower().startswith(("nothing", "no "))]
             if items:
                 count += len(items); lines.append(f"pipx ({len(items)}):"); lines += [f"  {l}" for l in items]
+        elif m == "winget":
+            rc, out, err = run_on(node, "winget upgrade --include-unknown --disable-interactivity")
+            if rc == 124 or (rc != 0 and not out):
+                errs.append(f"winget: {err or 'failed'}"); continue
+            items = parse_winget(out)
+            if items:
+                count += len(items)
+                lines.append(f"winget ({len(items)}) — from cache: the source index cannot refresh without elevation:")
+                lines += [f"  {l}" for l in items]
         elif m == "manual":
             lines.append("MANUAL: " + MANUAL_HINT.get(node["os"], "check this node's native updater manually."))
     if not lines and not errs:
         lines.append("current — nothing outdated")
     return lines, count, errs
+
+def parse_winget(out):
+    """Upgradable rows from `winget upgrade --disable-interactivity`: only the rows of the TABLE,
+    i.e. after the dashed separator under its header, up to the "N upgrades available" summary.
+    Everything before the separator — progress spinners, "Failed in attempting to update the
+    source" (the index needs elevation to refresh, so results come from cache), the header — is not
+    a package. No separator means no table ("no upgrades"), so no rows."""
+    rows, in_table = [], False
+    for line in out.splitlines():
+        t = line.strip()
+        if not in_table:
+            in_table = bool(re.match(r"^-{5,}$", t))
+            continue
+        if re.search(r"upgrades? available", t, re.I) or not t:
+            break
+        rows.append(t)
+    return rows
+
+def github_latest(repo):
+    """The latest release tag of <owner>/<repo> on GitHub (unauthenticated: 60 requests/hour)."""
+    import json as _j, urllib.request as _u
+    with _u.urlopen(f"https://api.github.com/repos/{repo}/releases/latest", timeout=20) as r:
+        return (_j.load(r).get("tag_name") or "").strip()
+
+# Discovery of binaries placed by hand: executables no package manager owns.
+BINARY_DISCOVERY = {
+    "linux": ('for f in $(find /usr/local/bin /opt -maxdepth 2 -type f -perm -u+x 2>/dev/null); do '
+              '(dpkg -S "$f" >/dev/null 2>&1 || rpm -qf "$f" >/dev/null 2>&1) || echo "$f"; done'),
+    "macos": ('for f in /usr/local/bin/*; do [ -f "$f" ] && [ -x "$f" ] || continue; '
+              'case "$(readlink -f "$f" 2>/dev/null)" in /opt/homebrew/*|/usr/local/Cellar/*|/usr/local/Caskroom/*) ;; '
+              '*) echo "$f";; esac; done'),
+}
+
+def binaries_block(nodes, reach):
+    """(lines, count, errs): unregistered / missing / behind hand-placed binaries."""
+    if not os.path.isfile(BINARIES_CONF):
+        reg, errs = {}, []
+        note = f"  (no {os.path.basename(BINARIES_CONF)} yet — every hand-placed binary found is UNREGISTERED)"
+    else:
+        rows, errs = read_conf(BINARIES_CONF, 5)
+        reg = {(r[0], r[1]): (r[2], r[3], r[4]) for r in rows}
+        note = None
+    lines, count = ([note] if note else []), 0
+    for node in nodes:
+        probe = BINARY_DISCOVERY.get(node["os"])
+        if not probe or not reach.get(node["role"]):
+            continue
+        rc, out, err = run_on(node, probe, timeout=120)
+        if rc == 124:
+            errs.append(f"{node['role']}: binary discovery timed out"); continue
+        found = sorted(l.strip() for l in out.splitlines() if l.strip())
+        for path in found:
+            if (node["role"], path) not in reg:
+                lines.append(f"  UNREGISTERED  {node['role']}: {path} — add it to {os.path.basename(BINARIES_CONF)}")
+                count += 1
+                continue
+            kind, source, rx = reg[(node["role"], path)]
+            if kind != "upstream":
+                continue
+            _, cur, _ = run_on(node, f"strings {shlex.quote(path)} 2>/dev/null | grep -oE {shlex.quote(rx)} | sort -u | tail -1")
+            cur = (cur or "").strip()
+            try:
+                latest = github_latest(source)
+            except Exception as e:
+                errs.append(f"{os.path.basename(path)}: upstream lookup failed ({type(e).__name__})"); continue
+            if not cur:
+                lines.append(f"  UNREADABLE  {node['role']}: {path} — installed version unreadable; latest {latest}")
+                count += 1
+            elif latest and cur != latest:
+                lines.append(f"  {node['role']}: {os.path.basename(path)} {cur} -> {latest}   ({source})")
+                count += 1
+        for (role, path) in reg:
+            if role == node["role"] and path not in found:
+                lines.append(f"  MISSING     {role}: {path} — registered but not found (removed? then unregister it)")
+                count += 1
+    if not lines:
+        lines.append("  every hand-placed binary is registered and current")
+    return lines, count, errs
+
+def decisions_block():
+    """(lines, count, errs): recorded update decisions, and any whose revisit date has passed."""
+    if not os.path.isfile(DECISIONS_CONF):
+        return ["  none recorded"], 0, []
+    rows, errs = read_conf(DECISIONS_CONF, 5)
+    today = datetime.date.today().isoformat()
+    lines, count, by_kind = [], 0, {}
+    for role, item, kind, reason, revisit in rows:
+        if revisit != "-" and not re.match(r"^\d{4}-\d{2}-\d{2}$", revisit):
+            errs.append(f"{os.path.basename(DECISIONS_CONF)}: revisit {revisit!r} for {item} is not YYYY-MM-DD or -")
+            continue
+        by_kind.setdefault(kind, []).append(f"{role}:{item}")
+        if revisit != "-" and revisit <= today:
+            lines.append(f"  REVISIT DUE  {role}: {item} ({kind}, set for {revisit}) — {reason[:90]}")
+            count += 1
+    for kind in sorted(by_kind):
+        lines.append(f"  {kind} ({len(by_kind[kind])}): {', '.join(by_kind[kind])}")
+    return lines or ["  none recorded"], count, errs
 
 def main():
     ap = argparse.ArgumentParser()
@@ -216,9 +381,19 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="print the digest; do not email")
     a = ap.parse_args()
 
-    nodes = load_nodes(a.config)
-    blocks, summary, any_updates, any_errs = [], [], False, False
+    nodes, conf_errs = load_nodes(a.config)
+    reach = {n["role"]: reachable(n) for n in nodes}
+    blocks, summary, any_updates, any_errs = [], [], False, bool(conf_errs)
+    if conf_errs:
+        blocks.append("\n".join(["== Config problems — fix these; a skipped row is a node nobody checks =="]
+                                 + [f"  {e}  ⚠" for e in conf_errs]))
+        summary.append(f"config ERR {len(conf_errs)}")
     for node in nodes:
+        if not reach[node["role"]]:
+            blocks.append(f"== {node['role']} ({node['os']}) — unreachable, skipped ==\n"
+                          "  not an error (a laptop asleep, a node offline) — it is checked when it answers")
+            summary.append(f"{node['role']} skipped")
+            continue
         lines, cnt, errs = check_node(node, a.refresh)
         any_updates = any_updates or cnt > 0
         any_errs = any_errs or bool(errs)
@@ -233,6 +408,8 @@ def main():
     # I check out of date", which is a different and much weaker question.
     rec_lines, rec_count, rec_errs = [], 0, []
     for node in nodes:
+        if not reach[node["role"]]:
+            continue
         l, c, e = reconcile_node(node)
         if l or e:
             rec_lines.append(f"  {node['role']} ({node['os']}):")
@@ -241,12 +418,29 @@ def main():
         rec_errs += e
     any_updates = any_updates or rec_count > 0
     any_errs = any_errs or bool(rec_errs)
-    tag = f"{rec_count} undeclared" if rec_count else ("ERROR" if rec_errs else "current")
+    tag = f"{rec_count} finding(s)" if rec_count else ("ERROR" if rec_errs else "current")
     blocks.append("\n".join([f"== Update coverage (reconciliation) — {tag} ==",
-                             "  Declared methods vs what is actually installed. An UNDECLARED entry",
-                             "  means something is installed that no checker covers — add it to",
-                             "  fleet-nodes.conf (as `name` to check it, or `!name` to exclude it",
-                             "  with intent; excluded entries stay counted, never silent)."] + rec_lines))
+                             "  Declared methods vs what is actually installed. UNDECLARED: installed,",
+                             "  nothing checks it. NO CHECKER: declared, but this tool has no code for it.",
+                             "  GAP: a known gap. NOT AUDITED: nobody has looked. Declare `name` to check,",
+                             "  `!name` to exclude with intent (still counted), `?name` for a known gap."] + rec_lines))
+
+    # Binaries placed by hand — invisible to every package manager above.
+    bin_lines, bin_count, bin_errs = binaries_block(nodes, reach)
+    any_updates = any_updates or bin_count > 0
+    any_errs = any_errs or bool(bin_errs)
+    tag = f"{bin_count} finding(s)" if bin_count else ("ERROR" if bin_errs else "current")
+    blocks.append("\n".join([f"== Hand-placed binaries ({os.path.basename(BINARIES_CONF)}) — {tag} =="]
+                             + bin_lines + [f"  {e}  ⚠" for e in bin_errs]))
+    summary.append(f"binaries {bin_count if bin_count else ('ERR' if bin_errs else 'ok')}")
+
+    # Recorded decisions — durable, but not forever.
+    dec_lines, dec_count, dec_errs = decisions_block()
+    any_updates = any_updates or dec_count > 0
+    any_errs = any_errs or bool(dec_errs)
+    tag = f"{dec_count} due for review" if dec_count else ("ERROR" if dec_errs else "none due")
+    blocks.append("\n".join([f"== Update decisions ({os.path.basename(DECISIONS_CONF)}) — {tag} =="]
+                             + dec_lines + [f"  {e}  ⚠" for e in dec_errs]))
     summary.append(f"coverage {rec_count if rec_count else ('ERR' if rec_errs else 'ok')}")
 
     stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")

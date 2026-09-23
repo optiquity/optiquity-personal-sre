@@ -1,0 +1,24 @@
+# fleet-binaries.conf — binaries installed OUTSIDE any package manager, which brew/apt/npm therefore
+# cannot see or update. Copy to $HOME/.config/fleet-monitoring/fleet-binaries.conf.
+#
+# Why it exists: a health checker installed as a bare binary on a gateway is exactly the thing
+# nobody checks for updates — the package manager's list will never mention it. fleet-update-check
+# DISCOVERS executables no package manager owns (/usr/local/bin, plus /opt on Linux; on macOS,
+# anything in /usr/local/bin that isn't a Homebrew symlink) and reconciles them against this list:
+# anything found but not listed is REPORTED as UNREGISTERED, and anything listed but not found as
+# MISSING. Forgetting to register becomes a visible finding instead of permanent silence.
+#
+# Register a new hand-placed binary in the SAME change that installs it.
+#
+#   role | path | kind | source | version-regex
+#     role           the node's role, as in fleet-nodes.conf
+#     kind           upstream = tracked against <source>'s latest GitHub release
+#                    local    = your own script: no upstream, listed so it isn't "unregistered"
+#     source         <owner>/<repo> on GitHub, or - for local
+#     version-regex  extracted from the binary's strings (Go binaries embed their module version,
+#                    which works even for a tool whose --version needs a config); - for local
+#
+# A row with the wrong number of fields is REPORTED, never skipped.
+
+gateway | /usr/local/bin/gatus            | upstream | TwiN/gatus | v5\.[0-9]+\.[0-9]+
+gateway | /usr/local/bin/<your-script.sh> | local    | -          | -

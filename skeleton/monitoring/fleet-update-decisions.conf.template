@@ -1,0 +1,16 @@
+# fleet-update-decisions.conf — updates you decided NOT to take (yet), with the reason and when to
+# look again. Copy to $HOME/.config/fleet-monitoring/fleet-update-decisions.conf.
+#
+# A denial is a durable answer, not an invitation to re-ask next week (guide § 03, principle 11) —
+# but "not now" must not silently become "never". Every decision is listed in the digest, and one
+# whose revisit date has passed is flagged REVISIT DUE.
+#
+#   role | item | decision | reason | revisit
+#     decision   your word for it: frozen · declined · self-updating · pinned · retiring …
+#     revisit    YYYY-MM-DD, or - for "no date" (use sparingly: a decision with no revisit date is
+#                one nobody will revisit)
+#
+# A row with the wrong number of fields, or a revisit that isn't a date or -, is REPORTED.
+
+always-on | <database-image>  | frozen   | the next major migrates the schema irreversibly; wait for a restore-tested backup | <YYYY-MM-DD>
+laptop    | <editor-app>      | self-updating | updates itself; tracked so it is counted, not silent            | -
