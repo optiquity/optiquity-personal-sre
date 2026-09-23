@@ -1,0 +1,11 @@
+# fleet-composes.conf — the compose stacks fleet-container-check watches for image updates.
+# Copy to $HOME/.config/fleet-monitoring/fleet-composes.conf. One path per line; # comments ok.
+#
+# Register a new stack in the SAME change that creates it. Discovery (~/*/compose.yaml and
+# ~/*/docker-compose.yml; override with $FLEET_COMPOSE_GLOB, colon-separated) reconciles against this
+# list and REPORTS any stack that exists but is not listed — so forgetting to register is a visible
+# finding in the weekly digest, never permanent silence. A listed file that no longer exists is
+# reported as MISSING.
+
+~/<stack>/compose.yaml
+# ~/<another-stack>/compose.yaml

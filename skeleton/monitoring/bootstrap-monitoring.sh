@@ -39,6 +39,7 @@ seed "$HERE/fleet-nodes.conf.template"   "$CFG/fleet-nodes.conf"   644
 seed "$HERE/local-checks.conf.template"  "$CFG/local-checks.conf"  644
 seed "$HERE/fleet-binaries.conf.template" "$CFG/fleet-binaries.conf" 644
 seed "$HERE/fleet-update-decisions.conf.template" "$CFG/fleet-update-decisions.conf" 644
+seed "$HERE/fleet-composes.conf.template"  "$CFG/fleet-composes.conf"  644
 
 if [ "$DO_TIMER" = 1 ]; then
   case "$(uname -s)" in

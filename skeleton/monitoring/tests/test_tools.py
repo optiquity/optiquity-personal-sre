@@ -12,7 +12,7 @@ FAKE mailer. The fake calls the REAL fleet-mail with --dry-run, so each subject 
 is built and validated by the real code — then records what it was asked to send, and can be
 told to fail (FAKE_MAIL_RC) to prove a failed send is retried rather than forgotten.
 """
-import importlib.util, json, os, shutil, subprocess, sys, tempfile, textwrap, time, unittest
+import contextlib, importlib.util, json, os, shutil, subprocess, sys, tempfile, textwrap, time, unittest, urllib.error
 from importlib.machinery import SourceFileLoader
 
 sys.dont_write_bytecode = True
@@ -490,6 +490,154 @@ class UpdateCheckReachability(Sandbox):
         self.assertIn("gateway (linux) — unreachable, skipped", r.stdout)
         self.assertIn("gateway skipped", r.stdout)
         self.assertNotIn("method discovery failed", r.stdout)
+
+
+class ContainerCheck(unittest.TestCase):
+    """Registries, variants, pins, floating tags and exit codes — the network replaced."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="fleet-cc-test-")
+        self.cc = load(os.path.join(TOOLS, "fleet-container-check"), "fleet_container_check_under_test")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_split_ref(self):
+        cases = {"caddy:2.10-alpine": ("docker.io", "library/caddy", "2.10-alpine"),
+                 "grafana/grafana:12.0.0": ("docker.io", "grafana/grafana", "12.0.0"),
+                 "docker.io/library/nginx:1.27": ("docker.io", "library/nginx", "1.27"),
+                 "ghcr.io/org/app:v1.2.3": ("ghcr.io", "org/app", "v1.2.3"),
+                 "lscr.io/linuxserver/nginx:1.26.2": ("lscr.io", "linuxserver/nginx", "1.26.2"),
+                 "quay.io/prometheus/node-exporter:v1.8.0": ("quay.io", "prometheus/node-exporter", "v1.8.0"),
+                 "registry.local:5000/team/svc:2.0": ("registry.local:5000", "team/svc", "2.0"),
+                 "app": ("docker.io", "library/app", "")}
+        for ref, want in cases.items():
+            with self.subTest(ref=ref):
+                self.assertEqual(self.cc.split_ref(ref), want)
+
+    def test_variants_and_floating_tags(self):
+        cc = self.cc
+        tags = ["5.12-apache", "5.13-apache", "5.13.0-apache", "5.14-fpm", "6.0-fpm"]
+        cc.tags_dockerhub = lambda repo: tags
+        self.assertEqual(cc.newest("docker.io", "library/matomo", "apache", 2), "5.13-apache",
+                         "same variant only; same component count preferred")
+        self.assertTrue(cc.is_behind("2.10-alpine", "2.11.4-alpine"), "a real minor bump is behind")
+        self.assertFalse(cc.is_behind("3.14-alpine", "3.14.7-alpine"), "a floating tag is not stale")
+        self.assertFalse(cc.is_behind("1.2.3", "1.2.3"))
+        self.assertEqual(cc.parse_tag("mysql-v2.19.0"), ((2, 19, 0), "mysql", 3))
+        self.assertIsNone(cc.parse_tag("latest"))
+
+    def test_scan_pins_errors_and_skips(self):
+        compose = os.path.join(self.tmp, "compose.yaml")
+        write(compose, "services:\n"
+                       "  web:\n    image: caddy:2.10-alpine\n"
+                       "  db:\n    # pin: LTS track, majors migrate the schema\n    image: mysql:8.4\n"
+                       "  py:\n    image: python:3.14-alpine\n"
+                       "  bad:\n    image: example/broken:1.0\n"
+                       "  moving:\n    image: app:latest\n"
+                       "  quoted:\n    image: \"ghcr.io/org/app:v1.2.3\"\n")
+        answers = {"library/caddy": "2.11.4-alpine", "library/mysql": "9.1", "library/python": "3.14.7-alpine",
+                   "org/app": "v1.2.3"}
+        def lookup(registry, repo, variant, parts):
+            if repo == "example/broken":
+                raise RuntimeError("registry said no")
+            return answers[repo]
+        rows = {r["image"]: r for r in self.cc.scan(compose, set(), [], lookup=lookup)}
+        self.assertTrue(rows["docker.io/library/caddy"]["outdated"])
+        self.assertFalse(rows["docker.io/library/mysql"]["outdated"], "an intentional pin is not an update")
+        self.assertEqual(rows["docker.io/library/mysql"]["pinned"], "LTS track, majors migrate the schema")
+        self.assertFalse(rows["docker.io/library/python"]["outdated"], "floating tag")
+        self.assertIn("error", rows["docker.io/example/broken"])
+        self.assertNotIn("docker.io/library/app", rows, "latest moves at pull time: skipped")
+        self.assertFalse(rows["ghcr.io/org/app"]["outdated"])
+
+    def test_oci_anonymous_token_flow(self):
+        cc = self.cc
+        calls = []
+        class Resp:
+            def __init__(self, body): self.body = json.dumps(body).encode()
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def read(self, *a): return self.body
+        def urlopen(req, timeout=15):
+            url, auth = req.full_url, req.headers.get("Authorization")
+            calls.append((url, auth))
+            if url.startswith("https://quay.io/v2/auth?"):      # the realm the challenge advertised
+                return Resp({"token": "anon"})
+            if auth != "Bearer anon":
+                import email.message, io
+                h = email.message.Message()
+                h["WWW-Authenticate"] = 'Bearer realm="https://quay.io/v2/auth",service="quay.io",scope="repository:p/n:pull"'
+                raise urllib.error.HTTPError(url, 401, "Unauthorized", h, io.BytesIO(b""))
+            return Resp({"tags": ["v1.8.0", "v1.12.1"]})
+        cc.urllib.request.urlopen = urlopen
+        self.assertEqual(cc.tags_oci("quay.io", "p/n"), ["v1.8.0", "v1.12.1"])
+        self.assertTrue(any("quay.io/v2/auth" in u and "scope=" in u for u, _ in calls), calls)
+
+    def test_non_docker_hub_registries_use_the_oci_client(self):
+        cc = self.cc
+        cc.tags_dockerhub = lambda repo: self.fail(f"{repo} must not be looked up on Docker Hub")
+        cc.tags_oci = lambda registry, repo: ["v1.8.0", "v1.12.1"]
+        for registry in ("quay.io", "lscr.io", "ghcr.io", "registry.local:5000"):
+            with self.subTest(registry=registry):
+                self.assertEqual(cc.newest(registry, "p/n", "", 3), "v1.12.1")
+
+    def test_exit_code_reflects_errors_and_updates(self):
+        cc = self.cc
+        compose = os.path.join(self.tmp, "compose.yaml")
+        write(compose, "services:\n  x:\n    image: example/app:1.0\n")
+        argv = sys.argv
+        try:
+            sys.argv = ["fleet-container-check", "--compose", compose]
+            cc.newest = lambda *a: (_ for _ in ()).throw(RuntimeError("registry down"))
+            with open(os.devnull, "w") as null, contextlib.redirect_stdout(null):
+                self.assertEqual(cc.main(), 2, "a failed check is an error, never 'current'")
+                cc.newest = lambda *a: "1.1"
+                self.assertEqual(cc.main(), 1)
+                cc.newest = lambda *a: "1.0"
+                self.assertEqual(cc.main(), 0)
+        finally:
+            sys.argv = argv
+
+    def run_cc(self, *args):
+        env = dict(os.environ, HOME=self.tmp, PYTHONDONTWRITEBYTECODE="1")
+        env.pop("FLEET_COMPOSES", None)
+        return subprocess.run([sys.executable, os.path.join(TOOLS, "fleet-container-check"), *args],
+                              stdin=subprocess.DEVNULL, capture_output=True, text=True, env=env, timeout=60)
+
+    def test_registry_discovery_and_exit_codes(self):
+        cfg = os.path.join(self.tmp, ".config", "fleet-monitoring")
+        os.makedirs(cfg)
+        for stack in ("a", "b"):
+            os.makedirs(os.path.join(self.tmp, stack))
+            write(os.path.join(self.tmp, stack, "compose.yaml"), "services:\n  x:\n    image: app:latest\n")
+        r = self.run_cc()
+        self.assertEqual(r.returncode, 2, "no registry file: nothing checked is an error, not 'current'")
+        self.assertIn("register your compose stacks", r.stdout)
+        write(os.path.join(cfg, "fleet-composes.conf"), "~/a/compose.yaml\n")
+        r = self.run_cc()
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("UNREGISTERED", r.stdout)
+        self.assertIn(os.path.join(self.tmp, "b", "compose.yaml"), r.stdout)
+        write(os.path.join(cfg, "fleet-composes.conf"), "~/a/compose.yaml\n~/b/compose.yaml\n~/gone/compose.yaml\n")
+        r = self.run_cc()
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("registered but MISSING", r.stdout)
+
+
+class UpdateCheckFoldsContainerErrors(Sandbox):
+    def test_container_check_error_is_reported_not_swallowed(self):
+        bindir = os.path.join(self.home, ".local", "bin")
+        os.makedirs(bindir)
+        write(os.path.join(bindir, "fleet-container-check"), "#!/bin/sh\necho 'Pinned container images'\necho 'boom' >&2\nexit 2\n")
+        os.chmod(os.path.join(bindir, "fleet-container-check"), 0o755)
+        conf = os.path.join(self.tmp, "fleet-nodes.conf")
+        write(conf, "# no nodes\n")
+        r = self.run_tool("fleet-update-check", "--config", conf)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        subj = self.mails()[0]["subject"]
+        self.assertIn("check errors", subj, "exit 2 from the container check must surface as an error")
+        self.assertIn("container check exited 2", self.mails()[0]["argv"][-1])
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

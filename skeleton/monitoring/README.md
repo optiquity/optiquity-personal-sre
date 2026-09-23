@@ -31,6 +31,7 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 | `fleet-install-audit.plist.template` | after-install WatchPaths trigger (runs the audit `--local`) |
 | `fleet-binaries.conf.template` | hand-placed binaries registry (reconciled against discovery; `upstream` rows version-checked) |
 | `fleet-update-decisions.conf.template` | update decisions with a reason and a revisit date |
+| `fleet-composes.conf.template` | the compose stacks to check for image updates (reconciled against discovery) |
 | `fleet-nodes.conf.template` | your node inventory (`role | ssh-target | os | methods`) |
 | `local-checks.conf.template` | typed local checks (`service`, `mount`, `http`, `command`, `hash`, `synclag`) |
 | `fleet-local-check.plist.template` | launchd timer for the local probe (every 15 min) |
@@ -235,13 +236,26 @@ moving under you) **never moves on its own and no package manager sees it**. In 
 until somebody happens to notice a "new version available" banner inside the app's own UI. That is
 a terrible detection mechanism.
 
-`fleet-container-check` closes it: parse your compose file, find version-pinned images (skipping
-`:latest`, which moves at pull time anyway), ask the registry (Docker Hub / ghcr.io) for newer
-semver tags, and report. **Read-only — it never pulls and never recreates.** It's folded into the
-weekly digest, so stale images arrive in the same email as everything else.
+`fleet-container-check` closes it. It reads every stack registered in `fleet-composes.conf`, finds
+the version-pinned images, asks the registry for newer tags, and reports. **Read-only: it never
+pulls and never recreates.** It's folded into the weekly digest.
+
+- **Every stack is seen.** Discovery (`~/*/compose.yaml`, `~/*/docker-compose.yml`) reports any stack
+  that exists but isn't registered. Forgetting to register a stack is a finding, not silence.
+- **Variant-aware.** `5.13-apache`, `2.10-alpine` and `mysql-v2.19.0` are compared only with tags of
+  the same variant: `-fpm` is a different image, not a newer one.
+- **Floating tags aren't stale.** `3.14-alpine` *is* today's 3.14.x, so it is not reported as behind
+  `3.14.7-alpine`. A real bump (`2.10 → 2.11`) still is.
+- **Intentional pins.** A `# pin: <reason>` comment above an `image:` line keeps the image listed (with
+  the newest version) but not counted as an update. A digest that nags about a version you
+  declined gets filtered to trash.
+- **Any registry.** Docker Hub, plus any OCI registry through the standard anonymous-token flow:
+  ghcr.io, quay.io, lscr.io, or your own.
+- **A failed check is an error, not "current".** It exits 2, and the digest reports it.
 
 ```sh
-fleet-container-check                 # or: FLEET_COMPOSE=/path/to/compose.yaml fleet-container-check
+fleet-container-check                      # every registered stack
+fleet-container-check --compose ./compose.yaml   # just one file
 ```
 
 **Updating a pinned image** — bump the tag, then:
@@ -265,6 +279,7 @@ container breaks the sidecar's networking** — the app stays healthy but its pu
 |---|---|
 | `docker restart <app>` (id unchanged) | `docker restart ts-<app>` |
 | `docker compose up -d <app>` / recreate (**new** id) | `docker compose up -d ts-<app>` — a plain restart fails; it still points at the dead container id |
+| **Nothing — the app restarted by itself** (a crash and its restart policy, or a boot where the sidecar joined first) | Recreate the sidecar. ⚠ This is the dangerous row: no human action to remember, and the sidecar keeps "running" in an empty namespace. In one fleet it stayed dark for four days; only an endpoint check noticed. **Monitor the published URL, not the container state.** |
 
 Sweep your published URLs after any such change; anything returning no response needs its sidecar
 restarted or recreated. Better still, **avoid the restart**: dashboard provisioners and config

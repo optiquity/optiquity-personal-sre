@@ -7,98 +7,229 @@ appliance — you don't want it moving under you) never moves on its own and is 
 package manager, so it silently rots until someone happens to notice a "new version available"
 banner inside the app's own UI. That is a terrible update-detection mechanism; this is the fix.
 
-Reads a compose file, finds `image: repo:tag` lines pinned to a VERSION tag (`:latest` is skipped —
-those move on their own at pull time), asks the registry for that repo's tags, and reports any
-newer semver. Read-only: it never pulls, never recreates. Supports Docker Hub and ghcr.io
-(anonymous pull tokens); anything else is reported as "unsupported registry" rather than skipped
-silently.
+WHICH STACKS: fleet-composes.conf (one compose file per line) is the explicit list of what is
+CHECKED; discovery (~/*/compose.yaml, ~/*/docker-compose.yml — override with $FLEET_COMPOSE_GLOB)
+decides what is REPORTED as missing from it. Each alone fails the way the other solves: a list is
+deliberate but only contains what someone remembered to add; a glob self-extends but silently
+absorbs scratch files. Together, forgetting to register a stack is a visible finding.
+
+WHICH TAGS: `image: repo:tag` pinned to a VERSION. Real tags carry variants — 5.13-apache,
+2.10-alpine, mysql-v2.19.0 — and a tag is only compared against tags with the SAME variant (-apache
+and -fpm are different images, not newer ones). `latest` and other non-version tags are skipped:
+they move at pull time. A SHORTER pin is a floating tag — `3.14-alpine` IS today's 3.14.x — so it is
+not reported as behind 3.14.7-alpine; a real minor bump (2.10 -> 2.11) still is.
+
+INTENTIONAL PINS: a `# pin: <reason>` comment directly above an `image:` line records a deliberate
+pin (an LTS track, a compatibility floor). It is still listed, with the newest version, but not
+counted as an update — otherwise the digest nags weekly about a version you declined, and a nagging
+channel gets filtered to trash.
+
+REGISTRIES: Docker Hub (its API), and any OCI registry via the standard anonymous-token flow —
+ghcr.io, quay.io, lscr.io, your own. Read-only: it never pulls, never recreates.
 
 Usage: fleet-container-check [--compose PATH] [--json]
-Exit:  0 all current (or nothing pinned) · 1 updates available · 2 error
+Exit:  0 all current · 1 updates available, or a stack is unregistered · 2 a check failed or no
+       compose file found (errors take precedence — an unchecked image is not a current one)
 """
-import argparse, json, os, re, sys, urllib.request, urllib.error
+import argparse, glob, json, os, re, sys, urllib.error, urllib.parse, urllib.request
 
-DEFAULT_COMPOSE = os.path.expanduser(os.environ.get("FLEET_COMPOSE", "~/selfhost/compose.yaml"))
-SEMVER = re.compile(r"^v?(\d+)\.(\d+)(?:\.(\d+))?$")
+CONF_DIR = os.path.expanduser("~/.config/fleet-monitoring")
+REGISTRY_FILE = os.environ.get("FLEET_COMPOSES", os.path.join(CONF_DIR, "fleet-composes.conf"))
+DISCOVER_GLOBS = os.environ.get("FLEET_COMPOSE_GLOB", "~/*/compose.yaml:~/*/docker-compose.yml").split(":")
 
-def get(url, headers=None, timeout=15):
+TAG_RE = re.compile(r"""
+    ^
+    (?:(?P<pre>[a-z][a-z0-9]*)-)?          # leading variant:  mysql-v2.19.0
+    v?
+    (?P<maj>\d+)(?:\.(?P<min>\d+))?(?:\.(?P<pat>\d+))?
+    (?:-(?P<post>[a-z][a-z0-9.]*))?        # trailing variant: 5.13-apache
+    $
+    """, re.VERBOSE)
+
+
+def parse_tag(tag):
+    """(version_tuple, variant, component_count), or None if not a version tag."""
+    m = TAG_RE.match(tag)
+    if not m:
+        return None
+    parts = [m.group("maj"), m.group("min"), m.group("pat")]
+    return (tuple(int(x or 0) for x in parts), m.group("pre") or m.group("post") or "",
+            sum(1 for x in parts if x is not None))
+
+
+def split_ref(ref):
+    """image ref -> (registry, repository, tag). `caddy:2` -> ('docker.io', 'library/caddy', '2')."""
+    name, _, tag = ref.rpartition(":") if ":" in ref.rsplit("/", 1)[-1] else (ref, "", "")
+    first, _, rest = name.partition("/")
+    if rest and ("." in first or ":" in first or first == "localhost"):
+        registry, repo = first, rest
+    else:
+        registry, repo = "docker.io", name
+    if registry in ("docker.io", "index.docker.io", "registry-1.docker.io"):
+        registry = "docker.io"
+        if "/" not in repo:
+            repo = "library/" + repo
+    return registry, repo, tag
+
+
+def http_json(url, headers=None, timeout=15):
     req = urllib.request.Request(url, headers=headers or {})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return json.load(r)
 
-def parse_ver(tag):
-    m = SEMVER.match(tag)
-    return tuple(int(x or 0) for x in m.groups()) if m else None
 
 def tags_dockerhub(repo):
-    ns, name = repo.split("/", 1) if "/" in repo else ("library", repo)
-    out, url = [], f"https://hub.docker.com/v2/repositories/{ns}/{name}/tags?page_size=100"
+    out, url = [], f"https://hub.docker.com/v2/repositories/{repo}/tags?page_size=100"
     for _ in range(3):                       # up to 300 tags is plenty to find the newest
-        d = get(url)
+        d = http_json(url)
         out += [t["name"] for t in d.get("results", [])]
         url = d.get("next")
         if not url:
             break
     return out
 
-def tags_ghcr(repo):
-    tok = get(f"https://ghcr.io/token?scope=repository:{repo}:pull&service=ghcr.io")["token"]
-    d = get(f"https://ghcr.io/v2/{repo}/tags/list?n=200", {"Authorization": f"Bearer {tok}"})
-    return d.get("tags", [])
 
-def newest(repo, registry):
-    tags = tags_ghcr(repo) if registry == "ghcr.io" else tags_dockerhub(repo)
-    vers = [(parse_ver(t), t) for t in tags]
-    vers = [(v, t) for v, t in vers if v]
-    return max(vers)[1] if vers else None
+def tags_oci(registry, repo):
+    """Any OCI registry: ask for the tag list; on 401, follow its WWW-Authenticate challenge to an
+    anonymous pull token (ghcr.io, quay.io, lscr.io and most self-hosted registries do this)."""
+    url = f"https://{registry}/v2/{repo}/tags/list?n=1000"
+    try:
+        return http_json(url).get("tags") or []
+    except urllib.error.HTTPError as e:
+        challenge = e.headers.get("WWW-Authenticate", "") if e.code == 401 else ""
+        e.close()
+        if not challenge.lower().startswith("bearer "):
+            raise
+    params = dict(re.findall(r'(\w+)="([^"]*)"', challenge))
+    realm = params.pop("realm", None)
+    if not realm:
+        raise RuntimeError(f"{registry}: no token realm in its challenge")
+    params.setdefault("scope", f"repository:{repo}:pull")
+    tok = http_json(realm + "?" + urllib.parse.urlencode(params))
+    token = tok.get("token") or tok.get("access_token")
+    return http_json(url, {"Authorization": f"Bearer {token}"}).get("tags") or []
+
+
+def newest(registry, repo, variant, parts):
+    """The newest tag with the SAME variant; among equals, prefer the same component count as the
+    pin, so a `5.3-apache` pin is answered with `5.13-apache`, not `5.13.0-apache`."""
+    tags = tags_dockerhub(repo) if registry == "docker.io" else tags_oci(registry, repo)
+    cands = [(p[0], p[2], t) for t in tags for p in [parse_tag(t)] if p and p[1] == variant]
+    if not cands:
+        return None
+    top = max(v for v, _, _ in cands)
+    same = [t for v, n, t in cands if v == top and n == parts]
+    return same[0] if same else next(t for v, _, t in cands if v == top)
+
+
+def is_behind(current, latest):
+    """True if `latest` is newer — but a SHORTER pin whose components match is a floating tag
+    (3.14-alpine IS 3.14.7-alpine), not a stale one."""
+    cur, new = parse_tag(current), parse_tag(latest) if latest else None
+    if not cur or not new or not new[0] > cur[0]:
+        return False
+    return not (cur[2] < new[2] and cur[0][:cur[2]] == new[0][:cur[2]])
+
+
+def scan(path, seen, rows, lookup=None):
+    """One compose file -> a row per pinned, version-tagged image (with `# pin:` honoured)."""
+    lookup = lookup or newest          # resolved at call time, so a test can replace it
+    pin = None
+    with open(path) as f:
+        for line in f:
+            pm = re.match(r"\s*#\s*pin:\s*(.+)", line)
+            if pm:
+                pin = pm.group(1).strip()
+                continue
+            m = re.match(r"\s*image:\s*[\"']?([^\"'\s]+)", line)
+            if not m:
+                continue
+            registry, repo, tag = split_ref(m.group(1))
+            parsed = parse_tag(tag) if tag else None
+            ref = f"{registry}/{repo}:{tag}"
+            if not parsed or ref in seen:
+                pin = None
+                continue
+            seen.add(ref)
+            row = {"image": f"{registry}/{repo}", "current": tag, "file": path, "pinned": pin}
+            try:
+                row["latest"] = lookup(registry, repo, parsed[1], parsed[2])
+            except Exception as e:
+                row.update(latest=None, error=f"{type(e).__name__}: {str(e)[:60]}")
+            else:
+                row["outdated"] = is_behind(tag, row["latest"]) and not pin
+            rows.append(row)
+            pin = None
+    return rows
+
+
+def registered():
+    """(files, problems) from the registry file; a missing registry is reported, not guessed at."""
+    if not os.path.isfile(REGISTRY_FILE):
+        return [], [f"no {REGISTRY_FILE} — register your compose stacks (see fleet-composes.conf.template)"]
+    with open(REGISTRY_FILE) as f:
+        files = [os.path.expanduser(l.split("#", 1)[0].strip()) for l in f if l.split("#", 1)[0].strip()]
+    return files, []
+
+
+def unregistered(files):
+    known = {os.path.realpath(p) for p in files}
+    found = {f for g in DISCOVER_GLOBS for f in glob.glob(os.path.expanduser(g))}
+    return sorted(f for f in found if os.path.realpath(f) not in known)
+
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--compose", default=os.environ.get("FLEET_COMPOSE", DEFAULT_COMPOSE))
+    ap.add_argument("--compose", help="check only this file (default: every file in fleet-composes.conf)")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
-    if not os.path.isfile(a.compose):
-        print(f"fleet-container-check: compose not found: {a.compose}", file=sys.stderr); return 2
 
-    seen, rows, outdated = set(), [], 0
-    for line in open(a.compose):
-        m = re.match(r"\s*image:\s*(\S+)", line)
-        if not m:
-            continue
-        ref = m.group(1)
-        if ":" not in ref or ref.endswith(":latest"):
-            continue                                   # floating tags move at pull time
-        repo, tag = ref.rsplit(":", 1)
-        if not parse_ver(tag) or ref in seen:
-            continue
-        seen.add(ref)
-        registry = "ghcr.io" if repo.startswith("ghcr.io/") else "docker.io"
-        short = repo[len("ghcr.io/"):] if registry == "ghcr.io" else repo
-        try:
-            new = newest(short, registry)
-        except Exception as e:
-            rows.append({"image": repo, "current": tag, "latest": None, "error": str(e)[:60]})
-            continue
-        behind = bool(new and parse_ver(new) > parse_ver(tag))
-        outdated += behind
-        rows.append({"image": repo, "current": tag, "latest": new, "outdated": behind})
+    wanted, problems = ([a.compose], []) if a.compose else registered()
+    missing = [f for f in wanted if not os.path.isfile(f)]
+    files = [f for f in wanted if os.path.isfile(f)]
+    stray = [] if a.compose else unregistered(files)
+
+    seen, rows = set(), []
+    for f in files:
+        scan(f, seen, rows)
+    outdated = sum(1 for r in rows if r.get("outdated"))
+    errors = [r for r in rows if r.get("error")]
+    rc = 2 if (errors or missing or not files) else (1 if (outdated or stray) else 0)
 
     if a.json:
-        print(json.dumps(rows, indent=2)); return 1 if outdated else 0
+        print(json.dumps({"images": rows, "unregistered": stray, "missing": missing,
+                          "problems": problems}, indent=2))
+        return rc
 
-    print(f"Pinned container images ({a.compose}) — {outdated} update(s) available")
+    for p in problems:
+        print(f"  [!]  {p}")
+    for f in missing:
+        print(f"  [!]  registered but MISSING: {f}")
+    if stray:
+        print("UNREGISTERED compose stack(s) — NOT being checked for updates:")
+        for f in stray:
+            print(f"  [!!] {f}\n       -> add it to {REGISTRY_FILE}")
+        print()
+    print(f"Pinned container images ({len(files)} stack(s)) — {outdated} update(s) available"
+          + (f", {len(errors)} check(s) FAILED" if errors else ""))
     for r in rows:
         if r.get("error"):
-            print(f"  [?]  {r['image']:42} {r['current']:12} (check failed: {r['error']})")
+            print(f"  [?]  {r['image']:42} {r['current']:14} check FAILED: {r['error']}")
         elif r.get("outdated"):
-            print(f"  [UP] {r['image']:42} {r['current']:12} -> {r['latest']}")
+            print(f"  [UP] {r['image']:42} {r['current']:14} -> {r['latest']}")
+        elif r.get("pinned"):
+            nv = f" (newest {r['latest']})" if r.get("latest") and r["latest"] != r["current"] else ""
+            print(f"  [PIN]{r['image']:42} {r['current']:14}{nv} — {r['pinned'][:58]}")
         else:
-            print(f"  [ok] {r['image']:42} {r['current']:12}")
+            print(f"  [ok] {r['image']:42} {r['current']:14}")
     if outdated:
-        print("\n  To update one:  edit the tag in compose.yaml, then")
-        print("    docker compose pull <svc> && docker compose up -d <svc> && docker compose up -d ts-<svc>")
-        print("  (if the service has a mesh sidecar sharing its netns, recreate the sidecar too)")
-    return 1 if outdated else 0
+        print("\n  To update one:  edit the tag in the compose file, then")
+        print("    docker compose pull <svc> && docker compose up -d <svc>")
+        print("  ⚠ A sidecar that JOINS the service's network namespace (network_mode: service:/container:)")
+        print("    must be recreated after it: when its target restarts, it is left in the old, empty")
+        print("    namespace — running, answering nothing, with no error anywhere.")
+    return rc
+
 
 if __name__ == "__main__":
     sys.exit(main())

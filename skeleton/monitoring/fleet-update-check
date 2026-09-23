@@ -452,14 +452,19 @@ def main():
 
     # fold the pinned-container-image check in — containers are invisible to brew/npm/apt, so a
     # version-pinned image rots silently until someone spots a banner in the app's own UI
-    container_updates = False
+    # Exit 1 = updates (or an unregistered stack); exit 2 = a check FAILED — an error, never "no updates".
+    container_updates = container_errs = False
     cc = os.path.expanduser("~/.local/bin/fleet-container-check")
     if os.path.exists(cc):
         try:
             cr = subprocess.run([cc], capture_output=True, text=True, timeout=180)
-            container_updates = cr.returncode == 1
+            container_updates = cr.returncode == 1 or "[UP]" in cr.stdout
+            container_errs = cr.returncode not in (0, 1)
             digest += "\n\n" + "=" * 56 + "\n" + (cr.stdout or "(no container output)")
+            if container_errs:
+                digest += f"\n  ⚠ container check exited {cr.returncode}: {(cr.stderr or '').strip()[:200]}\n"
         except Exception as e:
+            container_errs = True
             digest += f"\n\n(container image check failed to run: {e})\n"
 
     # fold the generalized install-method audit into the weekly digest (if the tool is installed)
@@ -475,6 +480,7 @@ def main():
 
     if a.dry_run:
         print(digest); return 0
+    any_errs = any_errs or container_errs
     if not (any_updates or any_errs or audit_conflict or container_updates or a.always):
         print("fleet-update-check: everything current, no errors, no install conflicts — no email sent.")
         return 0

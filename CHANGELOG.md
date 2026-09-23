@@ -3,6 +3,20 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-23 — `fleet-container-check`: every stack, every registry, no silent errors
+
+- **Fixed: every non-ghcr image was looked up on Docker Hub,** so `lscr.io` and `quay.io` images
+  failed. The check now speaks the standard OCI anonymous-token flow to any registry (verified live
+  against Docker Hub, ghcr.io, quay.io and lscr.io).
+- **Fixed: a failed check reported as current.** Errors now exit 2, and `fleet-update-check` reports
+  them instead of treating exit 2 as "no updates".
+- **New: `fleet-composes.conf`.** Registered stacks are checked, and discovered-but-unregistered ones
+  are reported. The hard-coded `~/selfhost/compose.yaml` default is gone.
+- **New: variant-aware tags** (`5.13-apache`, `mysql-v2.19.0`), **floating tags** not reported as
+  behind, and `# pin: <reason>` for intentional pins.
+- **Docs:** the sidecar table gains the dangerous case, an app that restarted **by itself**, which
+  leaves a namespace-sharing sidecar dark with no error anywhere.
+
 ## 2026-09-23 — `fleet-update-check`: coverage you can trust
 
 - **Fixed: gaps reported as "current".**
