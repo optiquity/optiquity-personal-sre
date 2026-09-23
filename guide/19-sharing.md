@@ -57,25 +57,50 @@ Human diligence isn't enough for a public repo — one slip is permanent
 **grep-guard**: a script that scans the tree and **fails** if any forbidden pattern appears.
 
 The framework ships one ([`scripts/grep-guard.sh`](../scripts/grep-guard.sh) — it guards this
-repo, so it lives at the root rather than in the skeleton); it checks for:
+repo, so it lives at the root rather than in the skeleton). It has two layers.
 
-- Path patterns: `/Users/`, `/home/<name>`-style user paths
-- Email patterns: anything matching a real address
-- Network patterns: `192.168.`, `10.`, `100.`-range IPs, tailnet-ID shapes
-- Your specific tokens: the machine names, usernames, and repo name you're scrubbing away
-  (you configure these — the guard is parameterized with *your* forbidden strings)
-- Secret shapes: `*_KEY`, `token`, `BEGIN … PRIVATE KEY`, high-entropy strings
+**Generic patterns, in the script** — they apply to everyone:
+
+- Home paths: `/Users/<name>`, `/home/<name>`
+- Private addresses: `192.168.x.x`, `10.x.x.x`, `172.16–31.x.x`, and the CGNAT range
+  `100.64–127.x.x` that mesh VPNs use; tailnet hostnames (`<host>.tail<hex>.ts.net`)
+- Email addresses
+- Secret shapes: private-key headers, `password = "…"`-style assignments, unquoted
+  `*_KEY=`/`*_TOKEN=`/`*_PASSWORD=` values, and common token prefixes (OpenAI/Anthropic `sk-`,
+  GitHub `ghp_`/`github_pat_`, AWS `AKIA`, Slack `xox?-`, Google `AIza`)
+
+It does **not** detect arbitrary high-entropy strings. A random secret with no recognisable
+shape passes, which is one more reason secrets never enter a repo in the first place
+([06 · Secrets](06-secrets.md)).
+
+**Your names, in a local file** — the machine names, usernames, tailnet ID and repo names you are
+scrubbing away. One literal per line in `.grep-guard.local` at the repo root (gitignored), or at
+the path in `$GREP_GUARD_LOCAL`. **Never put them in the script:** a public list of your names
+publishes exactly what the guard protects. Keep the master copy in your *private* repo, where
+those names already live. Make the list mandatory in your clone, so a lost file blocks commits
+instead of silently weakening the guard:
+
+```sh
+git config --local grepguard.requireLocal true
+```
 
 Wire it in two places:
 
-1. **Pre-commit hook** in the public repo — every commit is scanned before it lands. A hit
-   **blocks the commit**.
+1. **Pre-commit hook** ([`scripts/pre-commit.hook`](../scripts/pre-commit.hook)) — scans the
+   **index** (`--staged`), exactly what the commit will contain. A hit **blocks the commit**.
 2. **CI check** (a GitHub Action — see [`skeleton/github/`](../skeleton/github/)) — every push/PR
-   is scanned server-side, so a bypassed local
-   hook is still caught.
+   is scanned server-side, so a bypassed local hook is still caught.
 
-The guard **fails closed**: if it can't decide, it flags. A false positive costs you a
-`git` annotation; a false negative costs you a permanent leak — so bias it toward noise.
+Both run **`--self-test` first.** It plants one leak of each shape — **one per file** — and
+proves each is caught on that machine's git and grep. This is not ceremony. On macOS,
+`git grep -E` silently ignores `\b`, and an earlier version of this guard used it in most of its
+patterns. For weeks it caught only home paths, while a hand test "proved" it worked: the planted
+line held a home path *and* an IP, and the home-path pattern alone flagged it. **A test with two
+defects on one line proves only that one of your patterns works.**
+
+The guard **fails closed**: a hit exits 1, and a *scan error* exits 2. An unscanned tree is not
+a clean tree. A false positive costs you a `git` annotation; a false negative costs you a
+permanent leak — so bias it toward noise.
 
 ## The publish workflow
 

@@ -1,6 +1,10 @@
 # CI grep-guard (guide/19-sharing.md) — server-side backstop so a bypassed local
 # hook is still caught. A failing guard fails the build. Copy to
 # .github/workflows/grep-guard.yml in the public repo.
+#
+# The self-test runs FIRST: it plants one leak per file and proves each is caught
+# on this runner's git/grep. A guard that has stopped matching must fail the build,
+# not report "clean".
 name: grep-guard
 on:
   push:
@@ -10,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Prove the guard catches every leak shape
+        run: bash scripts/grep-guard.sh --self-test
       - name: Run grep-guard
-        run: |
-          chmod +x scripts/grep-guard.sh
-          scripts/grep-guard.sh .
+        run: bash scripts/grep-guard.sh .

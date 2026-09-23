@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
-# pre-commit hook — run the grep-guard before every commit (guide/14-sharing.md).
-# Install:  cp scripts/pre-commit.hook .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
-# (or symlink it). A non-zero exit BLOCKS the commit — fail closed.
+# pre-commit hook — prove the grep-guard works, then scan what is being committed
+# (guide/19-sharing.md). A non-zero exit BLOCKS the commit — fail closed.
+#
+# Install (either works; this file is executable, so a symlink runs it directly):
+#   ln -s ../../scripts/pre-commit.hook .git/hooks/pre-commit
+#   cp scripts/pre-commit.hook .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+#
+# Two steps, in this order:
+#   1. --self-test — plants one leak per file and proves each is caught. A guard that
+#      silently stopped matching (it happened: `\b` on macOS) must block commits,
+#      not wave them through. ~10 s.
+#   2. --staged — scans the INDEX, i.e. exactly what this commit will contain.
 set -euo pipefail
 DIR="$(git rev-parse --show-toplevel)"
-exec "$DIR/scripts/grep-guard.sh" "$DIR"
+"$DIR/scripts/grep-guard.sh" --self-test
+exec "$DIR/scripts/grep-guard.sh" --staged "$DIR"

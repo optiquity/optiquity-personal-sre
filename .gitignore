@@ -20,6 +20,10 @@ graphify-out/
 __pycache__/
 *.py[cod]
 
+# The grep-guard's list of YOUR names (machines, users, tailnet): local by design —
+# publishing it would publish what it protects. See guide/19-sharing.md.
+.grep-guard.local
+
 # Local, never-committed secrets — belt and braces; grep-guard is the real gate.
 .env
 .env.*

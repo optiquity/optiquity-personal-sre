@@ -7,6 +7,8 @@
 # ── Hard-exclude secret shapes, everywhere, permanently ─────────────────────
 **/.env
 **/.env.*
+# grep-guard's list of YOUR names — local by design (guide/19-sharing.md)
+**/.grep-guard.local
 **/*.pem
 **/*.key
 **/id_ed25519*
