@@ -194,8 +194,8 @@ For a system of any size, an optional **status dashboard** turns your project re
 state into a single at-a-glance view — a self-contained HTML page (no server, no build step)
 driven by a data block you edit. It renders all your projects grouped by status, a detailed page
 per active project, and a page per node. It's opt-in — skip it until you have enough going on to
-want the overview. See `guide/04-structure.md` → "The dashboard" for the pattern, and
-`skeleton/` for a starter.
+want the overview. See `guide/04-structure.md` → "The dashboard" for the pattern. There is no
+starter file in `skeleton/` yet; the chapter describes what to build.
 
 ## Getting started
 
@@ -208,7 +208,7 @@ how much is automated vs. explained:
 |---|---|---|
 | **3 · AI-guided setup** ⭐ | paste the prompt from [`GETTING-STARTED.md`](GETTING-STARTED.md) into your AI CLI | **Recommended** — the operator sets it up for you, prerequisites included. |
 | **2 · bootstrap.sh** | `./bootstrap.sh` (creates your repo; `--help` for options) | You want a script you can read that also creates your repo. |
-| **1 · chezmoi init** | `chezmoi init …` with data prompts | You already have your repo and want to see every file placed. |
+| **1 · by hand** | copy + fill the skeleton, then `chezmoi init` your repo ([guide 18](guide/18-setup.md)) | You want to place and read every file yourself. |
 
 Start with your platform's **spoke** for install specifics: `platforms/macos.md`,
 `platforms/windows.md`, `platforms/linux.md`, `platforms/raspberry-pi.md`, `platforms/cloud.md`.

@@ -3,6 +3,31 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-23 — setup works for a new user
+
+- **Fixed: `bootstrap.sh` was not executable** (`./bootstrap.sh` gave *Permission denied*).
+- **Fixed: `bootstrap.sh` could damage or skip an existing repo.**
+  - It re-cloned over a clone you had made by hand, and aborted.
+  - It never seeded with `--no-create-repo`.
+  - It **overwrote** an existing repo's `CLAUDE.md`, `PROJECTS.md` and the other seeded files.
+  - Now it uses an existing clone as-is (`--no-create-repo --dir <clone>`), refuses a non-empty
+    non-git directory, **never overwrites a file**, and lists what it kept.
+  - It no longer falls back to your git *display name* as your username.
+- **Changed: `bootstrap.sh` also seeds the design + postmortem practice** and the onboarding
+  project's own design doc and postmortem draft, as principles 14–15 require.
+- **Docs: `--yes` answers yes to installs and repo creation.** The header used to claim those
+  always ask. Guide 18's Tiers 1 and 2 now describe what actually ships:
+  - Tier 1 is by hand, since no `.chezmoi.toml.tmpl` ships.
+  - Tier 2 creates and seeds your repo. It does not set up SSH keys or the mesh.
+- **Fixed: `install-tooling.sh.template`.** Its default role never matched its own `case`, and it
+  reinstalled any tool whose command differs from its package (`ripgrep` → `rg`). Use
+  `package:command`.
+- **Docs fixes:**
+  - The monitoring README now creates `/etc/gatus` and shows a minimal, hardened `gatus.service`.
+  - `platforms/linux.md` and the monitoring README no longer claim systemd units ship.
+  - The README no longer points at a dashboard starter that does not exist.
+  - `enable-repo-index.sh` no longer claims to commit.
+
 ## 2026-09-23 — corrections: six things this guide taught that were wrong
 
 No code behaviour changes. If you followed any of these, re-check your setup:

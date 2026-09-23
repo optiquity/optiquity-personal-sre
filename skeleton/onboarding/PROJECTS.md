@@ -19,6 +19,8 @@ Finish standing up this personal-SRE repo: make the first commit, wire the confi
 (chezmoi), set up secrets + the permission preset, and (optionally) the private network. Your
 AI CLI should resume from `docs/onboarding/PLAN.md`. Node role: **<role>**.
 - `PLAN.md` — **open** (the resume-here checklist bootstrap left for you)
+- `DESIGN.md` — **draft** (short form: this setup's decisions — roles, posture, MCP)
+- `POSTMORTEM.md` — **draft** (entries appended as setup happens; finalised at close)
 
 ---
 

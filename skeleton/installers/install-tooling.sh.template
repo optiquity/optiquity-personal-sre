@@ -14,7 +14,7 @@ set -euo pipefail
 
 # The node's role comes from the config manager's data (guide/05). When run by the
 # manager, it templates this in; standalone, default sensibly.
-ROLE="${NODE_ROLE:-<workstation>}"
+ROLE="${NODE_ROLE:-workstation}"          # must match a case below, or no role extras install
 
 # Absolute path to your package manager — the apply/launchd context has a MINIMAL
 # PATH that may not include it (guide/07, property 3). Set per platform (spoke):
@@ -24,19 +24,24 @@ ROLE="${NODE_ROLE:-<workstation>}"
 PM="<absolute-path-to-package-manager>"
 PM_INSTALL=("$PM" install)
 
-# Tools every node of this repo gets. Add yours (space-separated, quoted names).
+# Tools every node of this repo gets. Add yours (space-separated).
+# Write `package:command` when the installed command differs from the package name
+# (ripgrep installs `rg`) — otherwise the "already present?" check never passes and the
+# script reinstalls it on every run.
 PKGS=( git chezmoi )
 # Role-specific extras — add your tool names inside the arrays:
 case "$ROLE" in
   server)      PKGS+=( )  ;;   # e.g. PKGS+=( docker n8n )
-  workstation) PKGS+=( )  ;;   # e.g. PKGS+=( gh ripgrep )
+  workstation) PKGS+=( )  ;;   # e.g. PKGS+=( gh ripgrep:rg )
+  *) echo "install-tooling: unknown role '$ROLE' — only the common PKGS install" >&2 ;;
 esac
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
-for pkg in "${PKGS[@]}"; do
-  if have "$pkg"; then
-    echo "ok: $pkg already present ($("$pkg" --version 2>/dev/null | head -1 || echo installed))"
+for entry in "${PKGS[@]}"; do
+  pkg="${entry%%:*}"; cmd="${entry##*:}"          # "ripgrep:rg" → package ripgrep, command rg
+  if have "$cmd"; then
+    echo "ok: $pkg already present ($("$cmd" --version 2>/dev/null | head -1 || echo installed))"
   else
     echo "installing: $pkg"
     if ! "${PM_INSTALL[@]}" "$pkg"; then

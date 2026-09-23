@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # enable-repo-index.sh — turn on a repo index for THIS repository. Idempotent.
 #
-# Commits exactly two things: the ignore file and one .gitignore line. Everything else (the tool,
-# the built index, the refresh hook) is per-clone/per-machine and is reported as a manual step,
-# because a repo cannot ship a working git hook — .git/hooks/ is never committed.
+# Changes exactly two TRACKED things — the ignore file and one .gitignore line — and commits
+# NOTHING: review and commit them yourself. Everything else (the tool, the built index, the refresh
+# hook) is per-clone/per-machine and is reported as a manual step, because a repo cannot ship a
+# working git hook — .git/hooks/ is never committed.
 #
 # Nothing here is destructive: existing files are kept, never overwritten.
 #

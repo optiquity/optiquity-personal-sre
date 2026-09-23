@@ -9,14 +9,19 @@
 #   1. Detects your platform + checks hard-core prerequisites (offers to install).
 #   2. (optional) Creates your private git repo — only if your `gh` auth can, after
 #      a tell-then-ask y/N prompt. Degrades gracefully to manual steps otherwise.
-#   3. Seeds your repo (UNCOMMITTED) with a rules file, a project registry, and an
-#      onboarding "resume here" doc — so your next AI CLI session picks up where
-#      this left off.
+#   3. Seeds your repo (UNCOMMITTED) with a rules file, a project registry, a playbook,
+#      the design + postmortem practice, peer messaging, and an onboarding "resume
+#      here" doc — so your next AI CLI session picks up where this left off. It NEVER
+#      overwrites a file that already exists; it reports what it kept.
 #   4. Tells you to continue in the new repo with the AI CLI of your choice.
+#
+# Already created and cloned your repo by hand? Point --dir at the clone: bootstrap
+# uses it as-is (no create, no clone) and seeds it.
 #
 # Everything has a default, is overridable by a flag OR an interactive prompt.
 # Precedence: command-line flag > interactive prompt > default.  Nothing is
-# committed or pushed; installs and repo creation always ask first.
+# committed or pushed. Installs and repo creation ask first — except under --yes,
+# which answers YES to both (it is for scripted runs whose effect you already know).
 set -euo pipefail
 
 # ── Defaults (all overridable) ──────────────────────────────────────────────
@@ -44,13 +49,15 @@ OPTIONS (all optional; each has a default and can also be entered when prompted)
   --git-host <host>    Git host                             (default: github.com)
   --git-user <user>    Your git username                    (default: from gh/git config)
   --no-create-repo     Don't create a remote repo; print manual steps instead
-  --yes                Non-interactive: accept all defaults, skip prompts
+  --yes                Non-interactive: accept all defaults AND answer yes to the
+                       install and repo-creation questions (read what it will do first)
   -h, --help           Show this help and exit
 
 EXAMPLES:
   ./bootstrap.sh
   ./bootstrap.sh --repo-name my-sre --dir ~/code/my-sre --role server
-  ./bootstrap.sh --yes            # accept every default, no prompts
+  ./bootstrap.sh --yes            # accept every default; also says yes to installs + repo creation
+  ./bootstrap.sh --no-create-repo --dir ~/code/my-sre   # seed a repo you already cloned
 
 NOTE: This framework repo is a read-only reference — you never edit or commit to
 it. bootstrap sets up YOUR repo; your work happens there. Nothing is committed by
@@ -133,7 +140,9 @@ say "2. Your repo settings"
 : "${TARGET_DIR:=}"; prompt_default TARGET_DIR "Local directory for it" "$HOME/Developer/$REPO_NAME"
 : "${ROLE:=}"; prompt_default ROLE "This node's role" "workstation"
 if [ -z "$GIT_USER" ]; then
-  GIT_USER="$(gh api user --jq .login 2>/dev/null || git config user.name 2>/dev/null || echo '')"
+  # Only the host's login is a username. `git config user.name` is a DISPLAY name
+  # ("Ada Lovelace"), and using it here would build a wrong repo URL.
+  GIT_USER="$(gh api user --jq .login 2>/dev/null || echo '')"
 fi
 : "${GIT_USER:=}"; prompt_default GIT_USER "Your git username" "${GIT_USER:-<your-username>}"
 info "→ repo: $GIT_HOST/$GIT_USER/$REPO_NAME   dir: $TARGET_DIR   role: $ROLE"
@@ -141,7 +150,16 @@ info "→ repo: $GIT_HOST/$GIT_USER/$REPO_NAME   dir: $TARGET_DIR   role: $ROLE"
 # ── 3. Create (or point at) YOUR private repo ───────────────────────────────
 say "3. Your private repo"
 CAN_CREATE=0
-if [ "$CREATE_REPO" = "no" ]; then
+REPO_READY=0
+if [ -d "$TARGET_DIR/.git" ]; then
+  # Created + cloned by hand (or by an earlier run): use it as-is. Never re-clone over it.
+  info "Found an existing clone at $TARGET_DIR — using it (no create, no clone)."
+  REPO_READY=1
+elif [ -e "$TARGET_DIR" ] && [ -n "$(ls -A "$TARGET_DIR" 2>/dev/null)" ]; then
+  info "✗ $TARGET_DIR exists, is not empty, and is not a git clone."
+  info "  Choose another --dir, or clone your private repo there first, then re-run."
+  exit 2
+elif [ "$CREATE_REPO" = "no" ]; then
   info "Skipping repo creation (--no-create-repo)."
 elif ! have gh; then
   info "gh (GitHub CLI) not installed — can't auto-create. Install it, or create the repo"
@@ -164,8 +182,7 @@ else
   fi
 fi
 
-REPO_READY=0
-if [ "$CAN_CREATE" = 1 ]; then
+if [ "$REPO_READY" = 0 ] && [ "$CAN_CREATE" = 1 ]; then
   say "Ready to create your private repo:"
   info "  • create  https://$GIT_HOST/$GIT_USER/$REPO_NAME  (PRIVATE)"
   info "  • clone it to  $TARGET_DIR"
@@ -187,47 +204,61 @@ if [ "$CAN_CREATE" = 1 ]; then
 fi
 
 # ── 4. Seed the repo (UNCOMMITTED) ──────────────────────────────────────────
+# seed <template> <dest> [sed expressions…] — render a template into YOUR repo, but
+# NEVER over a file that already exists: an existing repo's rules or registry are
+# its owner's work. Anything kept is reported, so you can compare it by hand.
+SEEDED=(); KEPT=()
+seed() {
+  local src="$1" dest="$2"; shift 2
+  [ -f "$src" ] || { info "✗ template missing: $src"; return 1; }
+  if [ -e "$dest" ]; then KEPT+=("${dest#$TARGET_DIR/}"); return 0; fi
+  mkdir -p "$(dirname "$dest")"
+  if [ $# -gt 0 ]; then sed "$@" "$src" > "$dest"; else cp "$src" "$dest"; fi
+  SEEDED+=("${dest#$TARGET_DIR/}")
+}
 if [ "$REPO_READY" = 1 ] && [ -d "$TARGET_DIR/.git" ]; then
-  say "4. Seeding your repo (uncommitted)…"
-  # Copy the onboarding seed from this framework, filling placeholders.
-  mkdir -p "$TARGET_DIR/docs/onboarding"
+  say "4. Seeding your repo (uncommitted; existing files are never overwritten)…"
+  S="$FRAMEWORK_DIR/skeleton"
+  TODAY="$(date +%Y-%m-%d)"
+  FILL=(-e "s|<repo-name>|$REPO_NAME|g" -e "s|<role>|$ROLE|g")
   # Rules file (filled from the template):
-  sed -e "s|<your-repo-name>|$REPO_NAME|g" -e "s|<git-host>|$GIT_HOST|g" -e "s|<git-user>|$GIT_USER|g" \
-      "$FRAMEWORK_DIR/skeleton/CLAUDE.md.template" > "$TARGET_DIR/CLAUDE.md" 2>/dev/null || true
-  # Onboarding registry + resume-here doc:
-  if [ -f "$FRAMEWORK_DIR/skeleton/onboarding/PROJECTS.md" ]; then
-    sed -e "s|<repo-name>|$REPO_NAME|g" -e "s|<role>|$ROLE|g" \
-        "$FRAMEWORK_DIR/skeleton/onboarding/PROJECTS.md" > "$TARGET_DIR/PROJECTS.md"
+  seed "$S/CLAUDE.md.template" "$TARGET_DIR/CLAUDE.md" \
+       -e "s|<your-repo-name>|$REPO_NAME|g" -e "s|<git-host>|$GIT_HOST|g" -e "s|<git-user>|$GIT_USER|g"
+  # Registry, playbook (the layered entrypoint, at the repo ROOT — guide/04), resume-here doc:
+  seed "$S/onboarding/PROJECTS.md"       "$TARGET_DIR/PROJECTS.md"  "${FILL[@]}"
+  seed "$S/onboarding/PLAYBOOK.md"       "$TARGET_DIR/PLAYBOOK.md"  "${FILL[@]}"
+  seed "$S/onboarding/onboarding-PLAN.md" "$TARGET_DIR/docs/onboarding/PLAN.md" \
+       "${FILL[@]}" -e "s|<framework-dir>|$FRAMEWORK_DIR|g"
+  # The design + postmortem practice (principles 14–15): the rules and templates, plus the
+  # open onboarding project's own design doc and postmortem draft — created at open, not close.
+  for f in README.md RULES.md TEMPLATE-SHORT.md TEMPLATE-LONG.md; do seed "$S/design/$f" "$TARGET_DIR/docs/design/$f"; done
+  for f in README.md RULES.md TEMPLATE.md; do seed "$S/postmortems/$f" "$TARGET_DIR/docs/postmortems/$f"; done
+  seed "$S/design/TEMPLATE-SHORT.md" "$TARGET_DIR/docs/onboarding/DESIGN.md" \
+       -e "1s|<project or thread>|onboarding|" -e "s|^opened:           <YYYY-MM-DD>|opened:           $TODAY|"
+  seed "$S/postmortems/TEMPLATE.md" "$TARGET_DIR/docs/onboarding/POSTMORTEM.md" \
+       -e "1s|<project or causal thread>|onboarding|" -e "s|^opened:             <YYYY-MM-DD>|opened:             $TODAY|"
+  # Peer messaging. See skeleton/peer-messaging/PEER-MESSAGING.md §2.
+  #   docs/peer-messaging/     the standard -- TRACKED (peers bootstrap from it)
+  #   docs/peer-conversations/ the logs -- IGNORED
+  seed "$S/peer-messaging/PEER-MESSAGING.md" "$TARGET_DIR/docs/peer-messaging/PEER-MESSAGING.md"
+  mkdir -p "$TARGET_DIR/docs/peer-conversations"
+  if ! grep -qxF 'docs/peer-conversations/' "$TARGET_DIR/.gitignore" 2>/dev/null; then   # never append twice
+    {
+      printf '\n# Peer-conversation logs: one file per peer, GITIGNORED BY DEFAULT.\n'
+      printf '# A repo can become public and git history keeps what you committed.\n'
+      printf '# Track them deliberately (remove this line) or not at all.\n'
+      printf '# The STANDARD is not here -- it is tracked at docs/peer-messaging/.\n'
+      printf 'docs/peer-conversations/\n'
+    } >> "$TARGET_DIR/.gitignore"
+    SEEDED+=(".gitignore (peer-conversations line)")
   fi
-  # Operator playbook — the layered entrypoint, seeded at the repo ROOT (guide/04-structure.md):
-  if [ -f "$FRAMEWORK_DIR/skeleton/onboarding/PLAYBOOK.md" ]; then
-    sed -e "s|<repo-name>|$REPO_NAME|g" -e "s|<role>|$ROLE|g" \
-        "$FRAMEWORK_DIR/skeleton/onboarding/PLAYBOOK.md" > "$TARGET_DIR/PLAYBOOK.md"
+  if [ "${#SEEDED[@]}" -gt 0 ]; then
+    info "✓ Seeded (uncommitted):"; for f in "${SEEDED[@]}"; do info "    $f"; done
   fi
-  if [ -f "$FRAMEWORK_DIR/skeleton/onboarding/onboarding-PLAN.md" ]; then
-    sed -e "s|<repo-name>|$REPO_NAME|g" -e "s|<role>|$ROLE|g" -e "s|<framework-dir>|$FRAMEWORK_DIR|g" \
-        "$FRAMEWORK_DIR/skeleton/onboarding/onboarding-PLAN.md" > "$TARGET_DIR/docs/onboarding/PLAN.md"
+  if [ "${#KEPT[@]}" -gt 0 ]; then
+    info "• Kept as-is (already existed — compare with $S by hand if you want the template):"
+    for f in "${KEPT[@]}"; do info "    $f"; done
   fi
-  # Peer messaging setup. See skeleton/peer-messaging/PEER-MESSAGING.md §2.
-  if [ -f "$FRAMEWORK_DIR/skeleton/peer-messaging/PEER-MESSAGING.md" ]; then
-    # docs/peer-messaging/     the standard -- TRACKED (peers bootstrap from it)
-    # docs/peer-conversations/ the logs -- IGNORED
-    mkdir -p "$TARGET_DIR/docs/peer-messaging" "$TARGET_DIR/docs/peer-conversations"
-    cp "$FRAMEWORK_DIR/skeleton/peer-messaging/PEER-MESSAGING.md" \
-       "$TARGET_DIR/docs/peer-messaging/PEER-MESSAGING.md"
-    # Idempotent: never append twice.
-    if ! grep -qxF 'docs/peer-conversations/' "$TARGET_DIR/.gitignore" 2>/dev/null; then
-      {
-        printf '\n# Peer-conversation logs: one file per peer, GITIGNORED BY DEFAULT.\n'
-        printf '# A repo can become public and git history keeps what you committed.\n'
-        printf '# Track them deliberately (remove this line) or not at all.\n'
-        printf '# The STANDARD is not here -- it is tracked at docs/peer-messaging/.\n'
-        printf 'docs/peer-conversations/\n'
-      } >> "$TARGET_DIR/.gitignore"
-    fi
-    info "✓ Peer messaging seeded: docs/peer-messaging/ (tracked) + docs/peer-conversations/ (ignored)"
-  fi
-  info "✓ Seeded (uncommitted): CLAUDE.md, PROJECTS.md, PLAYBOOK.md, docs/onboarding/PLAN.md"
   info "  Review + your first commit happen in the next step, under your approval."
 fi
 
@@ -241,8 +272,9 @@ if [ "$REPO_READY" = 1 ]; then
   info "offer the next steps (referencing GETTING-STARTED.md + guide/). Its first proposed"
   info "action will be your initial commit — approve it to exercise the governed loop."
 else
-  info "No repo was created. Next: create a PRIVATE repo, clone it, then either run the"
-  info "Tier-3 path (paste the Tier-3 prompt from GETTING-STARTED.md into your AI CLI) or 'chezmoi init' (Tier 1)."
-  info "Full walkthrough: GETTING-STARTED.md."
+  info "No repo was created. Next: create a PRIVATE repo and clone it, then either re-run"
+  info "  ./bootstrap.sh --no-create-repo --dir <your-clone>     (seeds it), or take the"
+  info "Tier-3 path (paste the Tier-3 prompt from GETTING-STARTED.md into your AI CLI), or"
+  info "Tier 1 by hand (guide/18-setup.md). Full walkthrough: GETTING-STARTED.md."
 fi
 info "Reminder: never edit THIS framework repo ($FRAMEWORK_DIR) — it's a read-only reference."

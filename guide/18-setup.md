@@ -41,34 +41,46 @@ store. (Full matrix in [07 · Tools](07-tools-requirements.md).)
 (cautious / standard / trusting — [10](10-permissions.md)); which **MCP servers** you'll enable
 ([11](11-mcp.md)).
 
-## Tier 1 — guided by the config manager (`chezmoi init`)
+## Tier 1 — by hand, with the config manager
 
-The most hands-on-but-transparent path: initialize the config manager against the framework
-skeleton, and let its **data prompts** collect your specifics.
+The most hands-on-but-transparent path: you place every file yourself.
 
-1. Install the config manager (see your platform spoke).
-2. Point it at the skeleton / your new repo. On init, it **prompts** for your data — your role,
-   your git-host username *(placeholder-filled, not hardcoded)*, your tailnet name if any, etc.
-   — and writes them to a **local, untracked** data file.
-3. It renders the skeleton files (rules, permission preset, ignore files, installer) for your
-   node, filling every placeholder from your answers.
+1. Install git and the config manager (see your platform spoke), and create + clone your
+   **private** repo.
+2. Copy in the skeleton files you want: the rules template (`skeleton/CLAUDE.md.template` or
+   `AGENTS.md.template`), the ignore templates, a permission preset (`skeleton/settings/`), the
+   installer template, and the design + postmortem practice (`skeleton/design/`,
+   `skeleton/postmortems/`). **Fill every `<placeholder>` yourself** — roles and placeholders,
+   never real machine names in anything you might publish.
+3. `chezmoi init` with your repo as the source, then put this node's role and non-secret data in
+   chezmoi's **local, untracked** config: `skeleton/chezmoi.toml.example` shows the keys. The
+   framework ships no `.chezmoi.toml.tmpl`, so `init` does not prompt. The example's last section
+   shows how to add prompts if you want them.
 4. Review the diff, apply ([05 · chezmoi](05-chezmoi.md)'s gated apply), verify.
 
 You see exactly what's placed. Good if you want to understand the machinery as you go.
 
 ## Tier 2 — the bootstrap script (`bootstrap.sh`)
 
-A single interactive script that **checks and sets up prerequisites**, then hands off to Tier 1.
-The framework ships `bootstrap.sh` (POSIX, in the skeleton root):
+A bash script at the framework's root that **creates and seeds your repo**, then hands off to
+your AI CLI (Tier 3) to finish. It does, in order:
 
 1. **Detects your platform** and points you at the right spoke.
-2. **Checks prerequisites** — git, the config manager, the AI CLI, (optionally) Tailscale and
-   SSH keys — and offers to install what's missing (via the platform's package manager).
-3. **Helps generate an SSH key** and explains the mesh setup, if you're going multi-node.
-4. **Offers to run `chezmoi init`** (Tier 1) to finish.
+2. **Checks prerequisites.** It requires git and chezmoi, and on macOS with Homebrew offers to
+   install them. It notes whether `gh`, node and the AI CLI are present. It does not set up SSH
+   keys or the mesh: those are onboarding steps, later.
+3. **Creates your private repo** with `gh`, if your auth has the `repo` scope, after a y/N
+   prompt. Otherwise it prints the manual steps. **Already cloned one?** Run it with
+   `--no-create-repo --dir <your-clone>`, and it uses the clone as-is.
+4. **Seeds the repo, uncommitted.** It writes a rules file, `PROJECTS.md`, `PLAYBOOK.md`, the
+   design + postmortem practice, the onboarding project's own design doc and postmortem draft,
+   peer messaging, and a "resume here" plan. It **never overwrites a file that already exists**;
+   it lists what it kept.
+5. **Hands off.** It tells you to open your AI CLI in the new repo, which resumes from the plan.
 
-Good if you want the prereqs handled for you but still like a script you can read. It installs
-nothing without asking, and it's idempotent — safe to re-run.
+It commits and pushes nothing, and it is safe to re-run. Installs and repo creation ask first —
+**except under `--yes`, which answers yes to both.** Use `--yes` only for a run whose effect you
+already know.
 
 ## Tier 3 — set up *with the operator* (recommended)
 

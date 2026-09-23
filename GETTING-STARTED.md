@@ -77,8 +77,8 @@ Work through these phases with me, one at a time, confirming before moving on:
    hard-coding machine names. These rules govern everything you do next, including your approval
    gates. Show it to me and get my ok. Make the initial commit (with my approval).
 
-4. STRUCTURE. Set up the project registry (PROJECTS.md) + a docs/ layout + (optionally) the
-   status dashboard skeleton. Explain the status taxonomy.
+4. STRUCTURE. Set up the project registry (PROJECTS.md) + a docs/ layout + (optionally) a status
+   dashboard, following guide/04-structure.md ("The dashboard"). Explain the status taxonomy.
 
 5. CONFIG MANAGER. Help me install and initialize chezmoi against my repo: set my node's role and
    non-secret data (from chezmoi.toml.example), and explain the dev-clone -> prod-source ->
@@ -119,7 +119,7 @@ exactly what you'll do and wait for my go. Start with phase 1 now.
   the rules in place. It won't push, apply, or create remote artifacts without your go.
 
 Prefer to run things yourself, or want to understand the machinery? Use **Tier 2**
-(`bootstrap.sh`, below) or **Tier 1** (`chezmoi init`). All three reach the same place.
+(`bootstrap.sh`, below) or **Tier 1** (by hand: [guide 18](guide/18-setup.md)). All three reach the same place.
 
 ---
 
@@ -177,8 +177,11 @@ framework repo, and it commits nothing.
    ```
    It will: check prerequisites → (if your `gh` auth allows, after a y/N prompt) **create your
    private repo** → **seed it (uncommitted)** with a rules file, a project registry, a starter
-   **playbook** (the layered entrypoint), and an onboarding "resume here" doc. If `gh` can't create the repo, it tells you exactly what's
-   missing and prints the manual steps — it degrades gracefully.
+   **playbook** (the layered entrypoint), the design + postmortem practice, peer messaging, and an
+   onboarding "resume here" doc. It **never overwrites a file that already exists.** If `gh` can't
+   create the repo, it tells you exactly what's missing and prints the manual steps. Already
+   created and cloned it yourself? `./bootstrap.sh --no-create-repo --dir <your-clone>` seeds it.
+   Note: `--yes` accepts every default **and** answers yes to installs and repo creation.
 3. **Continue in YOUR repo.** When bootstrap finishes, open your AI CLI **in the new repo's
    directory**:
    ```sh

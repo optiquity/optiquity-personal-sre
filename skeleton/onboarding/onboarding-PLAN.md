@@ -8,9 +8,15 @@ user the next uncompleted step. Reference the framework's `GETTING-STARTED.md` a
 
 ## What bootstrap already did ✅
 - Detected the platform + checked hard-core prerequisites.
-- Created/cloned this **private** repo and seeded it (UNCOMMITTED) with:
+- Created/cloned (or found) this **private** repo and seeded it (UNCOMMITTED, never overwriting
+  an existing file) with:
   - `CLAUDE.md` (your rules file — the operator's guardrails; filled for this repo/role)
   - `PROJECTS.md` (the registry, with this onboarding project)
+  - `PLAYBOOK.md` (the layered entrypoint — start of every session)
+  - `docs/design/` + `docs/postmortems/` (the design-pass and postmortem practice: rules + templates)
+  - `docs/onboarding/DESIGN.md` + `POSTMORTEM.md` (this project's own design doc and postmortem
+    draft, created at open, as the practice requires)
+  - `docs/peer-messaging/PEER-MESSAGING.md` (+ a `.gitignore` line for the peer logs)
   - `docs/onboarding/PLAN.md` (this file)
 
 ## Next steps ⬜ (operator: propose these one at a time, pausing for approval on anything material)
@@ -19,6 +25,9 @@ user the next uncompleted step. Reference the framework's `GETTING-STARTED.md` a
    user what will be committed, get approval — Rule 2). This is the first exercise of the loop.
 2. **Read the rules.** Confirm `CLAUDE.md` matches how the user wants you to behave; adjust the
    permission posture (cautious/standard/trusting — `guide/10-permissions.md`) for this role.
+   **Fill `docs/onboarding/DESIGN.md` (short form) with the user's answers.** Roles, posture and
+   MCP choices are this project's decisions, and the design doc is where they live. Append to
+   `docs/onboarding/POSTMORTEM.md` as things happen, not at the end.
 3. **Secrets.** Set up the ignore files (allowlist pattern) + the platform secret store, and a
    runtime secrets file if needed (`.env`/shell env) — `guide/06-secrets.md`. Confirm the
    zero-secrets-in-git invariant. NEVER put a secret in a tracked file.

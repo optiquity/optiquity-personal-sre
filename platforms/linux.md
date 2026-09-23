@@ -55,7 +55,10 @@ anything is installed). Two habits worth keeping:
   restart burst, and stay dead until you notice. `After=/Wants=network-online.target` plus a
   patient `RestartSec=` prevents it. (Or bind `0.0.0.0` and sidestep it entirely.)
 
-Worked units + a drop-in ship in [`../skeleton/monitoring/`](../skeleton/monitoring/).
+A drop-in ships in [`../skeleton/monitoring/`](../skeleton/monitoring/), along with a minimal
+Gatus unit in its README. The monitoring tools' scheduled runs ship as **launchd** plists (macOS)
+only. On Linux you write the systemd timers yourself, and `bootstrap-monitoring.sh --with-timer`
+tells you which.
 
 ## Secret store — ⛏ verify
 

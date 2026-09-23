@@ -60,6 +60,9 @@ Gatus usually runs on a small always-reachable node (a **gateway/Pi**) so it can
 independently. Native install (a single Go binary + `config.yaml`), then:
 
 ```sh
+# 0. the config directory
+sudo install -d -m 755 /etc/gatus
+
 # 1. config (fill every <placeholder>; conditions verify function, not just reachability)
 sudo install -m 644 gatus-config.yaml.template /etc/gatus/config.yaml   # then edit
 
@@ -71,6 +74,36 @@ sudo mkdir -p /etc/systemd/system/gatus.service.d
 sudo install -m 644 gatus-smtp.dropin.conf /etc/systemd/system/gatus.service.d/10-smtp-env.conf
 sudo systemctl daemon-reload && sudo systemctl restart gatus
 ```
+
+Step 3 extends a `gatus.service` unit, which a bare binary does not bring with it. If you have none,
+this minimal one (hardened; fine with the template's in-memory storage) goes at
+`/etc/systemd/system/gatus.service`, run as a dedicated system user
+(`sudo useradd --system --no-create-home --shell /usr/sbin/nologin gatus`):
+
+```ini
+[Unit]
+Description=Gatus health checks
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=gatus
+Group=gatus
+Environment=GATUS_CONFIG_PATH=/etc/gatus/config.yaml
+ExecStart=/usr/local/bin/gatus
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then `sudo systemctl daemon-reload && sudo systemctl enable --now gatus`. If you switch Gatus to disk
+storage, `ProtectSystem=strict` makes its data path read-only: add a `StateDirectory=`.
 
 **Test the alert path** before trusting it: add a throwaway endpoint that fails immediately
 (`url: "tcp://127.0.0.1:1"`, `conditions: ["[CONNECTED] == true"]`, `failure-threshold: 1`),
@@ -126,7 +159,8 @@ duplicate `$PATH` entries and self-updating (`auto_updates`) casks.
 fleet-install-audit --dry-run     # print; --local audits just this host; drop --dry-run to email
 ```
 
-Two intended triggers (both wired by bootstrap): **after any install** — the
+Two intended triggers (on macOS both are wired by `bootstrap-monitoring.sh --with-timer`; on Linux
+it prints what to set up, since no systemd units ship): **after any install** — the
 `fleet-install-audit.plist.template` WatchPaths agent runs it `--local` whenever an install dir
 changes (throttled, state-deduped); and **weekly** — `fleet-update-check` folds the audit into its
 digest email. On Linux, use a systemd `.path` unit watching your install dirs instead of WatchPaths.
