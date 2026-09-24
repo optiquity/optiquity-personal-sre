@@ -1,11 +1,12 @@
-# E12 · A dedicated mesh gateway (subnet router + exit node, with an HA backup)
+# E12 · A dedicated mesh gateway (subnet router + exit node)
 
 **Section E — fleet operations.** Back to the [catalog](../20-example-projects.md).
 
 **What this shows:** giving the mesh's **gateway roles** — subnet router (reach LAN-only gear
 remotely) and exit node (route internet traffic out through home) — a **dedicated, capable node**
-of their own, instead of bolting them onto a busy multi-duty box; and keeping the previous host as
-a **hot standby** for automatic failover. The clean way to own the tailnet's edge.
+of their own, instead of bolting them onto a busy multi-duty box; and **retiring the previous
+host's route** rather than keeping it as a standby, because the mesh may not let you prefer the new
+node at all. The clean way to own the tailnet's edge.
 
 > Generic pattern, no personal config. `<placeholders>` are yours to fill.
 
@@ -23,16 +24,16 @@ Your mesh's gateway roles are running on a node that's busy doing something else
   [08 · Networking](../08-networking.md), Trap 1) — pegging the weak CPU for traffic that never
   needed to leave the switch.
 
-The fix: move the gateway roles onto a **small dedicated node** built for exactly this, and demote
-the old host to a **backup**.
+The fix: move the gateway roles onto a **small dedicated node** built for exactly this, and take
+the subnet route **off** the old host.
 
 ## Why do it "the framework way"
 
 A gateway is **edge infrastructure** — every remote-access and exit-node byte flows through it.
 The framework's stance: give a role that important its own **dedicated, right-sized** home, keep it
 **minimal** (small attack surface, nothing else contending), and make the cutover **reversible**
-(the old host stays a hot spare until the new one is proven). Routing should never compete with
-storage — or anything else — for the same cores.
+(the old host keeps its setup, so rollback is re-advertising its route: one command). Routing
+should never compete with storage — or anything else — for the same cores.
 
 ## The shape
 
@@ -61,9 +62,11 @@ The old gateway is almost certainly the older node, so it takes the route back a
 re-election. That happens silently, and the upgrade quietly reverts itself. Nothing fails, so
 nothing alerts ([17a](../17a-case-monitoring-the-proxy.md), probe 3).
 
-So once the new node is verified as primary, **stop the old one advertising the subnet route**. It
-can keep its other roles, such as exit node. Rollback stays one command: re-advertise on the old
-node. If you genuinely need automatic failover, the only way to express a preference under
+It also sets the order of the cutover. While the older node advertises, the new one stays a
+standby however long you wait, so it cannot be proven as primary first. Once the new node's route is
+advertised and approved, **stop the old one advertising the subnet route**: the new node takes over
+within seconds, and step 4 verifies it. The old node can keep its other roles, such as exit node.
+Rollback stays one command: re-advertise on the old node, and it takes the route straight back. If you genuinely need automatic failover, the only way to express a preference under
 oldest-wins is to make the *preferred* node the older one, by re-joining the other. Decide that
 deliberately, and first ask whether the fallback hardware can carry the load: **a failover that
 silently degrades the service is worse than one that never happens.**
@@ -110,7 +113,7 @@ silently degrades the service is worse than one that never happens.**
 ## Adapt it
 
 In **your** repo: track the gateway as its own project (provision → key-only SSH → mesh advertise →
-approve → verify → keep old host as standby → document), fold it into the machine roster and the
+approve → withdraw the old host's route → verify → document), fold it into the machine roster and the
 update pass, and add "re-audit accept-routes" to your maintenance cadence.
 
 **Related:** [08 · Networking](../08-networking.md) (the mesh, subnet routes/exit nodes + both

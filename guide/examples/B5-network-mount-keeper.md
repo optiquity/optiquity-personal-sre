@@ -32,16 +32,28 @@ backup that writes to a mount needs the mount to *be there*.
 ### 1. A tiny idempotent keeper script
 
 ```sh
-# Is the mount present + healthy?
-#   mount | grep -q "<mount-point>"  AND  a quick read/stat of it succeeds
-# If NOT mounted -> (re)mount it:
-#   mount the <NFS|SMB> share to <mount-point> (credentials from the vault/keychain,
-#   never inline — see 06-secrets)
-# If a stale/hung mount -> unmount first, then remount.
-# Idempotent: when already healthy, it's a no-op. Loud on repeated failure.
+# Is the share in the kernel mount table?   mount | grep -q " on <mount-point> "
+#   YES -> exit. A present mount is left strictly alone: never probed, never unmounted.
+#   NO  -> is the server reachable? (a port check with a short timeout)
+#            NO  -> exit quietly (off-network, server down: no retry storm)
+#            YES -> mount the <NFS|SMB> share at <mount-point> (credentials from the
+#                   vault/keychain, never inline — see 06-secrets), and log the result.
 ```
 
-Keep it **cheap** (it runs frequently) and **idempotent** (a no-op when the mount is fine).
+Keep it **cheap** (it runs frequently), **idempotent** (a no-op when the mount is present) and
+**passive**. ⚠ Two tempting additions are wrong:
+
+- **Don't read inside the share to test it.** On macOS a network share is bound to the GUI login
+  session, so `ls`/`stat` inside it from a scheduled job can hang even when the mount is healthy
+  ([platform spoke](../../platforms/macos.md)). A probe that runs as root can also be refused by
+  the server's root squash, and then it fails on every run.
+- **Don't auto-heal a present mount.** A keeper that force-unmounts after a failed probe cannot tell
+  *broken* from *busy*, so on a timer it kills in-flight writes. Recovering a stale mount that is
+  still present is a manual runbook step.
+
+Detecting a *hung* mount is monitoring's job, not the keeper's: a separate check through a login
+shell, with a timeout, where a timeout means **unknown**, not down
+([E16](E16-fleet-health-and-alerting.md), [17 · Monitoring](../17-monitoring.md)).
 
 ### 2. Run it passively on a schedule / keep-alive
 
@@ -84,6 +96,8 @@ setup.
 
 - The **minimal always-on service**: an idempotent keeper + a platform-native scheduled/keep-alive
   unit, bootstrapped under approval.
+- **A keeper mounts what is missing and nothing else.** Healing a present mount automatically
+  destroys work; judging its health belongs to monitoring.
 - **Native > scripted where it exists** — e.g. a `systemd` automount beats a shell keeper on
   Linux; use the platform's real mechanism when it has one.
 - Even a **passive** job is tracked and watched for silent failure — that's ownership.

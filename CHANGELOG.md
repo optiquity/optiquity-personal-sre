@@ -3,6 +3,27 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-23 — what the earlier corrections missed
+
+The corrections below finish two changes that earlier entries only partly made. No code behaviour
+changes. If you followed either one, re-check your setup:
+
+- **Subnet-router "hot standby"** (E12, example catalogue): the earlier fix corrected E12's
+  section 3 but left the title, intro, rationale and checklist, and the catalogue entry, still
+  recommending a standby. All of them now say to retire the old host's route. Section 3 also had the
+  cutover backwards. Under oldest-wins the new node cannot become primary while the old one
+  advertises, so you withdraw the old route first, then verify.
+- **Network-mount keeper** (B5): it read inside the share to test health and unmounted a "stale"
+  mount automatically. Both are wrong. The first can hang from a scheduled job, and the second cannot
+  tell *broken* from *busy*, so it kills in-flight writes. The keeper is now passive: it checks the
+  mount table, mounts what is missing, and never touches a mount that is present. Detecting a hung
+  mount is left to monitoring, where a timeout means unknown.
+- **"A mount check does no I/O"** (E16, `platforms/macos.md`): now matches the monitoring README. The
+  check never reads inside the share, but checking the mount point and the mount table can still
+  block, so a check that cannot answer is unknown, not unmounted.
+- **Two smaller fixes:** § 11's diagram labelled CLI permissions `[09]` (it is chapter 10), and a
+  bullet in § 19's exclusion list was cut in half by another bullet.
+
 ## 2026-09-23 — navigation: every cross-reference points where it says
 
 - **New: `scripts/check-guide-links.py`, run in CI.** It checks four things a renumbering breaks:

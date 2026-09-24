@@ -85,8 +85,10 @@ launchd runs it**, not just from your shell.
 launchd/background context, I/O against a mounted NFS/SMB share (`ls`, `stat`) can **hang
 indefinitely even when the mount is perfectly healthy** — so a naive "is the share up?" check
 becomes a guaranteed false alarm on a timer. Check the **kernel mount table** (`mount`, or
-`os.path.ismount`) instead, which is reliable from any context and does no I/O. If you genuinely
-need hung-detection, do it through a login shell (`ssh localhost 'ls <path>'`).
+`os.path.ismount`) instead, which works from any context and never reads inside the share. It is
+still not free of I/O: `ismount` stats the mount point and the table read can block on an
+unresponsive server, so treat a check that cannot answer as unknown, not unmounted. If you
+genuinely need hung-detection, do it through a login shell (`ssh localhost 'ls <path>'`).
 
 ## Secret store — Keychain + vaults
 

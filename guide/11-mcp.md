@@ -87,7 +87,7 @@ Putting the three capability-bounding layers together:
 
 ```
   Governance rules ([03])  — the operator PAUSES before material MCP actions (judgment)
-  CLI permissions ([09])   — the harness PROMPTS/DENIES an MCP tool-call (capability limit)
+  CLI permissions ([10])   — the harness PROMPTS/DENIES an MCP tool-call (capability limit)
   MCP scope (this section) — the server only CAN do what you scoped it to (surface limit)
 ```
 
