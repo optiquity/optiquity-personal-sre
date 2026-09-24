@@ -3,7 +3,7 @@
 ```
 status:           draft | agreed | superseded
 design-version:   1          # THIS document's version — bump on a MAJOR change only (D9)
-template-version: 1.2        # which template version it was written against
+template-version: 1.3        # which template version it was written against
 form:             short
 opened:           <YYYY-MM-DD>
 agreed:           <YYYY-MM-DD or em-dash>
@@ -45,6 +45,7 @@ What else was weighed, why not, and what was chosen. *(Becomes postmortem §2 an
 
 ⭐ OS or vendor updates · another tool overwriting it · reboot · rebuild · restore · machine
 replacement.
+**Is the file you are changing generated?** Then change what generates it.
 
 **If anything here would silently undo it, either prevent that or make §5 detect it.**
 

@@ -204,7 +204,8 @@ Two gotchas worth internalizing (both cost real debugging):
   kind, write the installed side as `host:/path`: it is read over SSH, and an unreachable node is
   UNKNOWN. And
   `synclag` checks that sync is actually happening, since a status command that never fetches reports
-  "clean" while days behind.
+  "clean" while days behind. Name the sync job and it also checks that the job's last run
+  succeeded, because a fresh fetch followed by a failed apply passes every fetch-based check.
 
 ## Install-method audit (catch "installed two ways")
 

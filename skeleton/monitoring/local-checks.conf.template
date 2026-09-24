@@ -7,7 +7,8 @@
 #     http    | <name> | <url>                              200 == ok (e.g. cross-ping your Gatus)
 #     command | <name> | <shell command>                    exit 0 = OK · exit 3 = UNKNOWN · else FAIL
 #     hash    | <name> | <[host:]installed> | <reference>  installed copy identical to its reference?
-#     synclag | <name> | <git dir> | <max hours>             last successful fetch within <max hours>?
+#     synclag | <name> | <git dir> | <max hours> [| <job>] last successful fetch within <max hours>?
+#                                                          (+ the sync job's last run succeeded)
 #
 # Every check has THREE outcomes: OK, FAIL, or UNKNOWN (the probe could not answer — a timeout, an
 # unreadable table, a command exiting 3). UNKNOWN keeps the previous state and sends no mail; four in
@@ -27,7 +28,9 @@
 #      · staged by the config manager but installed by hand, because the live path needs root: both
 #        sides are local, the live file and the staged copy. The change isn't running until installed.
 #  - `synclag` watches that pull-based sync is actually happening: a status command that never
-#    fetches reports "clean" while days behind (guide 05b).
+#    fetches reports "clean" while days behind (guide 05b). Name the sync job (a launchd label, or
+#    a systemd unit) and it also checks the job's LAST RUN: a sync that fetches fine and then fails
+#    to apply looks current to every fetch-based check (guide 05, "If you do automate the apply").
 #  - `command` is the escape hatch: assert an app's workflows are active, a batch job exited 0,
 #    a container is healthy — anything a shell one-liner can decide.
 #  - a `service` with NO listening port (an outbound bridge/agent) is exactly what a remote
@@ -40,4 +43,4 @@ http    | gatus cross-ping | https://<gatus-host>/
 # command | batch last-run   | test "$(docker inspect -f '{{.State.ExitCode}}' <container>)" = 0
 # hash    | gateway relay    | gateway:/usr/local/bin/<relay> | ~/.local/share/chezmoi/<path>/relay
 # hash    | backup daemon    | /usr/local/bin/<job> | ~/.local/share/<staging-dir>/<job>.sh
-# synclag | dotfile sync     | ~/.local/share/chezmoi | 3
+# synclag | dotfile sync     | ~/.local/share/chezmoi | 3 | <your-sync-job-label>

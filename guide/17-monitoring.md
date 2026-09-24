@@ -389,6 +389,31 @@ A row that can never be cleared is worse than no row. Two ways to create one:
 
 Either one teaches the reader to skim the one report where real updates appear.
 
+## Settings the platform owns
+
+Some settings are correct when you set them and then quietly stop being true. The platform rewrites
+them, with no event, no error and no symptom. Every instance in the fleet this came from was found by
+a human noticing something else.
+
+- **Ask whether a file is written by hand or generated.** A NAS rewrote its crontab from its own task
+  database when a storage operation finished, wiping a hand-made "disable". It rewrote it again the
+  moment someone edited a task in its scheduler. Change what the file is generated *from* (the
+  scheduler, the settings screen), never the generated file. Hand-editing it also creates two truths:
+  the UI shows the old schedule while a different one runs.
+- **Change the setting, not the task that delivers it.** Automatic OS updates were a *setting* whose
+  scheduled task only carried it out. Setting it to "notify only" stopped unattended installs
+  without fighting the platform, where disabling the task would have been reverted.
+- **Some settings live only in the platform's own database,** outside anything you track, such as a
+  scheduled task's time limit and battery rules. Define those from an idempotent, tracked script that
+  reads its registration back ([platforms/windows](../platforms/windows.md)).
+- **Keep a registry of what you set, and read the live value.** Each row is a node, a setting, the
+  expected value, and how to read it now; check them on every run. Read the **live** value, never a
+  derived file that the same regeneration could rewrite. ⚠ *Designed in the fleet this came from;
+  not yet built there.*
+- **A script that changes a setting reads the result back.** One "disable" script received *Access
+  is denied*, discarded it in an empty `catch`, and reported the setting as off. A control that
+  reports success it did not check is worse than none, because it stops you looking.
+
 ## A dashboard is not a monitor
 
 If you keep a status dashboard ([04 · Structure](04-structure.md)), be clear about the division:

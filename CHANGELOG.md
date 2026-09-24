@@ -3,6 +3,38 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-24 — config drift: generated settings, a wedged apply, code that didn't reload (templates 1.3)
+
+- **New in § 17: "Settings the platform owns".**
+  - A generated file is changed at its source, not by hand.
+  - Change the setting, not the task that delivers it.
+  - Some settings live only in the platform's database.
+  - Keep a registry read *live*. *Labelled: designed, not yet built in the fleet it came from.*
+  - A script that changes a setting reads the result back.
+- **Corrected in § 05:** an unattended apply that meets a changed file doesn't only "wait forever".
+  It can also **error on every run**, applying nothing after that file (about 960 runs over 20 days,
+  in one fleet). Either way one file stops sync for all. New in the same chapter:
+  - app-owned files are seeded once (`create_`), with the diff as the tell;
+  - check `chezmoi managed` before deleting on a managed node;
+  - read a stalled queue entry by entry, because a lost execute bit shows only as `old mode` /
+    `new mode` header lines.
+- **New in § 09:** the mirror of "recreating is not restarting". `compose up -d` with only a mounted
+  file changed reports "Running" and reloads nothing. Restart, and verify from a line only the new
+  version prints.
+- **`synclag` can name the sync job** (a launchd label or a systemd unit) and then also checks
+  that the job's last run succeeded: a fresh fetch followed by a failed apply used to pass.
+  - A unit systemd doesn't know reports "success, exit 0", so loading is checked first (measured
+    on systemd 257).
+  - It trusts systemd's own verdict, which honours `SuccessExitStatus=`.
+
+  1 new test; 11 planted defects, each caught at its own assertion. One survived at first, and
+  that exposed the raw exit-code comparison as wrong.
+- **`platforms/windows.md`:** its TODO is filled. Define scheduled tasks from a tracked script that
+  reads its registration back, because task settings live only in the scheduler.
+- **Design templates 1.2 → 1.3:** Durability asks *"is the file you are changing generated?"*.
+- **Corrected in `platforms/windows.md`:** Group Policy is Pro and above only (Home has none), and the
+  repair service is the likely cause of a reverted update pin, not a proven one.
+
 ## 2026-09-24 — automation runtime: time limits, a busy guard, a queue pipeline
 
 - **New in C6: "Time limits: measure what a timeout does".** It explains how to measure a

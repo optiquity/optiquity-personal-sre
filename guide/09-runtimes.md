@@ -95,6 +95,21 @@ attached to something that no longer exists. It will usually keep running and si
 **If a service is recreated, recreate what was attached to it**; do not restart it and assume the
 attachment survived.
 
+⚠ **The mirror trap: a changed mounted file does not restart anything.** `docker compose up -d`
+recreates a container only when its compose configuration changed. If all that changed is a file in
+a mounted directory, it reports the container "Running" and does nothing. The new file is visible
+inside the container, but the process loaded the old code when it started and keeps running it.
+One fleet hit this twice in one afternoon, the second time after the first had been written down.
+
+- **Know which kind each service is.** Files read on every request (static assets) take effect
+  at once. Code, templates and config loaded at start need a restart.
+- **Restart after changing a mounted file the process loaded at start**, and don't read "Running"
+  as "updated".
+- **Verify from the running process:** have it log a line at startup that only the new version can
+  print (a mode, a version, a marker), and check for that line. The command's output is not
+  evidence. It is the same rule as for a deployment ([17 · Monitoring](17-monitoring.md), "Liveness
+  is not completion").
+
 ⚠ **Don't let the runtime update itself under you.** Desktop runtimes in particular like to
 auto-update. An update that changes the embedded VM, the network stack, or compose semantics will
 break running services at a moment you did not choose. Turn it off, and let the noticing be

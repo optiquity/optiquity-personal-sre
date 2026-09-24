@@ -25,7 +25,8 @@ Config (default $HOME/.config/fleet-monitoring/local-checks.conf, override --con
       http    | <name> | <url>                              does <url> return 200?
       command | <name> | <shell command>                    exit 0 = OK · exit 3 = UNKNOWN · else FAIL
       hash    | <name> | <[host:]installed file> | <reference>  byte-identical to its reference copy?
-      synclag | <name> | <git dir> | <max hours>            fetched successfully within <max hours>?
+      synclag | <name> | <git dir> | <max hours> [| <job>]  fetched within <max hours>? (and the sync job's
+                                                                last run succeeded, if <job> is named)
 A malformed line is REPORTED as a failing check, never silently skipped.
 
 IMPORTANT (the `mount` type never reads INSIDE the share): on macOS an NFS/SMB mount is bound to the
@@ -172,8 +173,40 @@ def chk_hash(name, arg):
     return name, got == want, ("matches its reference" if got == want
                                else f"{installed} differs from {reference} — reinstall it")
 
+def _job_last_run(job):
+    """(True|False|None, detail) for a scheduled job's LAST run: a launchd label on macOS, a
+    systemd unit elsewhere. False = it failed, or isn't loaded; None = the probe couldn't tell."""
+    if IS_MAC:
+        rc, out, err = sh(["launchctl", "print", f"gui/{os.getuid()}/{job}"])
+        if rc != 0 and not out:
+            if rc == 124 or not err or "could not find" not in err.lower():
+                return None, f"launchctl gave no answer ({err or 'rc=' + str(rc)})"
+            return False, f"sync job {job} is NOT loaded"
+        m = re.search(r"^\s*last exit code = (.+)$", out, re.M)
+        if not m:
+            return None, f"launchctl printed no last exit code for {job}"
+        code = m.group(1).strip()
+        if not code.lstrip("-").isdigit():
+            return True, f"sync job {job} has not finished a run yet"
+        return int(code) == 0, f"sync job {job} last exited {code}"
+    rc, out, err = sh(["systemctl", "show", "-p", "LoadState", "-p", "Result", "-p", "ExecMainStatus", job])
+    if rc == 124 or not out:
+        return None, f"systemctl gave no answer ({err or 'rc=' + str(rc)})"
+    props = dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
+    # ⚠ An unknown unit reports Result=success, ExecMainStatus=0 — so a misspelled unit would read
+    # as a healthy sync. Check it is loaded FIRST (measured on systemd 257).
+    if props.get("LoadState") != "loaded":
+        return False, f"sync job {job} is NOT loaded ({props.get('LoadState', '?')})"
+    # Trust systemd's own verdict (Result). It already honours the unit's SuccessExitStatus=, which a
+    # raw exit-code comparison would not; ExecMainStatus is reported, not judged.
+    status, result = props.get("ExecMainStatus", "?"), props.get("Result", "")
+    if result and result != "success":
+        return False, f"sync job {job} last run: {result} (exit {status})"
+    return True, f"sync job {job} last run succeeded"
+
 def chk_synclag(name, arg):
-    gitdir, _, hours = (p.strip() for p in arg.partition("|"))
+    gitdir, _, rest = (p.strip() for p in arg.partition("|"))
+    hours, _, job = (p.strip() for p in rest.partition("|"))
     try:
         limit = float(hours)
     except ValueError:
@@ -182,11 +215,20 @@ def chk_synclag(name, arg):
     try:
         age = (time.time() - os.path.getmtime(fetch_head)) / 3600.0
     except OSError:
-        return name, None, f"cannot read {fetch_head} (never fetched, or not a git clone)"
-    if age > limit:
-        return name, False, (f"last successful fetch {age:.1f} h ago (limit {limit:g} h) — "
-                             "a status command that never fetches cannot see this")
-    return name, True, f"fetched {age:.1f} h ago"
+        fetched = (None, f"cannot read {fetch_head} (never fetched, or not a git clone)")
+    else:
+        fetched = ((False, f"last successful fetch {age:.1f} h ago (limit {limit:g} h) — "
+                           "a status command that never fetches cannot see this")
+                   if age > limit else (True, f"fetched {age:.1f} h ago"))
+    # A fresh fetch is not an applied sync: a job that fetches fine and then fails to apply leaves
+    # every fetch-based check green. Naming the job adds its last run's result.
+    ran = _job_last_run(job) if job else (True, "")
+    for state in (False, None):
+        bad = [d for s, d in (fetched, ran) if s is state]
+        if bad:
+            return name, state, "; ".join(bad) + (" — a fresh fetch does not mean it applied"
+                                                   if ran[0] is False and fetched[0] is True else "")
+    return name, True, "; ".join(d for _, d in (fetched, ran) if d)
 
 DISPATCH = {"service": chk_service, "mount": chk_mount, "http": chk_http, "command": chk_command,
             "hash": chk_hash, "synclag": chk_synclag}

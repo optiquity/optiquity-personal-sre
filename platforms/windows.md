@@ -77,8 +77,8 @@ Unlike the framework's "update deliberately" stance ([07](../guide/07-tools-requ
 Windows Update wants to run itself. To take control, **pin it to manual** and patch on your
 schedule:
 
-- Disable/handle the automatic update behavior (Group Policy, the `wuauserv` service, or a
-  toggle script) so updates don't apply unattended.
+- Disable/handle the automatic update behavior (Group Policy on Pro and above, since Home has
+  none; the `wuauserv` service; or a toggle script) so updates don't apply unattended.
 - Keep a simple **on/off pair** of scripts (`wu-on` / `wu-off`) to re-enable, patch via
   **Settings → Windows Update**, then re-pin. Patch *deliberately*, not routinely.
 - This is the Windows equivalent of "don't auto-update everything" — the OS just fights you
@@ -86,7 +86,9 @@ schedule:
 
 ⚠ **The OS repairs this, so a one-time pin is not done.** Windows ships a service whose job is to
 detect and undo tampering with Windows Update. In one fleet the pin silently reverted twice over
-ten weeks, and each reversion was found by an audit, not an alert. So:
+ten weeks, and each reversion was found by an audit, not an alert. That service is the likely
+cause, not a proven one: one reversion happened while it was disabled, and its cause was never
+found. So:
 
 - **Make the scripts verify their own result.** The update-orchestration scheduled tasks are
   ACL-protected: a disable can fail with *"Access is denied"* behind a swallowed error while the
@@ -120,8 +122,19 @@ the upgrade itself from an elevated session. Metrics are fine: `windows_exporter
 other node. Task Scheduler is the launchd/systemd-timer analog if you want local scheduled checks.
 
 The launchd equivalent is **Task Scheduler** (for scheduled jobs) and **Windows Services** (for
-daemons). **⛏ TODO:** how to define a scheduled task / service from tracked config, the
-approval-gated "bootstrap" step, and the headless-at-boot pattern for Podman.
+daemons).
+
+**Define scheduled tasks from a tracked script, not by hand.** A task's *settings* live only in Task
+Scheduler's own database, outside config management: its time limit, whether it may start or must
+stop on battery power, its cadence. The script a task runs can be tracked while the task itself is
+not, and a task that is repaired or re-created by hand loses those settings silently.
+- Keep an **idempotent installer script** in the repo that registers the task with every setting
+  explicit, **reads the registration back**, and reports any difference. Re-run it to repair.
+- Registering it is still a service bootstrap, so it is gated ([Rule 1](../guide/03-governance-rules.md)).
+- ⚠ **The defaults bite a laptop pressed into server duty.** One clean-shutdown task was found set not
+  to start on battery. On a power cut, the one case it existed for, it would have refused to run.
+
+**⛏ TODO:** the headless-at-boot pattern for Podman.
 
 ## ⛏ Secret store on Windows — TODO
 

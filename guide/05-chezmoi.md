@@ -147,6 +147,11 @@ capability nobody asked for.
   that produces them, not the artifacts.
 - **Anything you can't regenerate or that isn't yours to version** — one-off local knobs can
   stay unmanaged; document that they're intentionally out of scope.
+- ⚠ **A file the app rewrites itself.** Some apps save their own settings back to their config
+  file. Managing its content makes every save drift, and every apply a conflict. **Seed it once
+  instead:** chezmoi's `create_` prefix writes the file only if it is absent, then never touches it.
+  **The tell is the diff.** One such file would have lost 95 lines of the app's settings to gain 2
+  lines of comments. A large removal with a trivial addition means the app owns the file.
 
 ## The apply discipline (safety)
 
@@ -173,10 +178,17 @@ workflow gets for free:
 
 - **Force non-interactivity explicitly.** This is the one that will actually break you. Config
   managers *prompt* when a managed file was changed by something other than themselves —
-  *"has changed since I last wrote it: diff / overwrite / skip / quit?"* With nobody to answer, the
-  job does not fail; it **waits forever**, and typically holds the tool's **state lock** while it
-  does, so every later invocation blocks too. The schedule then re-fires and wedges again. Pass the
-  explicit no-terminal flag rather than trusting the tool to notice there is no terminal.
+  *"has changed since I last wrote it: diff / overwrite / skip / quit?"* A file you deleted by hand
+  counts as changed. With nobody to answer, the job fails in one of two ways, depending on how it
+  was launched:
+  - it **waits forever**, typically holding the tool's **state lock**, so every later invocation
+    blocks too, and the schedule re-fires and wedges again;
+  - or it **exits with an error on every run**, having applied nothing after that file. One fleet
+    ran about 960 failing runs this way, over 20 days, before anyone noticed.
+
+  Either way, **one file stops sync for every file.** Pass the explicit no-terminal flag rather than
+  trusting the tool to notice there is no terminal. That turns a hang into a visible error; it does
+  not unblock the sync, which is what the conflict policy below is for.
 - **Decide the conflict policy up front, and log it.** *"Plain apply, reconcile by hand later"*
   sounds careful but is what produces the hang above. Since the model is **machines are derived,
   never authored**, letting the source win is consistent — but **record every overwrite**, because a
@@ -184,8 +196,12 @@ workflow gets for free:
 - **Verify what landed, not just that it landed.** Unreviewed changes now reach every node within one
   interval, and a script with a syntax error is written to disk perfectly happily — it fails only when
   something *runs* it, which may be days later and far from the cause. Syntax-check what you applied
-  and surface failures where you will read them. *"The file was written"* is not *"the file works"* —
-  the same distinction as *"the process ran"* versus *"the work happened"* ([17 · Monitoring](17-monitoring.md)).
+  and surface failures where you will read them. *"The file was written"* is not *"the file
+  works"* — the same distinction as *"the process ran"* versus *"the work happened"*
+  ([17 · Monitoring](17-monitoring.md)). **Watch the apply's result, not only the fetch:** a sync
+  that fetches fine and then fails to apply looks current to every check that reads the fetch. The
+  skeleton's `synclag` check reads both when you name the sync job
+  ([`skeleton/monitoring/`](../skeleton/monitoring/)).
 
 ## Handling drift
 
@@ -197,6 +213,23 @@ drift (a status/diff command — always a free read). When you find it, decide p
   becomes canonical.
 - **Revert** — the change was unwanted; re-apply from the repo to overwrite it.
 - **Leave** — intentionally machine-local; document it as out-of-scope.
+
+### Before deleting or hand-editing a file on a managed node
+
+Ask whether the config manager wrote it: `chezmoi managed` lists what it manages, and
+`chezmoi source-path <file>` names the source. If it did, change the source, not the node. The
+manager remembers what it last wrote, and a file that no longer matches, including one you deleted,
+makes the next unattended apply stop ([above](#if-you-do-automate-the-apply)). In one fleet, a single
+hand-deleted script stopped sync on its node until an alert on the apply's result caught it.
+
+### Before unfreezing a stalled sync
+
+**A blocked apply is an unreviewed queue.** Everything that piled up lands at once, so read the
+pending changes entry by entry first (`chezmoi status`, then `chezmoi diff`) and decide capture,
+revert or leave for each. ⚠ **A mode-only change is easy to miss.** A script losing its execute bit
+shows in `chezmoi diff` only as `old mode 100755` / `new mode 100644` header lines, with no content
+lines under them. One 20-day stall hid four such scripts, a nightly backup among them. Reading the
+queue caught them. Fixing only the blocker would have traded a visible failure for a silent one.
 
 A periodic "check drift" pass (a read across your nodes) keeps surprises small. Drift you never
 look at is drift that eventually breaks an apply.

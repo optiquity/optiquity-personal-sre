@@ -3,7 +3,7 @@
 ```
 status:           draft | agreed | superseded
 design-version:   1          # THIS document's version — bump on a MAJOR change only (D9)
-template-version: 1.2        # which template version it was written against
+template-version: 1.3        # which template version it was written against
 form:             long
 opened:           <YYYY-MM-DD>
 agreed:           <YYYY-MM-DD or em-dash>
@@ -95,6 +95,9 @@ Ask specifically:
 - Can an **OS or vendor update** revert it? (Service configurations, registry policy, power
   settings, firewall rules — all of these are routinely "repaired" by the platform)
 - Can **another tool** overwrite it? A config manager, an installer, a vendor agent?
+- **Is the file you are changing generated?** If the platform writes it from something else (a
+  scheduler's database, a settings screen), change what generates it. The generated file will be
+  rewritten, and the UI will go on showing the old value.
 - Does it survive a **reboot**? A **rebuild**? A **restore from backup**?
 - Does it survive the **machine being replaced**?
 - Is it recorded anywhere that a future operator would look, or only in the live system?

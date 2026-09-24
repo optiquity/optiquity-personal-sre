@@ -350,6 +350,50 @@ class LocalCheckProbes(unittest.TestCase):
         self.assertIs(r[1], False)
         self.assertEqual(len(calls), lc.MOUNT_RETRIES, "an unmount is confirmed over several attempts")
 
+    def test_synclag_job(self):
+        """A fresh fetch is not an applied sync: the named job's last run must have succeeded.
+        Outputs are the real formats (launchctl print on macOS; systemctl show, systemd 257)."""
+        lc = self.lc
+        tmp = tempfile.mkdtemp(prefix="synclag-")
+        self.addCleanup(shutil.rmtree, tmp, True)
+        os.makedirs(os.path.join(tmp, ".git"))
+        write(os.path.join(tmp, ".git", "FETCH_HEAD"), "")
+        lc.IS_MAC = True
+        for rc, out, err, want in [
+                (0, "\tstate = not running\n\texit timeout = 5\n\tlast exit code = 0\n", "", True),
+                (0, "\texit timeout = 5\n\tlast exit code = 1\n", "", False),
+                (0, "\tlast exit code = (never exited)\n", "", True),
+                (113, "", 'Could not find service "sync" in domain for user gui: 501', False),
+                (124, "", "timed out", None),
+                (0, "\texit timeout = 5\n", "", None)]:        # no last-exit line: can't tell
+            with self.subTest(mac=out or err):
+                lc.sh = lambda *a, rc=rc, out=out, err=err, **k: (rc, out, err)
+                self.assertIs(lc.chk_synclag("s", f"{tmp} | 3 | sync")[1], want)
+        lc.sh = lambda *a, **k: (0, "\tlast exit code = 1\n", "")
+        self.assertIn("a fresh fetch does not mean it applied", lc.chk_synclag("s", f"{tmp} | 3 | sync")[2])
+        lc.IS_MAC = False
+        for out, want in [("LoadState=loaded\nResult=success\nExecMainStatus=0", True),
+                          ("LoadState=loaded\nResult=exit-code\nExecMainStatus=1", False),
+                          ("LoadState=not-found\nResult=success\nExecMainStatus=0", False),  # measured trap
+                          ("LoadState=loaded\nResult=timeout\nExecMainStatus=0", False),
+                          # SuccessExitStatus=1 declared: systemd's verdict wins over the raw code
+                          ("LoadState=loaded\nResult=success\nExecMainStatus=1", True)]:
+            with self.subTest(linux=out):
+                lc.sh = lambda *a, out=out, **k: (0, out, "")
+                self.assertIs(lc.chk_synclag("s", f"{tmp} | 3 | sync.service")[1], want)
+        lc.sh = lambda *a, **k: (124, "", "timed out")
+        self.assertIsNone(lc.chk_synclag("s", f"{tmp} | 3 | sync.service")[1])
+        calls = []
+        lc.sh = lambda *a, **k: calls.append(a) or (0, "LoadState=loaded\nResult=success\nExecMainStatus=0", "")
+        self.assertIs(lc.chk_synclag("s", f"{tmp} | 3")[1], True)
+        self.assertEqual(calls, [], "without a job named, synclag reads only the fetch")
+        old = time.time() - 5 * 3600
+        os.utime(os.path.join(tmp, ".git", "FETCH_HEAD"), (old, old))
+        self.assertIs(lc.chk_synclag("s", f"{tmp} | 3 | sync.service")[1], False, "a stale fetch fails even if the job is fine")
+        lc.sh = lambda *a, **k: (0, "LoadState=loaded\nResult=exit-code\nExecMainStatus=1", "")
+        self.assertIs(lc.chk_synclag("s", f"{tmp}/nope | 3 | sync.service")[1], False,
+                      "an unreadable fetch plus a failed job is a failure, not unknown")
+
     def test_hash_remote_form(self):
         lc = self.lc
         for arg, remote in [("gw:/usr/local/lib/x", True), ("user@gw:~/x", True), ("gw.lan:/x", True),
