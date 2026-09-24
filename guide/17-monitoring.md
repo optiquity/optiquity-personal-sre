@@ -140,6 +140,12 @@ which on a network mount is a server round-trip — and it **catches the error a
 looks local too; the call behind it can block on an unresponsive server. Neither is wrong to
 use — but treat their failure as *no answer*, never as *bad answer*.
 
+**A check whose source has gone is not unknown. It is blind, and blind is a failure.** If the thing
+a check reads no longer exists, it can never go red again. That covers a workflow that was deleted,
+or whose live version stopped writing the marker the check reads. That is not a probe that couldn't
+answer this time; it is a probe with nothing left to ask. Report it as a failure, worded as
+blindness ([C20 · A queue pipeline](examples/C20-queue-pipeline.md)).
+
 ## Some things a central checker cannot see
 
 A remote prober reaches anything on the network. Three important things aren't on the network:

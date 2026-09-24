@@ -3,6 +3,26 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-24 — automation runtime: time limits, a busy guard, a queue pipeline
+
+- **New in C6: "Time limits: measure what a timeout does".** It explains how to measure a
+  timeout with a throwaway run.
+  - What one runtime was measured doing (n8n 2.21.7, regular mode): the run is marked canceled at
+    the limit and later steps never run, but **the remote work keeps running**. Its documentation
+    says the opposite.
+  - So: alert on stopped statuses; assert the global cap; re-measure after upgrades.
+- **New in § 14: "Serialising a pipeline without lock files".** A pipeline is busy while its fence
+  holds anything, or while a running process names its in-progress path. The needle must not
+  match the guard itself, and the self-match is tested from a shell inside a shell. It fails
+  closed, and overlaps are detected. *Labelled: designed and deployed, not yet proven on a live
+  job.*
+- **New example C20: a queue pipeline.** It covers visible stages; one-move hand-offs on one
+  filesystem; names fixed once on pickup; filing that never overwrites. The alerts are STALLED
+  while idle, STUCK (no progress), and any failure, one check per workflow. It also covers the
+  measurement traps: ctime rather than mtime, the server's clock, zero found = UNKNOWN, and a
+  blind check = FAIL.
+- **§ 17:** a check whose source has gone is blind, and blind is a failure, not "unknown".
+
 ## 2026-09-23 — prove each test: one planted defect per rule
 
 - **New in § 17: "Prove each test: one planted defect per rule".** It covers:

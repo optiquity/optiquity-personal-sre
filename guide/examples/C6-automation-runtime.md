@@ -202,6 +202,38 @@ not nesting but **overwriting**.
 sample, not the population. Before deploying, ask what *else* runs this code path — and test the
 case nobody complained about, because that is the one with no witness.
 
+## Time limits: measure what a timeout does
+
+A runtime's time limit is a safety net you will rely on exactly once, on the night a job runs away.
+Find out what it does **before** then, because the documentation may be wrong.
+
+**Measure it with a throwaway workflow:** a short limit (say 10 s), a step that runs a remote command
+which sleeps past the limit and then writes a marker file, and one more step after it. Then read
+three things: the run's recorded status, whether the last step ran, and whether the marker appeared.
+
+⚠ **One runtime, measured (n8n 2.21.7, regular mode, September 2026).** Its documentation says the
+timeout is *soft*: the current step finishes, then the rest is cancelled. Measured, it was not:
+
+- the run was marked **canceled at exactly the limit**, and the running step's output was never
+  recorded;
+- the step after it never ran;
+- **but the remote command kept running:** its marker appeared ten seconds after the cancellation.
+
+So a timeout stops the **bookkeeping, not the work**. A long conversion finishes and hands its result
+on, while the step that would have filed the original never runs, and the pipeline is left half-filed
+for a human. *(That consequence follows from the measurement; it has not been seen on a real job.)*
+
+What follows from it:
+
+- **Alert on the runner's stopped statuses:** canceled, error, crashed. A check that reads a marker
+  the workflow writes at its end cannot see a run that never reached its end. The execution status
+  is the only record.
+- **A per-workflow limit is capped by a global maximum**, read at startup, so changing it means a
+  restart while idle. Assert the maximum's value in a check too, so a replaced env file shows up.
+- **Re-measure after every runtime upgrade.** The behaviour belongs to a version, not a promise.
+
+The pipeline this protected is [C20 · A queue pipeline](C20-queue-pipeline.md).
+
 ## Maintenance — the ownership half
 
 - **Update deliberately, in a window.** Pin the image version; update on your cadence with a quick

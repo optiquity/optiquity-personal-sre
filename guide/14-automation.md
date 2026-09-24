@@ -119,6 +119,33 @@ kind of work an operator is good at: small, well-specified, testable, and boring
 secrets by reference, the schedule declared, and a check that the thing actually ran. An automation
 without a liveness check is an assumption with a cron entry.
 
+### Serialising a pipeline without lock files
+
+A pipeline that must run one job at a time needs a **busy** test. The obvious one, a lock file,
+fails in exactly the ways that matter: a person can move or delete it, and a crash leaves it behind,
+stale. Once, moving an item out of the fence by hand mid-job opened it and started a second job
+beside the first. Test something a person can't move instead:
+
+- **Busy while the fence holds anything visible, *or* while any running process's command line
+  names the pipeline's in-progress path.** A running process can't be dragged away in a file
+  manager, and a finished or crashed one releases the guard by itself. A process is poor evidence
+  that work *finished* ([17 · Monitoring](17-monitoring.md)), but good evidence that work is *still
+  running*, and that is the only direction a busy guard needs.
+- ⚠ **Pick that path so the guard can't match itself.** The guard's own command line names the
+  pipeline folder; the needle is the in-progress path *inside* it, which only the workers mention.
+  Excluding the guard's own process and its parent isn't enough, because the launching shell can be
+  further up the tree.
+- **Fail closed.** If the guard can't tell, it reports busy.
+- **An item stranded in the fence keeps it shut.** That is correct, and it needs a human, so say
+  so in the alert.
+- **Detect a failed guard afterwards:** flag two runs of one workflow that overlapped in time,
+  counting only runs that reached the worker.
+- **Test the self-match from a shell inside a shell.** A test run from the direct parent passed
+  against a guard that *did* match itself ([17 · Monitoring](17-monitoring.md), "Prove each test").
+
+⚠ *Designed and deployed in the fleet this came from; not yet proven on a live job.* The pipeline
+around it is [C20 · A queue pipeline](examples/C20-queue-pipeline.md).
+
 ## Long-running agent services
 
 A variant worth naming: an agent that runs **continuously** on a node rather than being invoked, and

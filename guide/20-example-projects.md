@@ -65,6 +65,10 @@ mesh — the [08 · Networking](08-networking.md) publish-a-service discipline, 
 - **[C7 · A container runtime + app stack](examples/C7-container-runtime-stack.md)** — install a
   container runtime and bring up an app stack reachable over the mesh; the container half of
   self-hosting, plus per-host run-mode divergence (always-on `server` vs on-demand `workstation`).
+- **[C20 · A queue pipeline](examples/C20-queue-pipeline.md)** — drop work into a watched folder
+  and get results out. Visible stages, one-move hand-offs on one filesystem, names fixed once on
+  pickup, a busy guard nobody can defeat by hand, and alerts on the outcome: stalled while idle, no
+  progress, any failure per workflow, and a blind check counted as failed.
 
 ## D · Composed skills & credentials
 
