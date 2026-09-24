@@ -6,7 +6,7 @@
 #     mount   | <name> | <path>                             is <path> a mount? (mount point + table)
 #     http    | <name> | <url>                              200 == ok (e.g. cross-ping your Gatus)
 #     command | <name> | <shell command>                    exit 0 = OK · exit 3 = UNKNOWN · else FAIL
-#     hash    | <name> | <installed file> | <reference>     installed copy identical to its reference?
+#     hash    | <name> | <[host:]installed> | <reference>  installed copy identical to its reference?
 #     synclag | <name> | <git dir> | <max hours>             last successful fetch within <max hours>?
 #
 # Every check has THREE outcomes: OK, FAIL, or UNKNOWN (the probe could not answer — a timeout, an
@@ -20,8 +20,12 @@
 #    the mount point + table (retried; an unreadable table is UNKNOWN, not "unmounted"). It catches
 #    "unmounted", not "hung". For hung-detection use a `command` via a login shell, e.g.:
 #       command | media reachable | ssh localhost 'ls /path/to/mount >/dev/null'
-#  - `hash` watches a file your config manager does NOT deploy — a script installed by hand on a node
-#    it doesn't manage falls behind the repo silently otherwise. Point <reference> at the repo copy.
+#  - `hash` watches a file your config manager does NOT deploy, against the repo copy on THIS node
+#    (guide 16, "A fix that reaches four nodes out of five looks done"). Two cases:
+#      · installed by hand on a node it doesn't manage: write the installed side as host:/path. It is
+#        read over SSH (key auth); a node it can't reach is UNKNOWN, never "current".
+#      · staged by the config manager but installed by hand, because the live path needs root: both
+#        sides are local, the live file and the staged copy. The change isn't running until installed.
 #  - `synclag` watches that pull-based sync is actually happening: a status command that never
 #    fetches reports "clean" while days behind (guide 05b).
 #  - `command` is the escape hatch: assert an app's workflows are active, a batch job exited 0,
@@ -34,5 +38,6 @@ mount   | media share      | /path/to/your/mount
 http    | gatus cross-ping | https://<gatus-host>/
 # command | workflows active | test "$(sqlite3 ~/.app/db 'select count(*) from wf where active=1')" -ge 1
 # command | batch last-run   | test "$(docker inspect -f '{{.State.ExitCode}}' <container>)" = 0
-# hash    | gateway relay    | /usr/local/lib/<you>/relay | ~/.local/share/chezmoi/<path>/relay
+# hash    | gateway relay    | gateway:/usr/local/bin/<relay> | ~/.local/share/chezmoi/<path>/relay
+# hash    | backup daemon    | /usr/local/bin/<job> | ~/.local/share/<staging-dir>/<job>.sh
 # synclag | dotfile sync     | ~/.local/share/chezmoi | 3

@@ -3,6 +3,26 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-23 — what your config manager never deploys
+
+- **New in § 16: "A fix that reaches four nodes out of five looks done".** It covers two kinds of
+  file that fall behind the repo silently:
+  - copies installed by hand on the node the config manager doesn't manage;
+  - files it stages but cannot install, because the live path needs root.
+
+  The remedy for both: compare the file that runs with the repo copy by checksum, and register
+  hand-placed programs so discovery reports new ones. § 17 points to it from reconciliation.
+- **Fixed: the `hash` check couldn't do the first case, which its own example claimed.** It read
+  both files on the machine it ran on. On a node the config manager doesn't manage, the installed
+  file and the repo copy are on different machines, so the example could not pass anywhere.
+  - The installed side may now be `host:/path`, read over SSH.
+  - An unreachable node is UNKNOWN; a missing or different file is FAIL.
+  - A one-letter "host" is a drive letter, so it stays local.
+
+  2 new tests; 9 planted defects, each caught by its own assertion.
+- **Re-check:** if you copied the `hash | gateway relay | …` example, add the `host:` prefix. As
+  written, it could never have passed.
+
 ## 2026-09-23 — build what was asked (design templates 1.2)
 
 - **New in § 02: "Before building: restate the end state, and wait for every yes".** Restate the

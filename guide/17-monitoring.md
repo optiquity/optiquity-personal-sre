@@ -308,6 +308,13 @@ contains what someone remembered to add. **Discovery alone is noise** — it can
 system-vendored Ruby is deliberately untracked. Skip methods with **zero** installs, or the report
 cries wolf about every tool you have but don't use.
 
+**The same holds for files your config manager never deploys.** A script copied by hand to a node it
+doesn't manage, or staged by it and installed by hand because the live path needs root, is invisible
+to both the config manager and the package managers. Compare each one with its repo copy (the
+skeleton's `hash` check), and register each program in `fleet-binaries.conf`, so that the next one
+is reported rather than forgotten.
+[16 · Multi-node](16-multinode.md) has the two cases.
+
 Two rules keep this honest as it grows:
 
 - **Never mark something "checked" before its check exists.** A registry that claims coverage it

@@ -198,8 +198,11 @@ Two gotchas worth internalizing (both cost real debugging):
   So the probe retries, and a table it cannot read is **UNKNOWN**, not "unmounted" (guide § 17,
   "A probe that could not answer has not told you anything"). For genuine hung-detection, use a
   `command` check through a login shell (`ssh localhost 'ls <path>'`).
-- **Watch what your config manager doesn't deploy.** A script installed by hand, on a node it
-  doesn't manage, falls behind the repo silently; `hash` compares it with the repo copy. And
+- **Watch what your config manager doesn't deploy.** A script installed by hand on a node it
+  doesn't manage, or staged by it but installed by hand because the live path needs root, falls
+  behind the repo silently. `hash` compares the file that runs with the repo copy. For the first
+  kind, write the installed side as `host:/path`: it is read over SSH, and an unreachable node is
+  UNKNOWN. And
   `synclag` checks that sync is actually happening, since a status command that never fetches reports
   "clean" while days behind.
 

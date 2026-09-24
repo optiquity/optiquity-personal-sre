@@ -172,6 +172,35 @@ The test that matters is the one that reproduces production: **log out, or reboo
 while someone is signed in proves only that the job works *alongside* a session — never *without* one.
 That distinction is invisible until the machine restarts on its own at 2am.
 
+### A fix that reaches four nodes out of five looks done
+
+A config manager keeps the nodes it manages in step, and nothing else. Two kinds of file sit outside
+it, and both fall behind the repo without a sound:
+
+- **Hand-installed copies on the node it doesn't manage.** The odd node is often not under the
+  config manager at all, so its scripts were copied there once. Fix a tool in the repo and the fix
+  reaches every other node, while this one keeps the old copy. It looks done, because everywhere you
+  look is fixed.
+- **Files it stages but cannot install.** Some live paths need root (a system service definition, a
+  daemon's binary), which a user-level config manager cannot write. It puts the new version in a
+  staging directory, and someone installs it by hand. Until they do, the change is committed, applied
+  and reported, and not running.
+
+One check closes both: **compare the file that actually runs with the repo copy, by checksum, on a
+schedule, and name the stale file.** In the first case the file is on another machine, so read its
+checksum over SSH, and treat a node you cannot reach as *unknown*, not current. The skeleton's
+`hash` check does both ([`skeleton/monitoring/`](../skeleton/monitoring/)). Then **register** each
+program you placed by hand in the update checker's `fleet-binaries.conf`. Its discovery walks the
+usual install folders (`/usr/local/bin`, plus `/opt` on Linux), so a program placed there and never
+registered is reported. That is the registry-and-discovery pattern from
+[17 · Monitoring](17-monitoring.md). ⚠ A file anywhere else, such as a service definition, is watched
+only by the `hash` line you wrote for it. Nothing will report one you forgot, so put hand-placed
+programs where discovery looks.
+
+⚠ **It happens within minutes.** A shared mail tool was edited in the repo and synced to every
+managed node. The gateway's hand-installed copy was three lines behind within minutes, and nothing
+compared the two until a check was written for it.
+
 ## Keeping multi-node sane
 
 The failure mode of multi-node is **divergence you didn't notice** — a tweak on one node, a

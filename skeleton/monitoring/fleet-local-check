@@ -24,7 +24,7 @@ Config (default $HOME/.config/fleet-monitoring/local-checks.conf, override --con
       mount   | <name> | <path>                             is <path> a mount? (mount point + table)
       http    | <name> | <url>                              does <url> return 200?
       command | <name> | <shell command>                    exit 0 = OK · exit 3 = UNKNOWN · else FAIL
-      hash    | <name> | <installed file> | <reference>    byte-identical to its reference copy?
+      hash    | <name> | <[host:]installed file> | <reference>  byte-identical to its reference copy?
       synclag | <name> | <git dir> | <max hours>            fetched successfully within <max hours>?
 A malformed line is REPORTED as a failing check, never silently skipped.
 
@@ -40,7 +40,10 @@ via a login shell (e.g. `ssh localhost 'ls <path>'`) if you need hung-detection.
 WHY `hash` AND `synclag` EXIST. A config manager keeps the nodes it manages in step — and nothing
 else. A file you installed by hand (on a node it doesn't manage, or outside its tree) falls behind
 the repo silently: the fix reaches every other node and the check that would notice is the one you
-never wrote. `hash` compares the installed copy with its reference. `synclag` asks whether sync is
+never wrote. `hash` compares the installed copy with its reference. On a node the config manager
+doesn't manage, the installed file and the repo copy are on DIFFERENT machines, so the installed side
+may be `host:/path`: it is read over SSH from the node that holds the repo. An SSH failure is UNKNOWN,
+never a pass. `synclag` asks whether sync is
 actually HAPPENING: a status command that never fetches reports "clean" while days behind (guide
 05b), so it reads the age of the last successful fetch instead.
 
@@ -48,7 +51,7 @@ Exit: 0 all ok · 1 one or more failing · 3 the alert email failed to send (sta
 Flags: --dry-run (print, no email/state), --always (email regardless).
 Environment: $FLEET_MAILER (default ~/.local/bin/fleet-mail), $FLEET_LOCAL_CHECK_STATE (state file).
 """
-import argparse, hashlib, json, os, platform, shutil, subprocess, sys, time
+import argparse, hashlib, json, os, platform, re, shlex, shutil, subprocess, sys, time
 
 STATE = os.environ.get("FLEET_LOCAL_CHECK_STATE",
                        os.path.expanduser("~/.config/fleet-monitoring/local-check.state"))
@@ -126,12 +129,40 @@ def _sha256(path):
     with open(path, "rb") as f:
         return hashlib.sha256(f.read()).hexdigest()
 
+# `host:/path` or `host:~/path`. A one-letter "host" is a drive letter (C:/…), so it stays local.
+REMOTE_PATH = re.compile(r"^([^\s/:~]{2,}):([/~].*)$")
+
+def _sha256_remote(host, path):
+    """(sha, None) · (None, "MISSING") · (None, "<why it could not answer>")."""
+    q = ('"$HOME"/' + shlex.quote(path[2:])) if path.startswith("~/") else shlex.quote(path)
+    script = (f"if [ ! -e {q} ]; then echo '#MISSING'; "
+              f"elif h=$( (sha256sum {q} || shasum -a 256 {q}) 2>/dev/null ); then echo \"#SHA ${{h%% *}}\"; "
+              f"else echo '#UNREADABLE'; fi")
+    rc, out, err = sh(["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes", host, script], timeout=25)
+    line = next((l for l in out.splitlines() if l.startswith("#")), "")
+    if rc == 0 and line.startswith("#SHA ") and len(line) > 5:
+        return line[5:].strip(), None
+    if rc == 0 and line == "#MISSING":
+        return None, "MISSING"
+    if rc == 0 and line == "#UNREADABLE":
+        return None, f"cannot read it on {host}"
+    return None, f"could not reach {host} ({(err or f'rc={rc}').strip()[:60]})"
+
 def chk_hash(name, arg):
     installed, _, reference = (p.strip() for p in arg.partition("|"))
     try:
         want = _sha256(os.path.expanduser(reference))
     except OSError:
         return name, False, f"reference copy missing ({reference}) — not silently skipped"
+    remote = REMOTE_PATH.match(installed)
+    if remote:
+        got, why = _sha256_remote(*remote.groups())
+        if why == "MISSING":
+            return name, False, f"{installed} is NOT installed"
+        if why:
+            return name, None, f"{why} — whether {installed} is current is unknown"
+        return name, got == want, ("matches its reference" if got == want
+                                   else f"{installed} differs from {reference} — reinstall it")
     try:
         got = _sha256(os.path.expanduser(installed))
     except FileNotFoundError:

@@ -278,6 +278,45 @@ class LocalCheckStates(LocalCheckBase):
         write(inst, "v1\n")
         self.assertIn("[FAIL] h: reference copy missing", self.dry(), "a missing reference must FAIL, not pass")
 
+    def test_hash_check_remote(self):
+        """host:path — the installed copy lives on a node the config manager doesn't manage. A fake
+        `ssh` runs the tool's real remote script locally, so its quoting and branches are exercised."""
+        bin_dir = os.path.join(self.tmp, "bin")
+        os.makedirs(bin_dir)
+        write(os.path.join(bin_dir, "ssh"), textwrap.dedent("""\
+            #!/bin/sh
+            [ -n "$FAKE_SSH_RC" ] && { echo "ssh: connect to host gw: Connection refused" >&2; exit "$FAKE_SSH_RC"; }
+            for last; do :; done
+            exec sh -c "$last"
+            """))
+        os.chmod(os.path.join(bin_dir, "ssh"), 0o755)
+        path = bin_dir + os.pathsep + self.env["PATH"]
+        ref, inst = os.path.join(self.tmp, "ref"), os.path.join(self.tmp, "in st", "relay")
+        os.makedirs(os.path.dirname(inst))
+        write(ref, "v1\n")
+        self.write_conf([f"hash | h | gw:{inst} | {ref}"])
+        dry = lambda **e: self.check("--dry-run", PATH=path, **e).stdout
+        write(inst, "v1\n")
+        self.assertIn("[OK  ] h: matches its reference", dry(), "a path with a space must survive the SSH quoting")
+        write(inst, "v0\n")
+        self.assertIn(f"[FAIL] h: gw:{inst} differs from", dry())
+        out = dry(FAKE_SSH_RC="255")
+        self.assertIn("[????] h:", out, "an unreachable node is UNKNOWN — never a pass, never a stale-file alarm")
+        self.assertIn("could not reach gw", out)
+        os.chmod(inst, 0)
+        try:
+            if not os.access(inst, os.R_OK):          # root reads anything; the branch only exists for others
+                out = dry()
+                self.assertIn("[????] h:", out)
+                self.assertIn("cannot read it on gw", out)
+        finally:
+            os.chmod(inst, 0o644)
+        os.remove(inst)
+        self.assertIn(f"[FAIL] h: gw:{inst} is NOT installed", dry())
+        write(os.path.join(self.home, "relay"), "v1\n")
+        self.write_conf([f"hash | h | gw:~/relay | {ref}"])
+        self.assertIn("[OK  ] h: matches its reference", dry(), "~/ resolves in the REMOTE home")
+
     def test_synclag_check(self):
         repo = os.path.join(self.tmp, "src")
         os.makedirs(os.path.join(repo, ".git"))
@@ -310,6 +349,14 @@ class LocalCheckProbes(unittest.TestCase):
         r = lc.chk_mount("m", "/mnt/x")
         self.assertIs(r[1], False)
         self.assertEqual(len(calls), lc.MOUNT_RETRIES, "an unmount is confirmed over several attempts")
+
+    def test_hash_remote_form(self):
+        lc = self.lc
+        for arg, remote in [("gw:/usr/local/lib/x", True), ("user@gw:~/x", True), ("gw.lan:/x", True),
+                            ("C:/tools/x", False), ("/usr/local/lib/x", False), ("~/x", False),
+                            ("gw:relative", False)]:
+            with self.subTest(arg=arg):
+                self.assertIs(bool(lc.REMOTE_PATH.match(arg)), remote)
 
     def test_http(self):
         lc = self.lc
