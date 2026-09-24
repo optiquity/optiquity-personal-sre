@@ -32,7 +32,7 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 | `fleet-binaries.conf.template` | hand-placed binaries registry (reconciled against discovery; `upstream` rows version-checked) |
 | `fleet-update-decisions.conf.template` | update decisions with a reason and a revisit date |
 | `fleet-composes.conf.template` | the compose stacks to check for image updates (reconciled against discovery) |
-| `fleet-nodes.conf.template` | your node inventory (`role | ssh-target | os | methods`) |
+| `fleet-nodes.conf.template` | your node inventory (`role | ssh-target | os | methods [| discovery folders]`) |
 | `local-checks.conf.template` | typed local checks (`service`, `mount`, `http`, `command`, `hash`, `synclag`) |
 | `fleet-local-check.plist.template` | launchd timer for the local probe (every 15 min) |
 | `mail.env.template` | SMTP secret stub for `fleet-mail` (host-local, chmod 600) |

@@ -14,7 +14,7 @@ dedups multiple symlinks that point at one binary. Benign system-vs-brew overrid
 Also reports duplicate $PATH entries and self-updating casks (informational).
 
 Nodes come from the same $HOME/.config/fleet-monitoring/fleet-nodes.conf as fleet-update-check
-(role | ssh-target | os | methods — methods is ignored here). The audit logic is piped to each
+(role | ssh-target | os | … — only the first three fields are used here). The audit logic is piped to each
 node's python3 over SSH, so nothing needs to be pre-installed remotely.
 
 Two intended triggers: after any install (a launchd WatchPaths / systemd .path unit runs it

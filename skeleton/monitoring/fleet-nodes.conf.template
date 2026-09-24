@@ -2,9 +2,14 @@
 # Copy to $HOME/.config/fleet-monitoring/fleet-nodes.conf and edit for your fleet.
 #
 # One line per node:
-#   role | ssh-target | os | methods
+#   role | ssh-target | os | methods [| discovery folders]
 #     role         a label for the digest (your choice: always-on, laptop, gateway, nas, ...)
 #     ssh-target   "local" for the node this runs on, else an SSH host/alias (key auth)
+#     discovery    OPTIONAL comma list of extra folders to search for programs placed by hand
+#     folders      (default: /usr/local/bin, plus /opt on Linux), e.g. /usr/local/lib/<you>, ~/bin.
+#                  ⚠ Add a folder only if hand-placed programs really live there. A folder full of
+#                  config-managed scripts and tool shims makes nearly every entry "unregistered"
+#                  (one fleet measured 35 of 36), and a digest with permanent rows gets ignored.
 #     os           macos | linux | windows | synology   (chooses shell + manual hint)
 #     methods      comma list. CHECKED by this tool: brew, npm, softwareupdate (macos);
 #                  apt (linux); winget (windows); uvtool, pipx (Python tool installers —

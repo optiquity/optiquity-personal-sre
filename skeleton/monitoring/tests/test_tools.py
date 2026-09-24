@@ -557,6 +557,42 @@ class UpdateCheckRegistry(unittest.TestCase):
         uc.run_on = lambda node, cmd, timeout=300: (0, "", "") if cmd.startswith("strings") else (0, "/usr/local/bin/gatus\n", "")
         self.assertIn("UNREADABLE", "\n".join(uc.binaries_block([self.node(["apt"])], {"gateway": True})[0]))
 
+    def test_discovery_folders(self):
+        """The optional 5th column adds folders to a node's hand-placed-binary discovery. The REAL
+        probes run here, against a folder with a space in its name and one given as ~/."""
+        uc = self.uc
+        self.assertIn("find /usr/local/bin /opt -maxdepth 2", uc.binary_probe("linux"), "defaults unchanged")
+        self.assertIn("for f in /usr/local/bin/*;", uc.binary_probe("macos"), "defaults unchanged")
+        self.assertIsNone(uc.binary_probe("windows"))
+        extra = os.path.join(self.tmp, "hand placed")
+        home = os.path.join(self.tmp, "home2")
+        os.makedirs(extra)
+        os.makedirs(os.path.join(home, "bin"))
+        for path in (os.path.join(extra, "tool"), os.path.join(home, "bin", "mine")):
+            write(path, "#!/bin/sh\n")
+            os.chmod(path, 0o755)
+        write(os.path.join(extra, "notes.txt"), "not a program")
+        for os_ in ("macos", "linux"):
+            with self.subTest(os_=os_):
+                r = subprocess.run(["sh", "-c", uc.binary_probe(os_, [extra, "~/bin"])], capture_output=True,
+                                   text=True, env=dict(os.environ, HOME=home), stdin=subprocess.DEVNULL)
+                found = [l for l in r.stdout.splitlines() if l.startswith(self.tmp)]
+                self.assertIn(os.path.join(extra, "tool"), found, "a folder with a space must survive quoting")
+                self.assertIn(os.path.join(home, "bin", "mine"), found, "~/ resolves in the node's home")
+                self.assertNotIn(os.path.join(extra, "notes.txt"), found, "only executables")
+        conf = os.path.join(self.tmp, "fleet-nodes.conf")
+        write(conf, "gateway | gw | linux | apt | /usr/local/lib/x, ~/bin\nlaptop | lp | macos | brew\n"
+                    "bad | b | linux | apt |\nworse | w | linux | apt | /x | extra\n")
+        nodes, errs = uc.load_nodes(conf)
+        self.assertEqual([(n["role"], n["extra"]) for n in nodes],
+                         [("gateway", ["/usr/local/lib/x", "~/bin"]), ("laptop", [])])
+        self.assertEqual(len(errs), 2, errs)                  # an empty 5th field, and a 6th field
+        seen = []
+        uc.run_on = lambda node, cmd, timeout=300: seen.append(cmd) or (0, "", "")
+        uc.BINARIES_CONF = os.path.join(self.tmp, "none.conf")
+        uc.binaries_block([nodes[0]], {"gateway": True})
+        self.assertIn("/usr/local/lib/x", seen[0], "the node's extra folders reach its probe")
+
     def test_decisions(self):
         uc = self.uc
         dec = os.path.join(self.tmp, "fleet-update-decisions.conf")

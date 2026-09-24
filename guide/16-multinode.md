@@ -195,7 +195,9 @@ usual install folders (`/usr/local/bin`, plus `/opt` on Linux), so a program pla
 registered is reported. That is the registry-and-discovery pattern from
 [17 · Monitoring](17-monitoring.md). ⚠ A file anywhere else, such as a service definition, is watched
 only by the `hash` line you wrote for it. Nothing will report one you forgot, so put hand-placed
-programs where discovery looks.
+programs where discovery looks, or add their folder to that node's line (an optional fifth column).
+Add only a folder that really holds hand-placed programs: one full of managed scripts and tool
+shims reported 35 of 36 entries as unregistered, which trains the reader to ignore the digest.
 
 ⚠ **It happens within minutes.** A shared mail tool was edited in the repo and synced to every
 managed node. The gateway's hand-installed copy was three lines behind within minutes, and nothing

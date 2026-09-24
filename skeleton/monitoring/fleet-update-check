@@ -30,7 +30,8 @@ COVERAGE — the question a list of checks cannot answer is "what is installed t
   · a declared method this checker has no code for is reported as NO CHECKER — never as "current".
   · discovery reconciles declared methods against what is ACTUALLY installed (macos/linux).
   · fleet-binaries.conf: binaries installed by hand, outside any package manager (a tool you
-    downloaded, your own scripts). Discovery walks /usr/local/bin (+ /opt on Linux); anything
+    downloaded, your own scripts). Discovery walks /usr/local/bin (+ /opt on Linux, + any folders in
+    the node's optional 5th column); anything
     found but unregistered is REPORTED. `upstream` rows are version-checked against GitHub.
   · fleet-update-decisions.conf: recorded decisions ("frozen", "declined", …) with a revisit date;
     a denial is a durable answer, but one whose date has passed surfaces again.
@@ -63,10 +64,11 @@ def sh(args, timeout=300):
     except Exception as e:
         return 1, "", str(e)
 
-def read_conf(path, fields):
-    """(rows, errors) for a pipe-delimited registry. A malformed row is RETURNED as an error rather
-    than skipped: silently dropping a line is how a registered thing becomes unregistered without
-    anyone being told — the blind spot these registries exist to close."""
+def read_conf(path, fields, optional=0):
+    """(rows, errors) for a pipe-delimited registry: `fields` required columns, up to `optional` more.
+    A malformed row is RETURNED as an error rather than skipped: silently dropping a line is how a
+    registered thing becomes unregistered without anyone being told — the blind spot these
+    registries exist to close."""
     rows, errs = [], []
     with open(path) as fh:
         for n, raw in enumerate(fh, 1):
@@ -74,8 +76,9 @@ def read_conf(path, fields):
             if not line:
                 continue
             parts = [p.strip() for p in line.split("|")]
-            if len(parts) != fields or not all(parts):
-                errs.append(f"{os.path.basename(path)}:{n}: expected {fields} non-empty fields, got {len(parts)}")
+            if not fields <= len(parts) <= fields + optional or not all(parts):
+                want = f"{fields}-{fields + optional}" if optional else f"{fields}"
+                errs.append(f"{os.path.basename(path)}:{n}: expected {want} non-empty fields, got {len(parts)}")
                 continue
             rows.append(tuple(parts))
     return rows, errs
@@ -84,10 +87,12 @@ def load_nodes(path):
     """(nodes, errors)."""
     if not os.path.isfile(path):
         sys.exit(f"fleet-update-check: node config not found: {path}  (copy fleet-nodes.conf.template)")
-    rows, errs = read_conf(path, 4)
-    nodes = [{"role": role, "target": target, "os": os_,
-              "methods": [m.strip() for m in methods.split(",") if m.strip()]}
-             for role, target, os_, methods in rows]
+    rows, errs = read_conf(path, 4, optional=1)
+    nodes = [{"role": r[0], "target": r[1], "os": r[2],
+              "methods": [m.strip() for m in r[3].split(",") if m.strip()],
+              # optional 5th column: extra folders for this node's hand-placed-binary discovery
+              "extra": [d.strip() for d in r[4].split(",") if d.strip()] if len(r) > 4 else []}
+             for r in rows]
     return nodes, errs
 
 def run_on(node, cmd, timeout=300):
@@ -298,14 +303,29 @@ def github_latest(repo):
     with _u.urlopen(f"https://api.github.com/repos/{repo}/releases/latest", timeout=20) as r:
         return (_j.load(r).get("tag_name") or "").strip()
 
-# Discovery of binaries placed by hand: executables no package manager owns.
-BINARY_DISCOVERY = {
-    "linux": ('for f in $(find /usr/local/bin /opt -maxdepth 2 -type f -perm -u+x 2>/dev/null); do '
-              '(dpkg -S "$f" >/dev/null 2>&1 || rpm -qf "$f" >/dev/null 2>&1) || echo "$f"; done'),
-    "macos": ('for f in /usr/local/bin/*; do [ -f "$f" ] && [ -x "$f" ] || continue; '
-              'case "$(readlink -f "$f" 2>/dev/null)" in /opt/homebrew/*|/usr/local/Cellar/*|/usr/local/Caskroom/*) ;; '
-              '*) echo "$f";; esac; done'),
-}
+# Discovery of binaries placed by hand: executables no package manager owns. The default folders,
+# plus any a node adds in fleet-nodes.conf's optional 5th column.
+# ⚠ Add a folder only if hand-placed programs really live there. A folder full of config-managed
+# scripts and tool shims makes nearly every entry "unregistered" (one fleet measured 35 of 36),
+# and a digest with permanent rows trains its reader to ignore it.
+DISCOVERY_DIRS = {"linux": ["/usr/local/bin", "/opt"], "macos": ["/usr/local/bin"]}
+
+def _shdir(d):
+    """A folder for the probe's shell: quoted, with a leading ~/ resolved in the (remote) $HOME."""
+    return ('"$HOME"/' + shlex.quote(d[2:])) if d.startswith("~/") else shlex.quote(d)
+
+def binary_probe(os_, extra=()):
+    """The discovery command for one node, or None where discovery isn't supported."""
+    if os_ not in DISCOVERY_DIRS:
+        return None
+    dirs = [_shdir(d) for d in [*DISCOVERY_DIRS[os_], *extra]]
+    if os_ == "linux":
+        # read line by line: a `for f in $(find …)` loop would split a path with a space in two
+        return (f'find {" ".join(dirs)} -maxdepth 2 -type f -perm -u+x 2>/dev/null | while IFS= read -r f; do '
+                '(dpkg -S "$f" >/dev/null 2>&1 || rpm -qf "$f" >/dev/null 2>&1) || echo "$f"; done')
+    return (f'for f in {" ".join(d + "/*" for d in dirs)}; do [ -f "$f" ] && [ -x "$f" ] || continue; '
+            'case "$(readlink -f "$f" 2>/dev/null)" in /opt/homebrew/*|/usr/local/Cellar/*|/usr/local/Caskroom/*) ;; '
+            '*) echo "$f";; esac; done')
 
 def binaries_block(nodes, reach):
     """(lines, count, errs): unregistered / missing / behind hand-placed binaries."""
@@ -318,7 +338,7 @@ def binaries_block(nodes, reach):
         note = None
     lines, count = ([note] if note else []), 0
     for node in nodes:
-        probe = BINARY_DISCOVERY.get(node["os"])
+        probe = binary_probe(node["os"], node.get("extra", ()))
         if not probe or not reach.get(node["role"]):
             continue
         rc, out, err = run_on(node, probe, timeout=120)

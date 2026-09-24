@@ -3,6 +3,20 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-24 — discovery folders you choose
+
+- **`fleet-nodes.conf` takes an optional fifth column: extra discovery folders** for that node
+  (comma list, `~/` resolved in the node's home), searched along with `/usr/local/bin`, plus `/opt`
+  on Linux. A program you placed by hand in, say, `/usr/local/lib/<you>` can now be reported as
+  unregistered instead of never seen.
+  - ⚠ The template carries the warning with it: add only a folder that really holds hand-placed
+    programs. One full of managed scripts and shims reported 35 of 36 entries as unregistered.
+  - An empty or extra field is reported as malformed, as before.
+- **Fixed: Linux discovery split paths that contain a space.** It now reads `find`'s output line by
+  line.
+- 1 new test running the real probes; 10 planted defects, each caught at its own assertion.
+- § 16 and the monitoring README describe the new column.
+
 ## 2026-09-24 — secrets as files, failures in the browser, asking the owner, status that decays
 
 - **§ 06, the daemon recipe now leads with `LoadCredential` + `DynamicUser`.** The secret is
