@@ -343,6 +343,9 @@ and each is cheap to check and expensive to get wrong.
 this failure is an operator writing a confident claim about coverage while the file that records
 coverage sits unread in the repo.
 
+**It applies to recorded status too.** A registry line saying *stable* or *next* is a claim with an
+age. See [04 · Structure](04-structure.md), "Status decays".
+
 ## Encoding the rules: the rules file
 
 The operator reads a **rules file** at the repo root — for Claude Code this is `CLAUDE.md`;

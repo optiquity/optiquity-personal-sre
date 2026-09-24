@@ -278,6 +278,23 @@ A CMS generates absolute links — canonical, `og:url`, RSS, images, embedded AP
 configured URL**. If it still names the mesh hostname after going public, every one of those links
 is unreachable for visitors. **Invisible from inside the mesh**, where the hostname resolves fine.
 
+### ⚠ A form that breaks in the browser sends your servers nothing
+
+A contact form was completely broken in production for fifteen days. A script error fired on
+submit, *before* any request was made: a disabled button, no message, no network call. The server
+logs and every server-side check saw nothing, because nothing arrived.
+
+- **You can't alert on "no messages".** Zero deliveries means either total success or total
+  failure, and that ambiguity is exactly what let fifteen days pass.
+- **Submit the real form from a real browser, on a schedule.** A headless browser loads the page
+  and submits it against an instance that cannot deliver mail (a staging copy set to discard).
+  Staging is safe but misses breakage that exists only in production. Probing production needs a
+  marked submission that gets discarded, and a bot challenge may block the headless browser.
+  ⚠ *Designed in the fleet this came from; not yet built there.*
+- **A clean lint run doesn't prove the page works.** The linter in use missed the undefined name.
+  That was shown by planting one, and it still reported nothing
+  ([17 · Monitoring](../17-monitoring.md), "Prove each test").
+
 ---
 
 ## 5. Monitoring must follow the traffic
@@ -299,6 +316,20 @@ alerts *before* you stop the service.
 
 ⚠ **Container "started" is not application "serving".** A CMS restart reports done in seconds while
 migrations and template compilation run for minutes. Measure from outside.
+
+### Abuse on a public form: measure before you fix
+
+Spam through a contact form invites the obvious fix: an invisible captcha, another hidden field.
+One count settled it instead. The honeypot field had caught **0 of 6,219 submissions** in two days.
+The bots never loaded the page; they posted straight to the endpoint, so no change to the page
+could have reached them. Measure first, from your own logs:
+
+- **How many submissions arrive, and how many trip each defence you already have.**
+- **Whether a silent defence works at all.** A honeypot that discards quietly answers "success"
+  whether it caught something or not, so test it from the logs, not from its responses.
+- **Whether the load comes from a few addresses or many,** before tightening per-address limits.
+  Here none had hit the existing limit: the load was spread across many addresses, and a lower cap
+  would have punished real visitors first.
 
 ---
 

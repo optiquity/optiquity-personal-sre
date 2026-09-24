@@ -64,13 +64,15 @@ Conditions verify *function*, not just reachability — that's what catches "up 
     - "[STATUS] == 200"
     - "[BODY].status == ok"        # the API actually answered correctly
     - "[RESPONSE_TIME] < 3000"     # …and in time
-  alerts: [{type: email}]
+  alerts: [{type: custom}]      # → the localhost relay → your own mailer (see below)
 ```
 
 Start from [`skeleton/monitoring/gatus-config.yaml.template`](../../skeleton/monitoring/gatus-config.yaml.template):
 a group of infra reachability checks (TCP/DNS) plus one functional check per self-hosted app.
-The email alerter reads its credential from the environment (`${SMTP_USERNAME}` /
-`${SMTP_PASSWORD}`) via a service drop-in — never from the versioned config.
+Alerts go through a localhost relay to your own mailer (below), which receives the SMTP
+credential as a read-only systemd credential (`LoadCredential`), never from the versioned config.
+Gatus's built-in email alerter would instead read it from its environment through a drop-in
+([06 · Secrets](../06-secrets.md)).
 
 > **Prove the alert fires.** Add a throwaway endpoint that fails immediately
 > (`tcp://127.0.0.1:1`, `failure-threshold: 1`), confirm the email arrives, then remove it. A
@@ -100,7 +102,7 @@ reminder rather than a silent gap.
 ### 3. Failure email — one standalone credential
 
 Both pieces send through the same **host-local SMTP credential** (e.g. a Gmail *app password*):
-Gatus's native email alerter for endpoint failures, and the `fleet-mail` helper for the digest
+the relay (through `fleet-mail`) for Gatus's endpoint failures, and `fleet-mail` directly for the digest
 and any script-level failure (`some_job || fleet-mail --kind Alert --source Jobs --text "nightly job failed" --body "…"`). The secret
 lives only in a `chmod 600` env file on each sending node and is **never committed** (§ 06).
 

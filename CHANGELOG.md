@@ -3,6 +3,29 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-24 — secrets as files, failures in the browser, asking the owner, status that decays
+
+- **§ 06, the daemon recipe now leads with `LoadCredential` + `DynamicUser`.** The secret is
+  read-only, there is no second copy, and the service owns no files (systemd 247+). `EnvironmentFile`
+  is the fallback. The worked example now points at the relay unit that already did this.
+- **New in § 06: "A secret a container reads".** A read-only file under `/run/secrets` or compose
+  `secrets:`, not `environment:`, which `docker inspect` shows. Use the image's `*_FILE` variables.
+  The honest scope: it is not access control.
+- **Aligned:**
+  - E16, `platforms/linux.md`, C6 and C7 now teach secrets as files or credentials;
+  - E16's sample config and failure-email section, and the monitoring README, now describe the
+    relay default, not Gatus's built-in email.
+- **New in E17:**
+  - "A form that breaks in the browser sends your servers nothing": zero messages is ambiguous; use
+    a scheduled headless submission (*labelled: designed, not yet built in the fleet it came
+    from*).
+  - "Abuse on a public form: measure before you fix": 0 honeypot catches in 6,219 submissions
+    ruled out every page-side fix.
+- **New in § 02: "When you need the owner, ask; don't report".** Put the one required action first,
+  on its own.
+- **New in § 04: "Status decays".** It covers `verified <date> (<command>)` stamps, re-measuring
+  before acting, and a scheduled re-check. Rule 18 in § 03 now points to it.
+
 ## 2026-09-24 — config drift: generated settings, a wedged apply, code that didn't reload (templates 1.3)
 
 - **New in § 17: "Settings the platform owns".**

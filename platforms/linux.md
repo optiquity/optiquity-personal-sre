@@ -48,8 +48,9 @@ filesystem change with a **`.path`** unit (the `WatchPaths` equivalent — e.g. 
 anything is installed). Two habits worth keeping:
 
 - **Extend a unit with a drop-in, don't edit it.** `/etc/systemd/system/<unit>.d/10-thing.conf`
-  survives package upgrades and keeps your change separable — that's also how you hand a daemon a
-  secret (`EnvironmentFile=`, see [06](../guide/06-secrets.md)).
+  survives package upgrades and keeps your change separable. To hand a daemon a secret, prefer
+  `LoadCredential=` in the unit (read-only, no second copy), with an `EnvironmentFile=` drop-in as the
+  fallback (see [06](../guide/06-secrets.md)).
 - **Order anything that binds a specific address after the network.** A service that binds a fixed
   LAN IP can start before DHCP assigns it, fail with *cannot assign requested address*, exhaust its
   restart burst, and stay dead until you notice. `After=/Wants=network-online.target` plus a

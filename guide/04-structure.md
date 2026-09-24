@@ -96,6 +96,21 @@ point to the whole system.
 The registry is **authoritative**. If a doc and the registry disagree, the registry wins and
 the doc is reconciled to it. This gives you one place to look and one place to trust.
 
+### Status decays
+
+The registry is authoritative over the docs, not over the machine. A status line such as *stable*,
+*next: X*, *standby* or *pending decision* was true when someone measured it. Nobody re-measures it
+by default, so it quietly becomes a claim.
+
+- **Stamp status with how it was known:** `verified <date> (<command>)`. A line without one is a
+  memory ([03 · Governance](03-governance-rules.md), rule 18).
+- **Re-measure before acting on or reporting a recorded status.** In one audit, three of four
+  approved updates were already current. A listed "next" item turned out to be done already.
+- **Re-check on a schedule, not only when a commit touches the line.** A status nobody touches is
+  never re-checked, and a setup that works only by accident still reads "stable". One "primary
+  with a hot spare" stood in the registry, the plan and the dashboard for four weeks, on a platform
+  that could not express that preference at all ([E12](examples/E12-dedicated-mesh-gateway.md)).
+
 ## Status taxonomy
 
 A small, fixed vocabulary keeps statuses meaningful across every project:

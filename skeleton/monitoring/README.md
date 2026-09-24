@@ -37,7 +37,7 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 | `fleet-local-check.plist.template` | launchd timer for the local probe (every 15 min) |
 | `mail.env.template` | SMTP secret stub for `fleet-mail` (host-local, chmod 600) |
 | `gatus-mail-relay` + `.service` | sends Gatus alerts through `fleet-mail` (your subject format); localhost only, hardened unit |
-| `gatus-config.yaml.template` | Gatus endpoints (infra + apps) + email alerter |
+| `gatus-config.yaml.template` | Gatus endpoints (infra + apps), alerting through the relay (Gatus's own email provider as the documented alternative) |
 | `gatus.env.template` | SMTP secret stub for Gatus (root-owned on the Gatus node) |
 | `gatus-smtp.dropin.conf` | systemd drop-in so Gatus loads the SMTP env |
 | `fleet-update-check.plist.template` | launchd weekly timer (macOS always-on node) |

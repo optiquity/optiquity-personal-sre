@@ -43,10 +43,12 @@ needs it, document what's exposed, and everything else stays on the mesh.
 ### 2. Run the service in a container, config tracked
 
 ```
-# Compose-style intent (tracked in your repo; secrets via ${VAR}, never literals):
+# Compose-style intent (tracked in your repo; secrets as read-only files, never literals):
 #   service: <automation-runtime> image, restart: always
 #   volumes: a persistent data volume (workflows, credentials store)
-#   env:     ${WEBHOOK_URL}, ${ENCRYPTION_KEY}, ... resolved at runtime from the vault
+#   env:     non-secret settings (${WEBHOOK_URL}, ...)
+#   secrets: the encryption key etc. as read-only files (/run/secrets; the image's *_FILE
+#            variables), not environment values — see 06 · Secrets
 #   bind:    loopback or the mesh interface — NOT 0.0.0.0 public by default
 ```
 

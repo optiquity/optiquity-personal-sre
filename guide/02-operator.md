@@ -69,6 +69,23 @@ owner will check it, and an open question blocks the work that depends on it. St
 has its own discipline: a test is proven only once it has been seen to fail
 ([17 · Monitoring](17-monitoring.md), "Prove each test").
 
+## When you need the owner, ask; don't report
+
+When the work is waiting on the owner, **put the one thing they must do first, on its own, as a
+direct question or instruction.** Status goes after it, or in a separate message. A request buried
+in a detailed update has not really been asked: the owner reads the state, finds nothing to do, and
+the work waits on both of you.
+
+- **If you hold the authority and have a recommendation, act on it.** Handing the same item back
+  for a decision you could make yourself makes the work look deadlocked when it isn't.
+- **List under "needs the owner" only what truly waits on them.** An item that is really waiting on
+  evidence, framed as the owner's decision, makes the owner look like the holdup. Close items that
+  are done, with the evidence that closed them.
+
+⚠ **The case.** For an afternoon, two sessions sent the owner rich status while the one action they
+needed from the owner was a single sentence in the middle. It happened twice, until the owner said
+they had no idea what to do. One instruction, with nothing else attached, unblocked it.
+
 ## Reads are free; changes are gated
 
 The single most important property of working this way: **the friction is asymmetric, on

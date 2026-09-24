@@ -123,19 +123,39 @@ of use), the concrete setup:
 A background service — a health checker, a scheduled job — has no shell and no session, so the
 recipe above doesn't reach it. The shape that does:
 
-1. **A dedicated env file next to the service's config**, owned by whoever runs the service and
-   `chmod 600` (root-owned if the unit starts as root). Not in any repo.
-2. **Hand it to the service the way its runtime does it** — a systemd `EnvironmentFile=` drop-in,
-   or the timer/job's own environment. A **drop-in** is better than editing the shipped unit:
-   it survives package upgrades and keeps your change separable.
+1. **A dedicated env file next to the service's config**, `chmod 600` and root-owned. Not in any
+   repo.
+2. **Hand it to a systemd service as a credential:** `LoadCredential=<name>:<path>` makes it appear,
+   read-only, at `$CREDENTIALS_DIRECTORY/<name>` for that service alone. No second copy of the secret
+   exists. Pair it with `DynamicUser=yes`, so the service runs as a throwaway user that owns no files
+   and can write nowhere. This needs systemd 247 or later. **Fallback:** an `EnvironmentFile=`
+   drop-in, for older systemd or a program that only reads its environment. Use a drop-in rather
+   than editing the shipped unit, so it survives package upgrades. Remember that an environment is
+   readable by more than a file is.
 3. **Commit the `.template`, never the filled file.** Ship `<placeholder>` values so the shape is
    documented and reviewable; the real one is created on the node and stays there.
 4. **Split secret from non-secret.** Only the credential needs the locked file — sender and
    recipient addresses aren't secrets and can live in the versioned config as plain values.
 
-Worked example: the alerting credential in
-[`../skeleton/monitoring/`](../skeleton/monitoring/) (`mail.env.template`, `gatus.env.template`,
-`gatus-smtp.dropin.conf`), narrated in [E16](examples/E16-fleet-health-and-alerting.md).
+Worked example: the alert relay in [`../skeleton/monitoring/`](../skeleton/monitoring/).
+`gatus-mail-relay.service` gets the SMTP settings from `gatus.env.template` through
+`LoadCredential` + `DynamicUser`. `gatus-smtp.dropin.conf` is the `EnvironmentFile=` fallback, needed
+only if you use Gatus's built-in email. Narrated in [E16](examples/E16-fleet-health-and-alerting.md).
+
+### Recipe: a secret a *container* reads
+
+Values under a compose file's `environment:` show in `docker inspect`, and in the process's
+environment, which every child process inherits and which ends up pasted into diagnostics. So:
+
+1. **Mount the secret as a read-only file.** Bind a `chmod 600` host file to `/run/secrets/<name>`
+   (`- ./secrets/<name>:/run/secrets/<name>:ro`), or use compose's own `secrets:` section, which
+   mounts the same way. The application reads the file.
+2. **Use the image's `*_FILE` variables where it has them** (for example `DB_PASSWORD_FILE=/run/secrets/db`).
+   Where an image reads only environment variables, record that as a known exception rather than
+   pretend.
+3. **Know the scope.** This keeps the secret out of `inspect` output, child processes and pasted
+   diagnostics. It is not access control: anyone who can run the container runtime's commands is
+   effectively root on the host.
 
 > `~/.zshenv` itself is a dotfile you may config-manage — but it should only ever *load* the
 > secrets file, never *contain* secrets. Keep the split: env file = values (git-ignored);

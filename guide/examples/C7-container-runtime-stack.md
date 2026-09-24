@@ -50,7 +50,7 @@ recorded. Don't install a *second* runtime alongside it (daemon/socket conflicts
 ### 2. Bring up the app stack (tracked compose)
 
 ```
-# Compose-style intent (tracked; secrets via ${VAR} from the vault):
+# Compose-style intent (tracked; secrets as read-only files, not env values — see 06):
 #   db:    <database> image, persistent volume, restart: always
 #   app:   <app> image, depends_on db, bound to loopback/mesh (NOT 0.0.0.0)
 #   proxy: (optional) a reverse proxy fronting the app on the mesh
