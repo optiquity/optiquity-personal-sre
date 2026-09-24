@@ -3,6 +3,17 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-23 — prove each test: one planted defect per rule
+
+- **New in § 17: "Prove each test: one planted defect per rule".** It covers:
+  - the method, which needs no tool: list the rules, plant the smallest faithful defect, and
+    require that rule's test to fail *at its own assertion*, then restore;
+  - a surviving defect is a finding about the test;
+  - the four traps, each met in practice: a bytecode cache running the previous mutant; discarded
+    stderr hiding a crash; a pass that ran the wrong branch; tests that could not fail.
+- § 02's "restate the end state" section now points to it for step 5, *it verifies*. The design
+  templates have asked for this since 1.2.
+
 ## 2026-09-23 — what your config manager never deploys
 
 - **New in § 16: "A fix that reaches four nodes out of five looks done".** It covers two kinds of

@@ -252,6 +252,42 @@ The skeleton now does all three: see [`skeleton/monitoring/tests/`](../skeleton/
 and the `tools` CI workflow. Each test was proven by deliberately breaking the code it guards and
 watching the test fail. A test nobody has seen fail is the same untested alarm as above.
 
+### Prove each test: one planted defect per rule
+
+A passing test proves only that it passed. Whether it would *fail* if the code broke is a separate
+question, and the only way to answer it is to break the code and watch. This is mutation testing,
+done by hand, and it needs no tool:
+
+1. **List the rules the code enforces:** each branch, each boundary, each "unknown, not a pass".
+2. **For one rule, plant the smallest faithful defect** (a *mutant*): a bug someone could plausibly write (turn
+   UNKNOWN into FAIL, drop a quote, compare the wrong value). A syntax error proves nothing.
+3. **Run the tests. That rule's test must fail, at the assertion that guards it.** A different
+   test failing for a different reason doesn't count.
+4. **Restore the file, check it is byte-identical,** then the next rule.
+
+A defect that survives is a finding about the **test**, not noise: fix the test, or record why the
+mutant is equivalent (it changes nothing observable).
+
+Four traps, each met in practice:
+
+- **A cache ran the previous mutant's code.** Python reuses compiled bytecode while a file's size
+  and timestamp look unchanged. Two same-size mutants written within the same second shared one
+  cached copy, so "caught" meant the *previous* mutant was caught. Disable the cache for every run
+  (`PYTHONDONTWRITEBYTECODE=1`, and delete `__pycache__`).
+- **Discarded stderr made a crash look like a pass.** A test script crashed on its last line under
+  `2>/dev/null`, and printed exactly what a success prints: nothing. Never discard stderr from a
+  test run.
+- **A pass that ran the wrong branch.** A test for "never match yourself" passed against a mutant
+  that did match itself, because another rule excluded the test's own launching process and hid the
+  fault. Check which branch a passing test exercised, and where a caught mutant actually failed.
+- **Tests that could not fail.** One stripped away the very padding it existed to detect. Another
+  replaced a function that the code had already bound as a default argument, so the replacement
+  never took effect. Both passed while proving nothing, and only planting defects exposed them.
+
+Planted defects found four such gaps in this framework's own tools, all of which review had missed.
+The design templates ask for this up front: *for each rule, the planted defect that proves its test
+fails.*
+
 ## Updates: automate the noticing, not the upgrading
 
 [07 · Tools & requirements](07-tools-requirements.md) argues you should update deliberately rather

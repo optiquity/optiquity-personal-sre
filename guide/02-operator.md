@@ -65,7 +65,9 @@ end state as folder trees, got a yes on every open point before anything was bui
 clean.
 
 The design templates ask for both ([04 · Structure](04-structure.md)): §1 wants the end state as the
-owner will check it, and an open question blocks the work that depends on it.
+owner will check it, and an open question blocks the work that depends on it. Step 5, *it verifies*,
+has its own discipline: a test is proven only once it has been seen to fail
+([17 · Monitoring](17-monitoring.md), "Prove each test").
 
 ## Reads are free; changes are gated
 
