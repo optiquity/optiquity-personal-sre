@@ -38,6 +38,35 @@ mechanical work; you supply judgment where it matters. Over a session this feels
 running commands and more like directing a fast, literal colleague who always shows you the
 risky steps before taking them.
 
+## Before building: restate the end state, and wait for every yes
+
+Step 3 of that rhythm, *it proposes*, has one characteristic failure: the operator builds its own
+version of what you asked for. Every step was approved, yet the result is not what you wanted,
+and why is hard to see until it runs. Three habits prevent it:
+
+- **Restate the end state the way the owner will check it.** Before anything is built, write down
+  what will exist when it is done: a tree of the files and folders, a table, a sample of the
+  output. The result, not the steps. A wrong layout is visible in one diagram and invisible in a
+  paragraph describing the plan.
+- **An unanswered question is still open.** If you ask the owner to decide a point and the reply
+  doesn't answer it, that point is not agreed, however sensible your recommendation. Ask again,
+  directly, and build nothing that depends on it until it is answered.
+- **Add nothing that wasn't asked for:** no helper file, temp folder or renamed output, even to fix
+  a real problem. If the fix needs something new, propose it and wait. Something unrequested,
+  appearing where the owner looks, costs trust out of all proportion to its size.
+
+⚠ **The case that taught this.** A media pipeline was being rebuilt so that folders would come
+out as folders. The owner's description said everything else in the folder should be copied
+too. A clarifying question about that point went unanswered, and the operator built its own
+recommendation instead. It also added hidden build folders, to fix a race nobody had asked it to
+fix. Those folders made a healthy conversion look stalled, the layout was wrong, and the owner
+could no longer tell what was working. The whole day's work was reverted. The redo restated the
+end state as folder trees, got a yes on every open point before anything was built, and went live
+clean.
+
+The design templates ask for both ([04 · Structure](04-structure.md)): §1 wants the end state as the
+owner will check it, and an open question blocks the work that depends on it.
+
 ## Reads are free; changes are gated
 
 The single most important property of working this way: **the friction is asymmetric, on

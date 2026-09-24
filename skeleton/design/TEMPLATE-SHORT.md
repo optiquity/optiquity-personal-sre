@@ -3,7 +3,7 @@
 ```
 status:           draft | agreed | superseded
 design-version:   1          # THIS document's version — bump on a MAJOR change only (D9)
-template-version: 1.1        # which template version it was written against
+template-version: 1.2        # which template version it was written against
 form:             short
 opened:           <YYYY-MM-DD>
 agreed:           <YYYY-MM-DD or em-dash>
@@ -25,6 +25,9 @@ nobody thought about it; `N/A — <reason>` means somebody did.
 ## 1. The requirement, and what "done" means
 
 One paragraph. State the outcome, and state the condition that makes it finished.
+
+**Then the end state, as the owner will check it:** a tree, a table, a sample of the output. The
+result, not the steps. A wrong layout shows in one diagram and hides in a paragraph.
 
 ## 2. Constraints, and the feasibility verdict
 
@@ -56,6 +59,9 @@ replacement.
 How the work is verified **by function**, and how the §5 signal is proven to fire — by
 **inducing the failure**. A check that has never gone red is not a check.
 
+**And prove each test can fail:** for each rule the work enforces, name the planted defect that
+makes its test fail. A test nobody has seen fail is as unproven as an untested alarm.
+
 ## 7. Rollback
 
 Can it be undone, how, and at what cost? If it cannot, **say so explicitly** so the one-way
@@ -71,6 +77,9 @@ real answers, **this is long-form work.**
 ## Open questions
 
 Unresolved items, who decides, by when.
+
+⚠ **An open point blocks the work that depends on it.** A question put to the owner and not
+answered is still open: ask again, and build nothing that depends on it until it is.
 
 ---
 

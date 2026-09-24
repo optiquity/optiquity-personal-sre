@@ -164,5 +164,6 @@ an actual difference rather than a bare number. **Mirrors the postmortem side.**
 
 | Version | Date | What changed |
 |---|---|---|
+| **1.2** | 2026-09-23 | §1 asks for **the end state as the owner will check it**; an **open question blocks** the work that depends on it; testing asks for **the planted defect that proves each test fails**. Two postmortem §6 lessons made standing prompts (D7) |
 | **1.1** | <date> | ⚠ **Raised the bump threshold** (D9), matching the postmortem side |
 | **1.0** | <date> | Initial |

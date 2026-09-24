@@ -3,7 +3,7 @@
 ```
 status:           draft | agreed | superseded
 design-version:   1          # THIS document's version — bump on a MAJOR change only (D9)
-template-version: 1.1        # which template version it was written against
+template-version: 1.2        # which template version it was written against
 form:             long
 opened:           <YYYY-MM-DD>
 agreed:           <YYYY-MM-DD or em-dash>
@@ -39,6 +39,10 @@ What this must do, in terms of outcome rather than implementation. One paragraph
 **What does "done" mean?** State it now, because §5–§8 exist to test whether that definition
 is complete. *"It works"* is almost never a sufficient definition of done — the rest of this
 document is the argument for why.
+
+**Then the end state, as the owner will check it:** a tree of what will exist, a table, a sample
+of the output. The result, not the steps. A wrong layout shows in one diagram and hides in a
+paragraph describing the plan.
 
 ## 2. Constraints, and an honest feasibility verdict
 
@@ -124,7 +128,9 @@ should come back here as a standing prompt.)*
 Two distinct questions, both required:
 
 **(a) How is the work verified?** What proves it does what §1 says — by function, not by
-readback. A setting accepted is not a setting working.
+readback. A setting accepted is not a setting working. **And prove each test can fail:** for each
+rule the work enforces, name the planted defect that makes its test fail. A test nobody has seen
+fail is as unproven as an untested alarm.
 
 **(b) How is the DETECTION verified?** How do we prove the §6 signal actually fires?
 
@@ -197,8 +203,12 @@ first thing that changes it will erase the explanation.
 
 ## Open questions
 
-Anything unresolved at the time of agreement, with who decides and by when. Carry these into
-the work rather than letting them dissolve.
+Anything unresolved at the time of agreement, with who decides and by when. Keep them visible
+until answered, rather than letting them dissolve.
+
+⚠ **An open point blocks the work that depends on it.** It is not settled along the way. A
+question put to the owner and not answered is still open: ask again, and build nothing that
+depends on it until it is. Work that does not depend on it can go ahead.
 
 ---
 

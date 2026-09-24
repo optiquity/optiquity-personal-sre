@@ -3,6 +3,21 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-23 — build what was asked (design templates 1.2)
+
+- **New in § 02: "Before building: restate the end state, and wait for every yes".** Restate the
+  result the way the owner will check it (a tree, a table, a sample output). A question that
+  wasn't answered is still open, so build nothing that depends on it. Add nothing that wasn't
+  asked for; propose it and wait. It comes with the case that taught it: a day's work reverted.
+- **Design templates 1.1 → 1.2** (short and long). Two postmortem lessons became standing prompts:
+  - §1 now asks for the end state as the owner will check it;
+  - testing asks for the planted defect that proves each test can fail;
+  - "Open questions" changed meaning. They used to be *carried into the work*; now an open point
+    **blocks** the work that depends on it.
+
+  **Re-check:** designs you write from now on should use 1.2. Existing designs keep the version
+  they were written against. That is what the field is for.
+
 ## 2026-09-23 — what the earlier corrections missed
 
 The corrections below finish two changes that earlier entries only partly made. No code behaviour
