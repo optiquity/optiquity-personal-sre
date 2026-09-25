@@ -3,6 +3,17 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-25 — who maintains the public repo; what the guard cannot catch
+
+- **New in § 19: "Who maintains the public repo".** A public repo derived from a private one
+  normally shares its owner, because its author needs both. The control is the guard, not the
+  separation, and the exception must be written into the rules by name, or a later session re-derives
+  "one session, one repo" and refuses the work.
+- **§ 19 now says what the guard cannot catch:** identifying context (a distinctive figure, date or
+  phrasing), which is why derive-don't-copy and the stranger review still apply.
+- **Principle 12 (§ 03) and `skeleton/CLAUDE.md.template` rule 12:** one sentence naming that
+  exception. **Re-check your rules file** if you publish a derived repo.
+
 ## 2026-09-25 — measuring a link honestly; the pre-flight question (design templates 1.4)
 
 - **New in § 08: "Measuring a link honestly".** Test each layer on its own: the pure link memory to

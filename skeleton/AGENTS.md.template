@@ -46,7 +46,8 @@ Rules 1–18 are the framework's principles, same order and titles as `guide/03-
 11. **Updates are proposed by the operator, decided by you.** Raise known updates with version
     evidence, risk, backup and rollback; register exclusions with a reason; a denial is durable.
 12. **One plan, one owner — when more than one session is working.** One repo per session for
-    writes; one canonical document; changes requested, not made.
+    writes (exception: a public repo derived from this one may share its owner — name it here if
+    you have one); one canonical document; changes requested, not made.
 13. **A channel between agents is also an escalation path.** *(Per
     `docs/peer-messaging/PEER-MESSAGING.md`, **v4**.)* Named `<machine>-<repo>`, no two live sessions
     sharing a name; a message is a **hand-off, not an edit** carrying **state, not internals**; **no

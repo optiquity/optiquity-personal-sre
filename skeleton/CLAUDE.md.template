@@ -78,9 +78,10 @@ here, in the guide and in every other repo built from it. Your own rules start a
     Flag security updates promptly.
 
 12. **One plan, one owner — when more than one session is working.** Each session writes to
-    exactly one repo; crossing that line is a hand-off, not an edit. Exactly one document is
-    canonical — every other mention is a pointer. Changes to it are requested, not made. IDs are
-    permanent; disagreement blocks until the user rules.
+    exactly one repo; crossing that line is a hand-off, not an edit. (Exception: a public repo
+    derived from this one may share its owner — name it here if you have one.) Exactly one
+    document is canonical — every other mention is a pointer. Changes to it are requested, not
+    made. IDs are permanent; disagreement blocks until the user rules.
 
 13. **A channel between agents is also an escalation path.** *(Per this repo's copy of
     `docs/peer-messaging/PEER-MESSAGING.md`, **v4**.)* (a) This session is named

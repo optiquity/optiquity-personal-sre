@@ -18,6 +18,30 @@ The public repo is **not a filtered view** of the private one and **not a fork**
 separate repo, populated by *deriving* generic content from your private patterns. Deriving (not
 copying) is the safe default; the guard below is the backstop.
 
+## Who maintains the public repo
+
+The public repo is derived from the private one, so whoever writes it needs to read both: every
+guide section and worked example is a generalisation of something that happened on the private
+side. **One owner across the pair is the normal case**, not a breach of "each session owns exactly
+one repo" (principle 12 in [03 · Governance rules](03-governance-rules.md)). Splitting them would
+turn every guide update into a hand-off to a session that has none of the evidence.
+
+Two things make that safe, and both have to be written down:
+
+- **The control is the guard, not the separation.** What keeps private detail out is the
+  fail-closed [grep-guard](#the-grep-guard-mechanical-enforcement), running in the pre-commit hook
+  and in CI and proving itself with a self-test on every commit. Keeping two sessions apart would not
+  catch a single leak the guard misses.
+- **The exception is in the rules, by name.** Left unwritten, a later session re-derives the default
+  from principle 12 and refuses to maintain a repo it has in fact been writing all along.
+
+⚠ **Say plainly what the guard cannot catch.** It matches patterns: names, home paths, addresses,
+emails, secret and token shapes. It cannot see **identifying context**: a distinctive figure, a date,
+an unusual phrasing or a recognisable sequence of events can point at one person's setup with no
+name, address or secret in it. That half is covered by deriving rather than copying (next section)
+and by the stranger review in [the publish workflow](#the-publish-workflow). Present the guard as the
+whole control and those two get skipped.
+
 ## The cardinal rule: derive, don't copy
 
 **Never `cp` a file from private to public.** Copying carries personal detail by default and

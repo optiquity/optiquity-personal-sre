@@ -161,7 +161,10 @@ with one session. All three are cheap to prevent and expensive to discover.
 **Each session owns exactly one repo for writes.** Reads are free everywhere (principle 10), but a
 session never writes to another's repo. Crossing that line is a **hand-off**, not an edit: state what
 you want changed and let the owner change it. A session that owns infrastructure does not author
-content, and vice versa — even when it would be faster, and even when asked.
+content, and vice versa — even when it would be faster, and even when asked. The one exception worth
+naming is a public repo derived from a private one: it may share its owner with its private source,
+because its author needs both, and the exception belongs in your rules by name
+([19 · Sharing](19-sharing.md)).
 
 **Exactly one document is canonical.** Not "the two copies are kept in sync" — *one* file, and every
 other mention of it is a pointer. This sounds like bookkeeping until it isn't:
