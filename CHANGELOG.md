@@ -3,6 +3,17 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-25 — a multi-site starter: a platform-side registry and a deploy with no site argument
+
+- **New in E17 § 7: "When each site has its own session".** The site registry lives on the platform
+  side; deploy takes no site argument and resolves the site from the repo it runs in, so a site's
+  session cannot publish another site; it fails closed (an empty build would otherwise delete the
+  live site); monitoring and backups are provisioned with the site. The honest limit: sessions
+  running as the same OS user are protected from accidents, not from intent.
+- **New `skeleton/websites/`:** `sites.conf.template`, `deploy-site.sh` and its tests (17 tests, one
+  per thing the script must do or refuse; each proven by a planted defect). The CI `tools` job runs
+  them. Deliberately small: no provisioning and no container stack.
+
 ## 2026-09-25 — who maintains the public repo; what the guard cannot catch
 
 - **New in § 19: "Who maintains the public repo".** A public repo derived from a private one

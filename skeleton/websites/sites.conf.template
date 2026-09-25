@@ -1,0 +1,26 @@
+# sites.conf — the site registry. Copy to <websites-root>/sites.conf (default ~/websites/sites.conf).
+#
+# ⚠ THIS FILE LIVES ON THE PLATFORM SIDE, NEVER IN A SITE'S REPO. That is the whole point.
+# deploy-site.sh resolves the repo it is run from and looks that repo up HERE to decide which
+# site it may publish. A site's own session therefore cannot publish another site: there is no
+# site argument to misuse, and nothing it edits inside its own repo changes the answer, because
+# this map is what is consulted. Adding a row is a platform change, made by whoever owns the
+# platform (guide/examples/E17-public-websites.md § 7).
+#
+# One site per line, pipe-separated; blank lines and lines starting with # are ignored:
+#
+#   name | repo path | build command | output dir
+#
+# name           lowercase letters, digits and hyphens; must not end in "-stg". It names the
+#                serving roots: <websites-root>/srv/<name>/ and <websites-root>/srv/<name>-stg/.
+# repo path      the site's git repo; matched by its real path, so a symlinked path still matches.
+#                A leading ~ is expanded. Register each repo once: a repo listed twice is refused.
+# build command  run from the repo root; `-` for a site that needs no build. It cannot contain `|`
+#                (the separator): put a longer build in a script and call that.
+# output dir     relative to the repo root, inside it (no ..): what gets copied to the serving root.
+#
+# Adding a row is not the whole of adding a site. Provision its serving root, its proxy block,
+# its monitoring endpoint and its backup in the same change — a site that is trivial to add and
+# unmonitored or unbacked is a liability, not a feature.
+
+<site-name> | ~/<path-to>/<site-repo> | npm run build | dist

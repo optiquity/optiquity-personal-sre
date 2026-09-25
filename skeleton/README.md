@@ -16,6 +16,7 @@ where the *why* lives; this table is just the map back.
 | `skills/` | Two worked `SKILL.md` examples (a vault read, a browser login). | [12 · Agents & skills](../guide/12-agents-skills.md) |
 | `installers/` | The idempotent, role-aware install-script pattern. | [07 · Tools & requirements](../guide/07-tools-requirements.md) |
 | `monitoring/` | **Ready-to-run**: health-check config + email alerting, a local probe, an update digest, install-conflict and stale-image checks, and the timers to schedule them. Has its own [README](monitoring/README.md). | [17 · Monitoring](../guide/17-monitoring.md) |
+| `websites/` | A multi-site starter: the platform-side site registry and a deploy script that takes **no site argument** (it resolves the site from the repo it runs in), with its tests. Has its own [README](websites/README.md). | [E17 · Public websites](../guide/examples/E17-public-websites.md#7-adding-site-n-must-be-trivial) |
 | `repo-index/` | Enabling a repo index: an annotated exclusion template + an idempotent per-repo enablement script. | [13 · Repo comprehension](../guide/13-repo-comprehension.md) |
 | `design/` | Design-phase templates (short + long) and rules — the pass that happens *before* the work, covering durability, detection and testing. Has its own [README](design/README.md). | [04 · Structure](../guide/04-structure.md) |
 | `postmortems/` | Template + rules for the postmortem practice — created when a project *opens*, not when it closes. Has its own [README](postmortems/README.md). | [04 · Structure](../guide/04-structure.md) |

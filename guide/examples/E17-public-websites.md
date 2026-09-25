@@ -357,6 +357,36 @@ next command including any profile flag**. Omitting an opt-in profile flag leave
 **down while the stack looks fully up**, and a hand-off that tells the next person to do that is a
 documentation bug with an operational blast radius.
 
+### When each site has its own session
+
+A platform that serves several sites often ends up with one AI session per site, each working in
+that site's repo. The platform must then stop one site's session from publishing over another's,
+and the guardrail that holds is **structural**, not a line in each repo's rules file:
+
+- **The site registry lives on the platform side.** One file maps each site to its repo, build
+  command and output folder, and it lives beside the platform, never in a site's repo. A session
+  can edit everything in its own repo without changing what the registry says about it.
+- **Deploy takes no site argument.** It resolves the repo it is run from, by real path, and looks
+  that up in the registry. There is no argument to point at another site, so the one action that
+  reaches the live platform can only reach this site. Run it by its platform path, not from a copy
+  inside a site repo, which that site's session could edit.
+- **It fails closed.** A repo that is not registered, or registered twice, a name or output folder
+  that could escape its directory, a failed build and an **empty** build output all refuse to
+  publish. Publishing mirrors the output with `--delete`, so an empty build would otherwise delete
+  the live site.
+- **Monitoring and backups are provisioned with the site, not after.** A health check and a backup
+  do not follow a new site on their own; adding a registry row without them is adding an
+  unmonitored, unbacked service ([§ 5](#5-monitoring-must-follow-the-traffic),
+  [§ 6](#6-back-up-and-prove-the-restore)).
+
+⚠ **State the limit plainly.** Sessions that run as the same OS user can still reach each other's
+files. This makes cross-site damage by **accident** structurally hard and visible in history; it
+does not prevent it on **purpose**. If that trade is unacceptable, the answer is a separate OS user
+or container per site, a decision worth making before the first incident rather than after.
+
+A starter with the registry template, the deploy script and its tests is in
+[`skeleton/websites/`](../../skeleton/websites/README.md).
+
 ---
 
 ## 8. If you also build a status page
