@@ -68,6 +68,11 @@ a schedule. Pair it with `ThrottleInterval` so a bulk upgrade can't fire it a hu
 Ready-to-use agent templates (weekly timer, periodic probe, WatchPaths trigger) ship in
 [`../skeleton/monitoring/`](../skeleton/monitoring/).
 
+**After running a tool's setup, start or pair commands, look for agents you did not create.** Some
+CLIs install a LaunchAgent as a side effect of routine commands
+([07 · Tools & requirements](../guide/07-tools-requirements.md#a-command-that-installs-a-service)).
+List `~/Library/LaunchAgents` and `launchctl list` before and after, and account for every new label.
+
 ### The big macOS gotcha: TCC + network volumes
 
 macOS **TCC** (privacy protection) blocks launchd-spawned processes from **writing** to network

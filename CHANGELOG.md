@@ -3,6 +3,22 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-25 — tooling traps: command names, side-effect agents, file modes, silent checks
+
+- **New in § 07: "Naming a new command".** A `PATH` collision runs the wrong program without an
+  error. Check `PATH` on every node, the package registries, and the wrapped tool's former name.
+- **New in § 07: "A command that installs a service".** Some CLIs install a background agent from
+  routine commands such as `start` or `pair`; beside your own copy, that makes two instances. Fix the
+  reach: a guard, a wrapper, and a check that exactly one instance runs.
+- **§ 05:** a file-sync service is not a config manager (it can keep the content and drop the
+  permissions), and a captured script must declare its mode in the source.
+- **New in § 17: "Empty output is not a clean result".** A check that passes by printing nothing must
+  prove it ran. Four shell traps that fake a clean result: `xargs` and shell functions, zsh's
+  empty-glob abort, BSD `find -size` units, and zsh not word-splitting a variable. Plus: an in-place
+  edit resets a file's creation time.
+- **`platforms/macos.md`:** list LaunchAgents before and after running a tool's setup, start or pair
+  commands.
+
 ## 2026-09-24 — discovery folders you choose
 
 - **`fleet-nodes.conf` takes an optional fifth column: extra discovery folders** for that node

@@ -105,6 +105,41 @@ The skeleton ships a **generic installer template** (`skeleton/installers/`) emb
 properties; you fill in your tool list and the platform spoke supplies the package-manager
 specifics.
 
+### Naming a new command
+
+A wrapper or script you write becomes a command on `PATH`, and its name can already be taken. **A
+`PATH` collision does not error. It runs the wrong program**, and which one wins depends on `PATH`
+order, which can differ on every machine. Before settling a name, check three places:
+
+- **`PATH` on every node**, not just this one: `command -v <name>`.
+- **The package registries you use.** A name that is free on your machine may be a published package
+  that ships a binary of that name (`npm view <name>`, `brew info <name>`, and so on).
+- **The wrapped tool's former name.** The obvious name for a wrapper is often the tool's old one. In
+  one fleet it was a deprecated name whose package was still published and still shipped a binary
+  under it, so the wrapper would have collided on any machine that had it, and every reader would
+  have expected the old tool.
+
+### A command that installs a service
+
+Some CLIs install a background agent as a **side effect of routine commands**: not only `setup` or
+`install`, but `start`, `restart`, even `pair`. If the tool's own agent is how you run the service,
+that is how the service gets created. If you run your own copy under your own service definition,
+each of those commands quietly installs a **second** one beside it.
+
+- **The symptom is flakiness, not an error:** two instances answer one endpoint, and a connection
+  pairs, drops and asks again.
+- ⚠ **The side effect outlives the command.** Run it once and the duplicate persists across every
+  reboot. Deleting it treats a recurrence as an incident: it returns the next time someone runs the
+  routine command.
+- **Fix the reach, not the symptom.** Start your service through a **guard** that removes the tool's
+  agent first; route the command that installs it through a **wrapper** that removes the agent
+  afterwards; and **check that exactly one instance runs**. Make the guard fail loudly when it cannot
+  start the real service: a guard that exits 0 because its dependency vanished reports a healthy
+  service with nothing behind it.
+- **Before running a CLI's setup, start or pair commands on a node that runs its own copy,** read
+  what they do, or list the node's services before and after (for launchd, see
+  [`platforms/macos.md`](../platforms/macos.md)).
+
 ## Keeping tools current (without churn)
 
 Updates are a project, not a reflex:

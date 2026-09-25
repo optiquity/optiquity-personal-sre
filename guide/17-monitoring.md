@@ -294,6 +294,37 @@ Planted defects found four such gaps in this framework's own tools, all of which
 The design templates ask for this up front: *for each rule, the planted defect that proves its test
 fails.*
 
+### Empty output is not a clean result
+
+Many checks pass by printing nothing: a search for leaked strings, a grep for errors, a `find` for
+oversized files. **A check that never ran prints the same nothing.** So a check whose success is
+silence has to prove it ran: count what it examined, or print a sentinel line at the end, and treat a
+missing count or sentinel as unknown ([above](#a-probe-that-could-not-answer-has-not-told-you-anything)),
+not as clean.
+
+Four ways a shell turns a failed check into clean-looking silence, each met in practice:
+
+- **`xargs` cannot run a shell function or alias.** A leak scan piped a file list to `xargs rg`. In
+  that shell `rg` was a function, so `xargs` never ran it, and the empty output was recorded as "no
+  leaks".
+- **zsh aborts on a glob that matches nothing, before the command runs.** Under zsh's default
+  `nomatch`, `grep pattern dir/*` over an empty directory fails at the glob. The error is the shell's,
+  so `2>/dev/null` on `grep` does not catch it, and a caller reading only the output sees clean. Run
+  such checks under bash with `shopt -s nullglob`, or check the directory has entries first.
+- **BSD `find -size` wants an uppercase unit.** On macOS, `-size +2G` means gigabytes; `+2g` is an
+  error (`illegal trailing character`, exit 1) that prints nothing to standard output. A check that
+  hides stderr and ignores the exit code reads that as "no large files".
+- **zsh does not word-split a variable.** `cmd="ls -l"; $cmd` looks for a program literally named
+  `ls -l` in zsh (`command not found`), where bash runs `ls` with `-l`. A watcher that kept its
+  command in a variable failed this way. Use an array or a function.
+
+⚠ **An in-place edit can destroy evidence.** `sed -i` writes a new file, which resets its creation
+time. One investigation lost the only record of when a file had appeared, because the file had been
+edited in place before anyone asked. Copy a file before editing it when it may be evidence.
+
+The same failure across a machine boundary, where quoting mangles a remote command into empty
+output, is in [16 · Multi-node operations](16-multinode.md#quoting-across-an-os-boundary-will-bite-you).
+
 ## Updates: automate the noticing, not the upgrading
 
 [07 · Tools & requirements](07-tools-requirements.md) argues you should update deliberately rather

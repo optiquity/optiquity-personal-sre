@@ -21,6 +21,14 @@ This inverts the usual dotfiles habit ("I'll just tweak `~/.zshrc` on this box")
 framework, that tweak goes into the repo, is committed, and is *applied* — so every machine
 stays a faithful, reproducible projection of version-controlled truth.
 
+⚠ **A file-sync service is not a config manager.** Keeping config in a synced folder looks like the
+same thing, since every machine gets the same files. It is not: a sync service replicates the content
+you can see and may drop the metadata you cannot, such as permissions. In one fleet a status-bar
+plugin script was byte-identical on two machines (the same checksum) with modes `0711` and `0755`,
+and for that script the mode decides whether it runs at all. **The files matching is the most
+convincing evidence that the sync works, and it says nothing about mode.** A config manager makes the
+mode part of what the source declares ([below](#adopting-incrementally)).
+
 ## The three-tier flow
 
 Config moves through three stages. Keeping them distinct is what makes the system safe and
@@ -240,6 +248,13 @@ You don't chezmoi-manage everything on day one. Start with a few high-value file
 config, the AI-operator rules), get the pull→apply→verify loop comfortable on one node, then
 bring more under management as trust grows. A file is either managed (in the repo, rendered) or
 explicitly unmanaged (documented) — avoid the murky middle of "sort of managed."
+
+**Declare the mode when you capture a script.** The source carries a script's execute bit only if it
+says so: for chezmoi, the `executable_` prefix on the source file's name. `chezmoi add` sets it from
+the live file; a source copied in by hand does not, and the next apply makes the live script
+non-executable. The four scripts in the stalled sync [above](#before-unfreezing-a-stalled-sync) were
+exactly this. After capturing a script, check that nothing is pending for it: `chezmoi status` shows
+a mode-only change as ` M`.
 
 Next: [06 · Secrets](06-secrets.md) — the never-in-git discipline that lets the config manager
 place credential *references* without any secret ever touching the repo.
