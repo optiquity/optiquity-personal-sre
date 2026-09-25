@@ -3,7 +3,7 @@
 ```
 status:           draft | agreed | superseded
 design-version:   1          # THIS document's version — bump on a MAJOR change only (D9)
-template-version: 1.3        # which template version it was written against
+template-version: 1.4        # which template version it was written against
 form:             short
 opened:           <YYYY-MM-DD>
 agreed:           <YYYY-MM-DD or em-dash>
@@ -62,6 +62,9 @@ How the work is verified **by function**, and how the §5 signal is proven to fi
 
 **And prove each test can fail:** for each rule the work enforces, name the planted defect that
 makes its test fail. A test nobody has seen fail is as unproven as an untested alarm.
+
+**Before an irreversible step:** what must be proven healthy first — and does that list include the
+parts you are not changing?
 
 ## 7. Rollback
 

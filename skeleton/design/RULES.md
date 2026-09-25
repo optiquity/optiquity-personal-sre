@@ -164,6 +164,7 @@ an actual difference rather than a bare number. **Mirrors the postmortem side.**
 
 | Version | Date | What changed |
 |---|---|---|
+| **1.4** | 2026-09-25 | Testing asks, before an irreversible step, **what must be proven healthy first, and whether that includes the parts you are not changing** (a storage change whose first design tested only the new drives, while the existing ones had to carry weeks of load with no repair possible mid-operation; a §6 lesson, D7) |
 | **1.3** | 2026-09-24 | Durability asks **whether the file you are changing is generated**, and if so to change what generates it (a crontab rewritten from a scheduler's database; a §6 lesson, D7) |
 | **1.2** | 2026-09-23 | §1 asks for **the end state as the owner will check it**; an **open question blocks** the work that depends on it; testing asks for **the planted defect that proves each test fails**. Two postmortem §6 lessons made standing prompts (D7) |
 | **1.1** | <date> | ⚠ **Raised the bump threshold** (D9), matching the postmortem side |

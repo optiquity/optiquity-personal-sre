@@ -3,6 +3,16 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-25 — measuring a link honestly; the pre-flight question (design templates 1.4)
+
+- **New in § 08: "Measuring a link honestly".** Test each layer on its own: the pure link memory to
+  memory; writes flushed and larger than any write cache; reads warm and cold, labelled. A worked
+  case: one link measured at about 85%, 40% and 13% of line rate, and only the first was the link.
+  ⚠ A comparison is only valid between the same test.
+- **Design templates 1.4:** testing asks, before an irreversible step, what must be proven healthy
+  first, and whether that includes the parts you are not changing. **Re-check your own templates**
+  if you copied them earlier.
+
 ## 2026-09-25 — tooling traps: command names, side-effect agents, file modes, silent checks
 
 - **New in § 07: "Naming a new command".** A `PATH` collision runs the wrong program without an

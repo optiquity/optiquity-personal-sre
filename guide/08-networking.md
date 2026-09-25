@@ -153,6 +153,38 @@ Two habits that make this diagnosis honest:
   each internally consistent and all wrong. Sample across a long window, say the range rather than a
   point estimate, and don't re-quote a new ETA with confidence every time the number moves.
 
+### Measuring a link honestly
+
+The table's middle row is the easiest to mismeasure. The obvious test, copying a file and timing
+it, measures three things at once: the link, the file protocol, and whichever disk the file came
+from or went to. Give each layer its own test:
+
+- **The pure link: memory to memory.** Send bytes from RAM on one end to RAM on the other, with no
+  disk and no file protocol in the path: `iperf3` if both ends have it, or a few lines of Python
+  with a socket when the far end is an appliance that doesn't. This is the ceiling every other
+  number is compared against.
+- **Writes: flushed, and larger than any write cache.** A write that fits in RAM finishes before it
+  reaches the wire or the far disk, so it times the cache. In one case a plain `dd … && sync` over a
+  network filesystem reported a rate the link could not carry, because the data had never left the
+  client's memory. Force the flush (`dd … conv=fsync`, in both GNU and BSD `dd`) and write more than
+  the largest cache in the path, the client's RAM and the server's.
+- **Reads: warm and cold, labelled.** A cold read, of a file the server has not cached, measures the
+  server's disks. A warm read, of a file the server has just read, measures the link plus the file
+  protocol. Both are real; say which one each number is.
+
+In that case one gigabit link measured, on the same day: memory to memory at about 85% of line
+rate; a network-filesystem read of a file already in the server's cache at about 40%, held down by
+the protocol's round-trips; and a cold read at about 13%, held down by the server's disks. **Three
+true numbers about one link, and only the first is the link.**
+
+⚠ **A comparison is only valid between the same test.** An earlier comparison in the same case put a
+wired link's cold-file read beside a wireless link's cached-file read, and chose the wireless one.
+The wired link later measured eight times faster, and the decision had stood for a week. Neither
+figure was wrong. Both were real numbers, correctly obtained, of different things, and the defect was
+in the table, which neither number shows on its own. Compare like with like: the same test, the same
+file state (cold or warm), and the same conditions. A wireless link on a good-signal day is not the
+same link on a bad one.
+
 ## SSH with keys — the access layer
 
 On top of the mesh, **SSH is how the operator administers remote nodes** and how config is

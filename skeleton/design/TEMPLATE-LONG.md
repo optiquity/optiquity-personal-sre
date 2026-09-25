@@ -3,7 +3,7 @@
 ```
 status:           draft | agreed | superseded
 design-version:   1          # THIS document's version — bump on a MAJOR change only (D9)
-template-version: 1.3        # which template version it was written against
+template-version: 1.4        # which template version it was written against
 form:             long
 opened:           <YYYY-MM-DD>
 agreed:           <YYYY-MM-DD or em-dash>
@@ -128,7 +128,7 @@ should come back here as a standing prompt.)*
 
 ## 7. Testing — how do we verify it, including the alarm?
 
-Two distinct questions, both required:
+Two distinct questions, both required, and a third before any one-way step:
 
 **(a) How is the work verified?** What proves it does what §1 says — by function, not by
 readback. A setting accepted is not a setting working. **And prove each test can fail:** for each
@@ -136,6 +136,12 @@ rule the work enforces, name the planted defect that makes its test fail. A test
 fail is as unproven as an untested alarm.
 
 **(b) How is the DETECTION verified?** How do we prove the §6 signal actually fires?
+
+**(c) Before an irreversible step: what must be proven healthy first — and does that list include
+the parts you are not changing?** Once a one-way operation starts, a weak part may not be
+repairable, replaceable or even testable until it ends. The parts you are not changing carry the
+operation too, and they are the ones a pre-flight skips, because they read healthy while nothing has
+been asked of them yet.
 
 ⚠ **An alarm nobody has tested is an assumption, not a safety net.** The only proof is
 **inducing the failure** and watching it fire. A check that has never gone red is not a
