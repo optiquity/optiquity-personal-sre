@@ -165,8 +165,8 @@ from or went to. Give each layer its own test:
   number is compared against.
 - **Writes: flushed, and larger than any write cache.** A write that fits in RAM finishes before it
   reaches the wire or the far disk, so it times the cache. In one case a plain `dd … && sync` over a
-  network filesystem reported a rate the link could not carry, because the data had never left the
-  client's memory. Force the flush (`dd … conv=fsync`, in both GNU and BSD `dd`) and write more than
+  network filesystem reported a plausible rate that measured only the client's memory: the data had
+  never left it. Force the flush (`dd … conv=fsync`, in both GNU and BSD `dd`) and write more than
   the largest cache in the path, the client's RAM and the server's.
 - **Reads: warm and cold, labelled.** A cold read, of a file the server has not cached, measures the
   server's disks. A warm read, of a file the server has just read, measures the link plus the file
@@ -179,7 +179,9 @@ true numbers about one link, and only the first is the link.**
 
 ⚠ **A comparison is only valid between the same test.** An earlier comparison in the same case put a
 wired link's cold-file read beside a wireless link's cached-file read, and chose the wireless one.
-The wired link later measured eight times faster, and the decision had stood for a week. Neither
+Measured properly, the wired link ran near line rate memory to memory, and its cold-file reads were
+still slow for the same reason as before, the server's disks: the link had never been the problem,
+and the decision had stood for a week. Neither
 figure was wrong. Both were real numbers, correctly obtained, of different things, and the defect was
 in the table, which neither number shows on its own. Compare like with like: the same test, the same
 file state (cold or warm), and the same conditions. A wireless link on a good-signal day is not the

@@ -15,6 +15,8 @@ docs/
   <project-name>/
     PLAN.md          # the plan + running status (or STATUS.md, SETUP.md — your call)
     ...              # any supporting design/reference docs
+  peer-conversations/  # one log per peer session, if your sessions message each other (E19);
+                       # gitignored by default
 ```
 
 Projects are **the unit of organization and the unit of memory**. When the operator finishes a

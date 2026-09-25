@@ -309,11 +309,15 @@ Four ways a shell turns a failed check into clean-looking silence, each met in p
   leaks".
 - **zsh aborts on a glob that matches nothing, before the command runs.** Under zsh's default
   `nomatch`, `grep pattern dir/*` over an empty directory fails at the glob. The error is the shell's,
-  so `2>/dev/null` on `grep` does not catch it, and a caller reading only the output sees clean. Run
-  such checks under bash with `shopt -s nullglob`, or check the directory has entries first.
-- **BSD `find -size` wants an uppercase unit.** On macOS, `-size +2G` means gigabytes; `+2g` is an
-  error (`illegal trailing character`, exit 1) that prints nothing to standard output. A check that
-  hides stderr and ignores the exit code reads that as "no large files".
+  so `2>/dev/null` on `grep` does not catch it, and a caller reading only the output sees clean.
+  Collect the files first (`files=(dir/*(N))` in zsh, `shopt -s nullglob; files=(dir/*)` in bash)
+  and report a count of zero as its own result, never as clean. ⚠ `nullglob` alone is not a fix: the
+  empty glob becomes no arguments at all, so `grep` reads its standard input instead and prints
+  nothing (exit 1) or waits forever.
+- **BSD `find -size` units are case-specific.** On macOS `c` and `k` are lowercase and `M`, `G`, `T`
+  and `P` uppercase: `-size +2G` means gigabytes, while `+2g` (or `+2K`) is an error (`illegal
+  trailing character`, exit 1) that prints nothing to standard output. A check that hides stderr and
+  ignores the exit code reads that as "no large files".
 - **zsh does not word-split a variable.** `cmd="ls -l"; $cmd` looks for a program literally named
   `ls -l` in zsh (`command not found`), where bash runs `ls` with `-l`. A watcher that kept its
   command in a variable failed this way. Use an array or a function.

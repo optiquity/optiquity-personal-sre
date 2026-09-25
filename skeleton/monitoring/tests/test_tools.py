@@ -444,6 +444,19 @@ class InstallAudit(Sandbox):
         self.assertEqual(r.returncode, 3)
         self.assertFalse(os.path.exists(state))
 
+    def test_malformed_node_line_is_reported_not_skipped(self):
+        conf = os.path.join(self.tmp, "fleet-nodes.conf")
+        write(conf, "# nodes\nbox | local\n | local | macos\n")
+        state = os.path.join(self.tmp, "install-audit.state")
+        r = self.run_tool("fleet-install-audit", "--config", conf, "--always",
+                          FLEET_INSTALL_AUDIT_STATE=state)
+        self.assertEqual(r.returncode, 1, r.stderr)
+        m = self.mails()[0]
+        self.assertTrue(m["subject"].startswith("[Fleet/Alert/Installs] "), m["subject"])
+        body = m["argv"][m["argv"].index("--body") + 1]
+        self.assertIn("line 2: 'box | local'", body)          # too few fields
+        self.assertIn("line 3: '| local | macos'", body)      # a blank field
+
 
 class UpdateCheck(Sandbox):
     def test_digest_send_path_uses_parts(self):

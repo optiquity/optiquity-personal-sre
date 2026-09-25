@@ -3,6 +3,27 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-25 — corrections to this phase, and the guard's blind spots
+
+Found by the re-audit that follows every phase. **Re-check anything you copied from these sections
+earlier today.**
+
+- **§ 17, empty globs:** the recommended fix was wrong. `nullglob` alone turns an empty glob into no
+  arguments, so `grep` reads its standard input and prints nothing (or waits forever): the same false
+  clean. Collect the files first and report a count of zero as its own result.
+- **§ 17, BSD `find -size`:** units are case-specific (`c`, `k` lowercase; `M`, `G`, `T`, `P`
+  uppercase), not "uppercase".
+- **§ 08:** the unflushed-write example measured the client's memory, not an impossible rate; and the
+  wired-versus-wireless case no longer quotes an "eight times" that compared two different tests.
+- **`scripts/grep-guard.sh`: your names are now scanned in every file**, including the docs the
+  generic patterns skip; the sharing chapter is no longer skipped at all (two of its lines were
+  reworded so it scans clean). The self-test proves all three (66 checks). ⚠ **If you copied the
+  guard, copy this version:** the old one never checked your names in two whole chapters.
+- **`fleet-install-audit`:** a malformed node line (too few fields, or a blank one) is reported and
+  alerts, instead of silently dropping that node from the audit.
+- **§ 04:** the project tree shows `docs/peer-conversations/` (E19). **§ 20** lists E17's multi-site
+  section. Two changelog lines corrected: the L4 test count, and the Codex template in L3.
+
 ## 2026-09-25 — a multi-site starter: a platform-side registry and a deploy with no site argument
 
 - **New in E17 § 7: "When each site has its own session".** The site registry lives on the platform
@@ -11,7 +32,7 @@ repo. One entry per published phase of work. (Started 2026-09-23; earlier histor
   live site); monitoring and backups are provisioned with the site. The honest limit: sessions
   running as the same OS user are protected from accidents, not from intent.
 - **New `skeleton/websites/`:** `sites.conf.template`, `deploy-site.sh` and its tests (17 tests, one
-  per thing the script must do or refuse; each proven by a planted defect). The CI `tools` job runs
+  per thing the script must do or refuse; 16 planted defects, each caught by its test). The CI `tools` job runs
   them. Deliberately small: no provisioning and no container stack.
 
 ## 2026-09-25 — who maintains the public repo; what the guard cannot catch
@@ -22,8 +43,8 @@ repo. One entry per published phase of work. (Started 2026-09-23; earlier histor
   "one session, one repo" and refuses the work.
 - **§ 19 now says what the guard cannot catch:** identifying context (a distinctive figure, date or
   phrasing), which is why derive-don't-copy and the stranger review still apply.
-- **Principle 12 (§ 03) and `skeleton/CLAUDE.md.template` rule 12:** one sentence naming that
-  exception. **Re-check your rules file** if you publish a derived repo.
+- **Principle 12 (§ 03), and rule 12 in `skeleton/CLAUDE.md.template` and
+  `skeleton/AGENTS.md.template`:** one sentence naming that exception. **Re-check your rules file** if you publish a derived repo.
 
 ## 2026-09-25 — measuring a link honestly; the pre-flight question (design templates 1.4)
 

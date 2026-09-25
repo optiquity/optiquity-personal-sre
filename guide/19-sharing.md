@@ -48,7 +48,7 @@ whole control and those two get skipped.
 relies on you to remember to scrub — which is exactly the failure mode. Instead:
 
 - **Rewrite** each artifact into placeholders and roles as you move it. A config becomes a
-  *template*; a machine name becomes a *role*; `/Users/you` becomes `$HOME`; your email becomes
+  *template*; a machine name becomes a *role*; `/Users/<you>` becomes `$HOME`; your email becomes
   `<your-email>`.
 - The scrub is the **act of moving**, not a cleanup pass afterward. If you find yourself
   "scrubbing a copied file," stop and rewrite it instead.
@@ -90,7 +90,7 @@ repo, so it lives at the root rather than in the skeleton). It has two layers.
   `100.64–127.x.x` that mesh VPNs use; tailnet hostnames (`<host>.tail<hex>.ts.net`)
 - Email addresses
 - Secret shapes: private-key headers, `password = "…"`-style assignments, unquoted
-  `*_KEY=`/`*_TOKEN=`/`*_PASSWORD=` values, and common token prefixes (OpenAI/Anthropic `sk-`,
+  `*_KEY=`, `*_TOKEN=` and `*_PASSWORD=` values, and common token prefixes (OpenAI/Anthropic `sk-`,
   GitHub `ghp_`/`github_pat_`, AWS `AKIA`, Slack `xox?-`, Google `AIza`)
 
 It does **not** detect arbitrary high-entropy strings. A random secret with no recognisable

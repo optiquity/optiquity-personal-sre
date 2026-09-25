@@ -124,7 +124,9 @@ exposure creep in.
   fails **silently**: client-side integrations that only resolve on your mesh, a **CDN caching 404s**
   for hours after the origin is fixed, an **admin panel exposed** as a side effect of proxying a path,
   and monitoring that stays green because it watches the wrong hostname. **Built and verified**, traps
-  included.
+  included. Also: running **several sites, each with its own AI session**, where a platform-side
+  registry decides what a deploy may publish, with a starter in
+  [`skeleton/websites/`](../skeleton/websites/).
 - **[E18 · Search and answer-engine visibility](examples/E18-search-and-answer-engines.md)** —
   make a self-hosted site **findable by search engines and AI assistants**, as a maintained property
   rather than a one-off audit. The decision that matters: **training crawlers and retrieval crawlers

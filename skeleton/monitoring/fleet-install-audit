@@ -21,7 +21,7 @@ Two intended triggers: after any install (a launchd WatchPaths / systemd .path u
 `--local`) and weekly (fleet-update-check folds it into the digest). Emails via fleet-mail,
 STATE-DEDUPED (only when a conflict appears or clears); state is saved only AFTER the email is sent,
 so a failed send is retried next run rather than forgotten.
-Exit 0 clean · 1 conflicts · 3 the email failed to send (state kept; next run retries).
+Exit 0 clean · 1 conflicts (a malformed node line counts as one) · 3 the email failed to send (state kept; next run retries).
 Environment: $FLEET_MAILER, $FLEET_NODES, $FLEET_INSTALL_AUDIT_STATE (state file).
 """
 import argparse, json, os, subprocess, sys
@@ -90,18 +90,21 @@ print(json.dumps(out))
 '''
 
 def load_nodes(path):
+    """(nodes, errors). A malformed line is REPORTED, never skipped: a node that silently drops out
+    of the audit looks exactly like a node with nothing installed twice."""
     if not os.path.isfile(path):
         sys.exit(f"fleet-install-audit: node config not found: {path}  (copy fleet-nodes.conf.template)")
-    nodes = []
-    for line in open(path):
+    nodes, errors = [], []
+    for num, line in enumerate(open(path), 1):
         line = line.strip()
         if not line or line.startswith("#"):
             continue
         parts = [p.strip() for p in line.split("|")]
-        if len(parts) < 3:
+        if len(parts) < 3 or not all(parts[:3]):
+            errors.append((num, line))
             continue
         nodes.append({"name": parts[0], "target": parts[1], "os": parts[2]})
-    return nodes
+    return nodes, errors
 
 def audit_node(node):
     try:
@@ -123,10 +126,14 @@ def main():
     ap.add_argument("--local", action="store_true", help="audit only this host (fast, for the after-install trigger)")
     a = ap.parse_args()
 
-    nodes = load_nodes(a.config)
+    nodes, bad_lines = load_nodes(a.config)
     if a.local:
         nodes = [n for n in nodes if n["target"] == "local"]
     blocks, conflicts = [], []
+    if bad_lines:
+        blocks.append("== node config — MALFORMED, these lines were not audited ==\n" +
+                      "\n".join(f"  line {num}: {text!r} — needs name | target | os" for num, text in bad_lines))
+        conflicts += [f"config:line{num}" for num, _ in bad_lines]
     for n in nodes:
         if n["target"] != "local" and subprocess.run(SSH + [n["target"], "true"]).returncode != 0:
             blocks.append(f"== {n['name']} — unreachable, skipped =="); continue

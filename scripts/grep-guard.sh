@@ -33,15 +33,20 @@
 # Exit: 0 clean · 1 forbidden pattern found · 2 could not scan (fails closed)
 set -euo pipefail
 
-# ── Files/dirs the guard should NOT scan ────────────────────────────────────
+# ── Files/dirs the GENERIC patterns skip ────────────────────────────────────
 #   - .git internals
-#   - the guard itself + the docs that NAME the forbidden shapes by design.
+#   - the guard itself + the one doc that NAMES the secret shapes by design.
 #     Add your own allowlist entries — sparingly; every exclusion is a blind spot.
+#   ⚠ YOUR NAMES are never excluded: they are scanned in every file (NAME_EXCLUDES below).
+#     A chapter that documents a pattern has a reason to contain it; nothing has a reason to
+#     contain your name. (Until 2026-09-25 whole files were skipped for both, names included.)
 EXCLUDES=(
   ':(exclude).git/**'
   ':(exclude)**/grep-guard.sh'
-  ':(exclude)**/19-sharing.md'
   ':(exclude)**/06-secrets.md'          # documents secret shapes by design
+)
+NAME_EXCLUDES=(
+  ':(exclude).git/**'
 )
 
 # ── Generic pattern classes (apply to everyone) ─────────────────────────────
@@ -97,9 +102,12 @@ load_local() {
 fail=0
 MODE=tree
 
-# scan LABEL FLAGS PATTERN ROOT  — records hits; exits 2 on a scan error.
+# scan LABEL FLAGS PATTERN ROOT [names] — records hits; exits 2 on a scan error.
+# With a 5th argument "names", only NAME_EXCLUDES apply.
 scan() {
   local label="$1" flags_kind="$2" pattern="$3" root="$4" rc=0 hits
+  local ex=("${EXCLUDES[@]}") plain_ex=(--exclude=grep-guard.sh --exclude=06-secrets.md)
+  if [ "${5:-}" = names ]; then ex=("${NAME_EXCLUDES[@]}"); plain_ex=(); fi
   local flags=(-nI --color=never)
   case "$flags_kind" in
     E)  flags+=(-E) ;;
@@ -109,14 +117,13 @@ scan() {
   esac
   if git -C "$root" rev-parse >/dev/null 2>&1; then
     if [ "$MODE" = staged ]; then
-      hits="$(git -C "$root" grep "${flags[@]}" --cached -e "$pattern" -- . "${EXCLUDES[@]}" 2>&1)" || rc=$?
+      hits="$(git -C "$root" grep "${flags[@]}" --cached -e "$pattern" -- . "${ex[@]}" 2>&1)" || rc=$?
     else
       # --untracked: a leak is most likely in a NOT-yet-committed file.
-      hits="$(git -C "$root" grep "${flags[@]}" --untracked -e "$pattern" -- . "${EXCLUDES[@]}" 2>&1)" || rc=$?
+      hits="$(git -C "$root" grep "${flags[@]}" --untracked -e "$pattern" -- . "${ex[@]}" 2>&1)" || rc=$?
     fi
   else
-    hits="$(grep "${flags[@]}" -r --exclude-dir=.git \
-      --exclude=grep-guard.sh --exclude=19-sharing.md --exclude=06-secrets.md \
+    hits="$(grep "${flags[@]}" -r --exclude-dir=.git ${plain_ex[@]+"${plain_ex[@]}"} \
       --exclude=.grep-guard.local -e "$pattern" "$root" 2>&1)" || rc=$?
   fi
   case "$rc" in
@@ -132,7 +139,7 @@ run_guard() {
   load_local "$root"
   for i in "${!PAT_RE[@]}"; do scan "${PAT_LABEL[$i]}" "${PAT_FLAGS[$i]}" "${PAT_RE[$i]}" "$root"; done
   if [ "${#FORBIDDEN_LITERALS[@]}" -gt 0 ]; then
-    for i in "${!FORBIDDEN_LITERALS[@]}"; do scan "your name #$((i + 1))" Fi "${FORBIDDEN_LITERALS[$i]}" "$root"; done
+    for i in "${!FORBIDDEN_LITERALS[@]}"; do scan "your name #$((i + 1))" Fi "${FORBIDDEN_LITERALS[$i]}" "$root" names; done
   fi
   if [ "$fail" -ne 0 ]; then
     note "grep-guard: FAILED — generalize the above before committing. Do NOT suppress the guard."
@@ -196,6 +203,30 @@ self_test() {
       else
         ok=$((ok + 1))
       fi
+    done
+  done
+  # Exclusions: a NAME is caught even in the file the generic patterns skip; that skip still works
+  # for a documented secret shape; and the sharing chapter, skipped whole until 2026-09-25, is
+  # scanned. (Whole-file skips once hid names from every scan.)
+  for mode in $modes; do
+    for case_ in name-in-excluded shape-in-excluded shape-in-sharing; do
+      rm -rf "$tmp/r"; mkdir -p "$tmp/r/guide"
+      local f=06-secrets.md
+      case "$case_" in
+        name-in-excluded)  printf 'written by SelfTestBox9\n' > "$tmp/r/guide/$f" ;;
+        shape-in-excluded) printf 'export API_KEY=abcd1234efgh5678\n' > "$tmp/r/guide/$f" ;;
+        shape-in-sharing)  f=19-sharing.md; printf 'path %ssomeone/project\n' "$U" > "$tmp/r/guide/$f" ;;
+      esac
+      printf 'selftestbox9\n' > "$tmp/r/.grep-guard.local"
+      if [ "$mode" != plain ]; then
+        git -C "$tmp/r" init -q; printf '.grep-guard.local\n' > "$tmp/r/.git/info/exclude"
+        git -C "$tmp/r" add "guide/$f"
+      fi
+      local args=(); [ "$mode" = staged ] && args+=(--staged)
+      local passed=0; ( cd "$tmp/r" && "$self" ${args[@]+"${args[@]}"} . ) >/dev/null 2>&1 && passed=1
+      if { [ "$case_" != shape-in-excluded ] && [ "$passed" -eq 0 ]; } || \
+         { [ "$case_" = shape-in-excluded ] && [ "$passed" -eq 1 ]; }; then ok=$((ok + 1))
+      else note "  FAIL  $case_ ($mode)"; bad=$((bad + 1)); fi
     done
   done
   # clean fixture: must pass (proves the patterns are not simply matching everything)
