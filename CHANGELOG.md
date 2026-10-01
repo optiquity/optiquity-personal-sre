@@ -3,6 +3,13 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-09-30 — the stand-in question (design templates 1.5)
+
+- **Design templates 1.5:** testing asks which code paths the real thing takes that a test's
+  stand-in never exercises (a fake server, a local folder in place of a cloud service, a small file
+  in place of a large one), and which test covers them against the real thing. **Re-check your own
+  templates** if you copied them earlier.
+
 ## 2026-09-25 — corrections to this phase, and the guard's blind spots
 
 Found by the re-audit that follows every phase. **Re-check anything you copied from these sections

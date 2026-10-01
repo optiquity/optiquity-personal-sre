@@ -3,7 +3,7 @@
 ```
 status:           draft | agreed | superseded
 design-version:   1          # THIS document's version — bump on a MAJOR change only (D9)
-template-version: 1.4        # which template version it was written against
+template-version: 1.5        # which template version it was written against
 form:             short
 opened:           <YYYY-MM-DD>
 agreed:           <YYYY-MM-DD or em-dash>
@@ -62,6 +62,12 @@ How the work is verified **by function**, and how the §5 signal is proven to fi
 
 **And prove each test can fail:** for each rule the work enforces, name the planted defect that
 makes its test fail. A test nobody has seen fail is as unproven as an untested alarm.
+
+**And name what your stand-ins cannot reach:** where a test uses a stand-in for the real thing (a fake
+server, a local folder in place of a cloud service, a small file in place of a large one), which
+code paths does the real thing take that the stand-in never exercises — and which test covers them
+against the real thing? A stand-in that differs from the target in *how it is written to* hides
+exactly the failures that live in that difference.
 
 **Before an irreversible step:** what must be proven healthy first — and does that list include the
 parts you are not changing?
