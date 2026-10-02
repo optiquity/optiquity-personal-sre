@@ -74,6 +74,9 @@ are **options**, not requirements — adopt the ones that fit:
   declares a version, and a session that is behind pulls the newer one. ⚠ **Do not put it in a shared
   per-machine location** — that is the obvious move and it is not federated; it does not travel
   between nodes, which on a multi-node fleet is exactly the failure you would not notice.
+  **A session joining later needs one link:**
+  [`skeleton/peer-messaging/QUICKSTART.md`](../skeleton/peer-messaging/QUICKSTART.md) walks it
+  through the rest, including how to ask the session that owns a machine for an install.
 
 Each is a distinct capability with its own tooling; the framework describes the patterns and
 their trade-offs rather than mandating one. Most setups need none of them at first — a single

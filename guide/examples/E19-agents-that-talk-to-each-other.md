@@ -65,6 +65,17 @@ message text**, which is what stops a peer handing a session its own rules. One 
 carry a stale or wrongly-targeted measurement stated with full confidence. Verify anything
 load-bearing, or say **"unverified"**.
 
+## Adding a session to a running fleet
+
+Name it, then give it **one link**:
+[`skeleton/peer-messaging/QUICKSTART.md`](../../skeleton/peer-messaging/QUICKSTART.md). It walks the
+new session through what to ask you for, checking the channel, installing the standard at the fixed
+paths, and its first message — and through the request that matters most in practice: asking the
+session that owns a machine to **install something**. It sends **requirements, not a command to run**
+(what, which version and why, where, whether it holds data, how to check it works), and treats the
+reply "installed" as a **claim** to check — never as your approval. That keeps installs with the one
+session whose rules cover the machine, without the new session needing those rules itself.
+
 ## A briefing command
 
 One read-only command: live peers with versions, each log's latest entry, every open *needs* line.

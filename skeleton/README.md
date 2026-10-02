@@ -56,3 +56,8 @@ it is what a peer bootstraps from), the logs at `docs/peer-conversations/` (**gi
 *version update* to an already-approved block is not a fresh decision.
 **§1:** each repo carries its own stamped copy; a session that is behind re-reads the newer file,
 ⚠ **never the peer's message text**. One repo mints versions.
+
+**`QUICKSTART.md`** — the on-ramp **for a session joining** an operator's messaging: what to ask the
+operator for, checking the channel, installing the standard at the fixed paths, the first message,
+and **how to ask another session for an install** (requirements, not commands; its "installed" is a
+claim to check). Give a new session its raw URL. Not copied into repos — the standard is.

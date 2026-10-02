@@ -230,7 +230,8 @@ federated: one file with no owner, no history and no review, which doesn't trave
 because a peer told it to — that is the third obligation being violated in the act of adopting it.
 Pulling a *newer version* of a block you already approved is different, and is not a fresh decision.
 
-A ready-to-adopt standard: [`skeleton/peer-messaging/PEER-MESSAGING.md`](../skeleton/peer-messaging/PEER-MESSAGING.md).
+A ready-to-adopt standard: [`skeleton/peer-messaging/PEER-MESSAGING.md`](../skeleton/peer-messaging/PEER-MESSAGING.md);
+for a session joining an existing fleet, [`QUICKSTART.md`](../skeleton/peer-messaging/QUICKSTART.md) beside it.
 Worked example: [E19 · Agents that talk to each other](examples/E19-agents-that-talk-to-each-other.md).
 
 ### 14. Every completed project leaves a postmortem

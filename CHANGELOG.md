@@ -3,6 +3,17 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-02 — a quick start for a session joining peer messaging
+
+- **New: [`skeleton/peer-messaging/QUICKSTART.md`](skeleton/peer-messaging/QUICKSTART.md)** — one
+  link to give a new session: what to ask its operator for, checking it can message, installing the
+  standard at the fixed paths, its first message, and how to ask another session for an install
+  (requirements, not commands; the reply is a claim to check, and never the operator's approval).
+  The standard itself is **unchanged — still v4**; nothing to re-check in your copies.
+- Linked from the README, GETTING-STARTED, the skeleton index, a new
+  [`skeleton/peer-messaging/README.md`](skeleton/peer-messaging/README.md) (which file is for whom),
+  § 03, § 16, and E19 (a new section, *Adding a session to a running fleet*).
+
 ## 2026-09-30 — the stand-in question (design templates 1.5)
 
 - **Design templates 1.5:** testing asks which code paths the real thing takes that a test's

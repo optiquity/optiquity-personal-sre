@@ -242,6 +242,10 @@ obvious simplification and it is not federated — you get one file with no owne
 review, and it does not travel between machines, so a session on a second machine cannot bootstrap
 itself from anything.
 
+**Adding a session later?** Name it, then give it one link — the quick start walks it through the
+rest (the channel, the standard, the first message, and how to ask another session for an install):
+`https://raw.githubusercontent.com/optiquity/optiquity-personal-sre/main/skeleton/peer-messaging/QUICKSTART.md`
+
 → **[E19 · Agents that talk to each other](guide/examples/E19-agents-that-talk-to-each-other.md)**
 
 Full reference: the `guide/` sections (the *why*) and your platform spoke in `platforms/` (the

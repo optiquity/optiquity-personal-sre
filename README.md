@@ -185,6 +185,7 @@ forking. **No roster of who has adopted** — a central list is a hub, and it go
 
 → **The portable standard, ready to adopt:**
 **[`skeleton/peer-messaging/PEER-MESSAGING.md`](skeleton/peer-messaging/PEER-MESSAGING.md)** ·
+**[the quick start a joining session reads](skeleton/peer-messaging/QUICKSTART.md)** ·
 **[E19 · Agents that talk to each other](guide/examples/E19-agents-that-talk-to-each-other.md)** ·
 principle 13 in [03 · Governance](guide/03-governance-rules.md) · [16 · Multi-node](guide/16-multinode.md)
 
