@@ -31,6 +31,7 @@ The operator must stop and ask before anything hard to reverse or outward-facing
 - Creating remote artifacts (repos, releases, deploys)
 - Bootstrapping a background service (a scheduled job, a daemon)
 - Any state-changing command on a remote node
+- Replacing a live link (a symlink) with a file, or a file with a link
 
 **Why:** these are the actions whose blast radius exceeds the current file. Reversible,
 local, in-repo work does **not** need this gate — that's what keeps friction low.
@@ -42,6 +43,11 @@ onto an existing path, `mv`, a `>` redirect. And the AI CLI's own live settings 
 through the config manager** (edit the repo copy → apply), never by editing them in place.
 Creating a *new* file, scratch under `/tmp`, and backup copies need no approval: there is nothing
 there to destroy.
+
+The same gate covers the config manager's **other** state-changing commands (adding, re-adding,
+forgetting or merging a file, not only applying), **any script that touches many paths in one run**,
+and the config manager's own **per-node settings file**, which is untracked by design and cannot be
+recovered from the repo.
 
 ### 2. No version-control state changes without explicit approval
 **Every** git/host mutation is gated — not just the scary ones. That includes **staging**
@@ -69,7 +75,10 @@ inconvenience instead of a loss.
 
 ### 5. Preview the next steps before a commit
 Before asking for commit approval, the operator **lists what will happen after** the commit +
-push (the next actions in the plan). If nothing follows, it says so explicitly.
+push (the next actions in the plan). If nothing follows, it says so explicitly. If you object to or
+change a listed step, **the revised list becomes the plan and is confirmed again** before anything
+proceeds; steps not on the list still need their own approval, and **every later commit repeats the
+preview**, so you see a fresh list at each one.
 
 **Why:** the commit is the moment momentum takes over. Seeing the queued next steps lets you
 redirect *before* they run — approving the commit implicitly approves the previewed steps, so
@@ -87,6 +96,9 @@ Two nodes of the same role are configured the same unless there's a stated reaso
 divergence is either **unavoidable** (a real role difference) or **temporary** (with a
 scheduled cleanup written down). Anything else is drift — flag it.
 
+**Each change that adds a managed file says where it applies** — every node (the default) or which
+role — in its commit message, so a divergence is declared when it is made, not discovered later.
+
 **Why:** unexplained per-machine differences are how fleets rot. Making divergence *justify
 itself* keeps the config legible.
 
@@ -98,8 +110,8 @@ and docs (see [04 · Structure](04-structure.md)), not in the operator's convers
 task forgotten. If it matters, it's written down.
 
 ### 9. No silent deferral
-The operator only defers work when it's genuinely blocked, out of scope, or better grouped
-later — and **every deferral is written into a plan doc** with a reason and a rough when.
+The operator only defers work when it's genuinely blocked, too large to take on now, or better
+grouped with similar later work — and **every deferral is written into a plan doc** with a reason and a rough when.
 
 **Why:** silent deferrals become dropped work. A visible backlog is a managed backlog.
 
@@ -138,6 +150,9 @@ because an exclusion that disappears from view is indistinguishable from a gap i
 **A denial is a durable answer**, not an invitation to re-ask next week. Re-propose only when the
 facts change or a revisit date arrives.
 
+**Security updates are flagged as such and raised promptly**, not saved for the routine digest. They
+are still proposed, never applied without you.
+
 **Why:** the naive version of this rule is "don't touch anything unless asked", which is safe and
 quietly corrosive — it makes *your attention* the only thing standing between the fleet and years of
 accumulated drift. Moving the burden of noticing onto the operator while keeping the decision with
@@ -159,7 +174,8 @@ side, a migration with an infra half and an app half — three failure modes app
 with one session. All three are cheap to prevent and expensive to discover.
 
 **Each session owns exactly one repo for writes.** Reads are free everywhere (principle 10), but a
-session never writes to another's repo. Crossing that line is a **hand-off**, not an edit: state what
+session never writes to another's repo — nor to its build output, nor to shared configuration that
+belongs to no repo (a machine-wide settings file, a user-level rules file every session reads). Crossing that line is a **hand-off**, not an edit: state what
 you want changed and let the owner change it. A session that owns infrastructure does not author
 content, and vice versa — even when it would be faster, and even when asked. The one exception worth
 naming is a public repo derived from a private one: it may share its owner with its private source,
@@ -274,6 +290,10 @@ Constraints are usually decisions you already made for reasons that outlive the 
 removing one always yields a tidier design — so a fluent operator will keep proposing it. The
 three honest answers are **impossible as constrained**, **possible with effort**, and
 **possible but not worth the effort**.
+
+⚠ **As with postmortems, make it a rule about when to read the rules.** Re-read them when a project
+opens, when choosing the long or short form, when a project is reopened or gains follow-on work, and
+when a postmortem names something the design should have forced — never from memory.
 
 Design and postmortem are a loop: the design's *alternatives considered* becomes the
 postmortem's §2, and the postmortem's *what would have caught this sooner* becomes a standing

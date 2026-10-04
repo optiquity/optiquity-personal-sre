@@ -30,6 +30,9 @@ NN. **Every completed project gets a postmortem. The rules live in
     - Before appending to one during the work
     - When a project closes, before tidying entries into prose
     - Before writing any retroactive postmortem
+    - When a project is REOPENED or gains follow-on work — it gets one then
+    - Before writing up NEW work — read the related completed projects first, and cite what
+      you found, including "nothing relevant"
 ```
 
 ⚠ **A pointer nobody follows is a dead rule.** Naming the moments is what keeps the practice

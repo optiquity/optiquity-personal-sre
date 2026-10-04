@@ -128,6 +128,8 @@ Worked instances of the cost, all from one real fleet:
   caused **20 days of silent, fleet-wide sync failure**.
 - A health probe rejected in one project for *"reads cached data, calls a dead handle healthy"* —
   the exact defect that later shipped, repeatedly, in a different subsystem's monitoring.
+- A scheduled job pinned to an **exact binary path**, recorded as a risk in one project — then, in
+  another, a routine package upgrade moved the binary and **silently disabled two scheduled jobs**.
 
 **In practice:** before writing up work on X, read the postmortems and docs of the projects your
 registry lists as *related* to X, plus anything touching the same machine, protocol or install
@@ -204,6 +206,7 @@ an actual difference rather than a bare number. Without it the field is unreadab
 
 | Version | Date | What changed |
 |---|---|---|
+| **1.3** | 2026-10-04 | §7 asks **"Does this belong in anything you publish?"** every time — what, generalised, belongs in a public framework or docs derived from the work. Added because the decision to ask it was once recorded and never built |
 | **1.2** | <date> | ⚠ **Raised the bump threshold.** A bump is for a MAJOR change; a small correction is an edit; **ask when unclear** |
 | **1.1** | <date> | Added `postmortem-version` + `template-version` and a **Revision log** section (R10) |
 | **1.0** | <date> | Initial |

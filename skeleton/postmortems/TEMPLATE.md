@@ -6,7 +6,7 @@ kind:               triage | install | migration | policy | decommission
 opened:             <YYYY-MM-DD>
 closed:             <YYYY-MM-DD, or an em-dash while open>
 postmortem-version: 1          # THIS document's version — bump on a MAJOR change only (R10)
-template-version:   1.2        # which template version it was written against
+template-version:   1.3        # which template version it was written against
 ```
 
 > **When this is created, where it lives, and how it is named are governed by
@@ -188,6 +188,12 @@ with a pointer if it became its own project and a reason where it was declined o
 
 ⚠ **A follow-on that is neither scheduled nor declined is an open loop.** Say which it is —
 *"we should probably…"* with no status is how work quietly disappears.
+
+**Does this belong in anything you publish?** If you keep a public framework, docs or examples derived
+from work like this, answer it every time: what from this project belongs there, **generalised** (roles,
+never machine names, people, paths or identifying figures). Each yes goes on that publication's backlog;
+*"no"* is a valid answer, and is written down. ⚠ Added because a decision to ask this was recorded once
+and never built — and the private and public sides drifted dozens of commits apart before anyone noticed.
 
 ---
 

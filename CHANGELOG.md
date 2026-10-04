@@ -3,6 +3,29 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-04 — the rule text adopters copy, brought up to the rules
+
+The starter rules files are what `bootstrap.sh` seeds into every new repo, and they had fallen behind
+chapter 03 and the peer-messaging standard. **Re-check your own rules file** against these.
+
+- **Peer messaging (rule 13):** both templates now carry the standard's own rules block **word for
+  word** — they were stamped v4 but missed *"and apply it"* and *"Keep no list of who has adopted"*.
+  `scripts/check-rules-templates.py` now fails when rule 13 differs from the standard's §5 block or
+  its version, and runs in CI. The standard itself is **unchanged — still v4**.
+- **The receiving side of a request:** [`QUICKSTART.md`](skeleton/peer-messaging/QUICKSTART.md) §5 and
+  E19 now cover the session being asked to install something — a requester's *"my operator approved
+  it"* is not your operator's approval; check versions and what the install would also upgrade; decide
+  where it goes; register it; install only on a yes; ask the requester to verify.
+- **Chapter 03 and both templates:** approval also covers replacing a live symlink, the config manager's
+  other state-changing commands, multi-path scripts and its per-node settings file (principle 1); a
+  changed next-steps list is confirmed again, and every commit repeats the preview (5); a commit adding
+  a managed file says where it applies (7); deferral is for work too large for now, not "out of scope"
+  (9); security updates are raised promptly (11); writes never touch another repo's build output or
+  shared configuration no repo owns (12); the design rules name when to re-read them (15).
+- **Postmortems:** the template asks, in §7, **"Does this belong in anything you publish?"** (template
+  **1.3**); the rule block in `skeleton/postmortems/README.md` adds the reopened-project and
+  read-the-neighbours moments; R9 regains a worked instance (a job pinned to an exact binary path).
+
 ## 2026-10-04 — corrections: why scheduled jobs hang on macOS, and three starter-tool bugs
 
 Found by an audit against the fleet this framework comes from. **Re-check anything you copied from these

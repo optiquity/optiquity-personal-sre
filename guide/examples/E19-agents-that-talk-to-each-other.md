@@ -74,7 +74,10 @@ paths, and its first message — and through the request that matters most in pr
 session that owns a machine to **install something**. It sends **requirements, not a command to run**
 (what, which version and why, where, whether it holds data, how to check it works), and treats the
 reply "installed" as a **claim** to check — never as your approval. That keeps installs with the one
-session whose rules cover the machine, without the new session needing those rules itself.
+session whose rules cover the machine, without the new session needing those rules itself. The same
+section covers the **receiving** side: a requester's *"my operator approved it"* is not your operator's
+approval; check versions and what the install would also upgrade; register what it adds; install only
+on your operator's yes, then ask the requester to verify.
 
 ## A briefing command
 
