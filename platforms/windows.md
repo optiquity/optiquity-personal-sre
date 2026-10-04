@@ -14,7 +14,7 @@ the hub's concepts to Windows; read `guide/` for the *why*.
 | Container runtime ([07](../guide/07-tools-requirements.md)) | **Podman** (+ Podman Desktop) over **WSL2** | ✅ |
 | OS updates | **Windows Update** — pin to manual (see below) | ✅ |
 | Config manager ([05](../guide/05-chezmoi.md)) | chezmoi on Windows (PowerShell templating) | ⛏ partial |
-| Service manager ([07](../guide/07-tools-requirements.md)) | **Task Scheduler** / Windows Services | ⛏ TODO |
+| Service manager ([07](../guide/07-tools-requirements.md)) | **Task Scheduler** / Windows Services | ⛏ partial |
 | Secret store ([06](../guide/06-secrets.md)) | **Windows Credential Manager** / DPAPI | ⛏ TODO |
 | Home path ([01](../guide/01-concepts.md)) | `%USERPROFILE%` (`$HOME` in PowerShell/WSL) | ✅ |
 
@@ -112,7 +112,7 @@ chezmoi runs on Windows, but templating and script hooks differ:
   equivalent on Windows. **⛏ TODO:** a `.ps1` installer variant + notes on run_onchange behavior
   on Windows.
 
-## ⛏ Service manager on Windows — TODO
+## ⛏ Service manager on Windows — partial
 
 For fleet monitoring, the practical note today: **detecting** Windows updates works over SSH
 (`winget list --disable-interactivity`, cached results); **applying** them needs an elevated

@@ -117,11 +117,13 @@ Prefer Gatus's own email provider (its fixed subject; add a second mail filter)?
 
 **Watch the relay from another node.** It is now a single point for every health-check email, and a
 dead relay cannot report its own death. From your always-on node, through *its* mail path, add to
-`local-checks.conf` (a `command` exiting 3 is UNKNOWN, so an unreadable journal never passes as clean):
+`local-checks.conf` (a `command` exiting 3 is UNKNOWN, so an unreadable journal never passes as clean,
+and `ssh` exits 255 only when it cannot connect, so each line turns that into 3: a node you cannot
+reach is unknown, not failing):
 
 ```
-command | gatus relay up     | ssh <gatus-host> 'systemctl is-active --quiet gatus-mail-relay && curl -sf http://127.0.0.1:8099/health >/dev/null'
-command | gatus alerts sent  | ssh <gatus-host> 'J=$(sudo -n journalctl -u gatus --since -20min --no-pager) || exit 3; ! printf %s "$J" | grep -q "Failed to send an alert"'
+command | gatus relay up     | ssh <gatus-host> 'systemctl is-active --quiet gatus-mail-relay && curl -sf http://127.0.0.1:8099/health >/dev/null'; rc=$?; [ $rc -eq 255 ] && exit 3; exit $rc
+command | gatus alerts sent  | ssh <gatus-host> 'J=$(sudo -n journalctl -u gatus --since -20min --no-pager) || exit 3; ! printf %s "$J" | grep -q "Failed to send an alert"'; rc=$?; [ $rc -eq 255 ] && exit 3; exit $rc
 ```
 
 And because the relay's two files were installed **by hand**, compare them with your repo copies
@@ -189,15 +191,16 @@ Two gotchas worth internalizing (both cost real debugging):
 - **Enumerate services, not containers.** It's easy to build a monitoring list from
   `docker ps` (or your container UI) and silently miss **native** services — a launchd/systemd
   agent, a gateway daemon. List what's *running*, by role, not what's *containerized*.
-- **`mount` checks avoid reading the share, but they are not free of I/O.** On macOS an NFS/SMB
-  share is bound to the GUI login session, so `ls`/`stat` *inside* it **hangs from a
-  launchd/background run even when the mount is healthy**, a guaranteed false alarm on a schedule.
+- **`mount` checks avoid reading the share, but they are not free of I/O.** On macOS, a scheduled
+  job's first read *inside* a share can raise a privacy prompt that waits until someone answers it: on an
+  unattended Mac, a hang on a schedule ([macOS platform notes](../../platforms/macos.md)).
   `fleet-local-check`'s `mount` type therefore checks the mount point and the mount table instead.
   ⚠ Both still touch the network. `os.path.ismount()` stats the mount point, and an unreachable
   server reads as "not a mount point". Reading the mount table can block on an unresponsive server.
   So the probe retries, and a table it cannot read is **UNKNOWN**, not "unmounted" (guide § 17,
   "A probe that could not answer has not told you anything"). For genuine hung-detection, use a
-  `command` check through a login shell (`ssh localhost 'ls <path>'`).
+  `command` check that reads inside the share (it has a 30-second limit, and a timeout is UNKNOWN),
+  run by a program macOS has approved.
 - **Watch what your config manager doesn't deploy.** A script installed by hand on a node it
   doesn't manage, or staged by it but installed by hand because the live path needs root, falls
   behind the repo silently. `hash` compares the file that runs with the repo copy. For the first

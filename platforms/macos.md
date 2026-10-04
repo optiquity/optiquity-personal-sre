@@ -73,27 +73,45 @@ CLIs install a LaunchAgent as a side effect of routine commands
 ([07 · Tools & requirements](../guide/07-tools-requirements.md#a-command-that-installs-a-service)).
 List `~/Library/LaunchAgents` and `launchctl list` before and after, and account for every new label.
 
-### The big macOS gotcha: TCC + network volumes
+### The big macOS gotcha: privacy prompts nobody answers
 
-macOS **TCC** (privacy protection) blocks launchd-spawned processes from **writing** to network
-volumes (a mounted NAS share) and some protected paths — *even as your user* — unless the
-process has **Full Disk Access**. A daemon that works when you run it interactively can **fail
-silently** when launchd runs it, because the interactive shell inherited FDA and the daemon
-didn't.
+macOS **privacy protection (TCC)** gates access to protected places — a mounted network share, iCloud
+Drive, Documents, Desktop, removable volumes — **program by program**. The first time a program macOS has
+not approved touches one, macOS shows a prompt, and **the access waits until someone answers it**. That
+holds for reads as well as writes. On a Mac nobody is watching, nobody answers: the scheduled job hangs,
+and so does anything else waiting on the same access.
 
-**Implication:** don't have a launchd job write to a mounted network share and assume it works.
-Either grant the specific binary Full Disk Access, or (more robust) **avoid the mount** — e.g.
-push data over SSH to the remote host instead of writing through the mount. Test the job **as
-launchd runs it**, not just from your shell.
+Three things decide when this bites:
 
-**A network mount is bound to the GUI login session.** This bites anything scheduled: from a
-launchd/background context, I/O against a mounted NFS/SMB share (`ls`, `stat`) can **hang
-indefinitely even when the mount is perfectly healthy** — so a naive "is the share up?" check
-becomes a guaranteed false alarm on a timer. Check the **kernel mount table** (`mount`, or
-`os.path.ismount`) instead, which works from any context and never reads inside the share. It is
-still not free of I/O: `ismount` stats the mount point and the table read can block on an
-unresponsive server, so treat a check that cannot answer as unknown, not unmounted. If you
-genuinely need hung-detection, do it through a login shell (`ssh localhost 'ls <path>'`).
+- **Which program macOS asks about.** It charges a job's access to the job's *responsible* program and
+  **skips Apple's own programs**. A shell script run by `/bin/bash` is charged to the first non-Apple
+  program it runs: the package manager's `python3`, `rsync`, and so on.
+- **Updates ask again.** A package update replaces that program with a new build, which macOS treats as a
+  new program. The approval does not carry over, so the next scheduled run prompts again, on a screen
+  nobody watches.
+- **Your terminal hides it.** The terminal you test from is already approved, so a job that works when
+  you run it can still hang when launchd runs it.
+
+**What to do:**
+
+- Test a job **as launchd runs it**, and look at the screen (Screen Sharing) the first time it runs and
+  after every update to a program it runs.
+- **Watch for unanswered prompts.** macOS's privacy service logs each request and its answer; a request
+  still unanswered after a few minutes is a prompt on a screen. Read that log with `/usr/bin/log`, by full
+  path: in zsh, a bare `log` is a different, built-in command.
+- **Start jobs through a small launcher you approve once and never rebuild.** macOS then charges the
+  access to the launcher, so updates to what it runs no longer ask again. Let it run only the commands you
+  list, in a file only an administrator can change, and give the commands a fixed environment.
+- Or **keep the job away from protected places**: push data over SSH to the host that holds it, rather
+  than reading or writing through the mount.
+
+⚠ **A network mount is not "bound to the login session".** Earlier versions of this guide said so, to
+explain why reading a share hangs from a scheduled job; the hang they described was this prompt. A check
+that a share is mounted should still not read inside it: check the **kernel mount table** (`mount`, or
+`os.path.ismount`), which asks for no access. It is not free of I/O — `ismount` stats the mount point, and
+reading the table can block on an unresponsive server — so treat a check that cannot answer as unknown,
+not unmounted. To catch a mounted-but-hung share, read inside it from a `command` check with a time limit,
+run by a program macOS has approved, and treat a timeout as unknown.
 
 ## Secret store — Keychain + vaults
 
@@ -148,11 +166,11 @@ queries) and keep the Linux one for Linux nodes.
 - **`workstation`** — a MacBook; Tailscale on; services on-demand; permission preset
   standard/trusting ([10](../guide/10-permissions.md)).
 - **`server`** — a Mac mini / always-on Mac; LaunchDaemons for 24/7 services; NAS mounts;
-  permission preset cautious. Watch the TCC-network-volume gotcha above for any scheduled job.
+  permission preset cautious. Watch the privacy-prompt gotcha above for any scheduled job.
 
 ## Verifying (macOS)
 
 - `brew doctor` clean; core tools resolve at their absolute paths.
 - A launchd job you rely on actually runs **under launchd** (check its log), not just from your
-  shell — the TCC trap.
+  shell — the privacy-prompt trap. After any update to a program a job runs, check the screen.
 - `security find-generic-password …` returns your vault key so non-interactive unlock works.

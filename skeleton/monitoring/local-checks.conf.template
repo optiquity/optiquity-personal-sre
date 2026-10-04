@@ -16,11 +16,12 @@
 # reported as a failing check, never silently skipped.
 #
 # Replace these examples with your fleet's local-only concerns. Notes:
-#  - `mount` never reads INSIDE the share — on macOS an NFS/SMB share is bound to the GUI login
-#    session, so ls/stat inside it HANGS from a launchd/background run even when healthy. It checks
-#    the mount point + table (retried; an unreadable table is UNKNOWN, not "unmounted"). It catches
-#    "unmounted", not "hung". For hung-detection use a `command` via a login shell, e.g.:
-#       command | media reachable | ssh localhost 'ls /path/to/mount >/dev/null'
+#  - `mount` never reads INSIDE the share — on macOS a scheduled job's first read inside it can raise a
+#    privacy prompt that waits until someone answers (platforms/macos.md). It checks the mount point +
+#    table (retried; an unreadable table is UNKNOWN, not "unmounted"). It catches "unmounted", not
+#    "hung". For hung-detection, read inside the share from a `command` (30 s limit; a timeout is
+#    UNKNOWN), run by a program macOS has approved, e.g.:
+#       command | media reachable | ls /path/to/mount >/dev/null
 #  - `hash` watches a file your config manager does NOT deploy, against the repo copy on THIS node
 #    (guide 16, "A fix that reaches four nodes out of five looks done"). Two cases:
 #      · installed by hand on a node it doesn't manage: write the installed side as host:/path. It is

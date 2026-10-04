@@ -3,6 +3,38 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-04 — corrections: why scheduled jobs hang on macOS, and three starter-tool bugs
+
+Found by an audit against the fleet this framework comes from. **Re-check anything you copied from these
+places.**
+
+- **The cause of "a share hangs from a scheduled job" was wrong.** Earlier versions said a macOS network
+  mount is bound to the GUI login session. The proven cause is a **privacy prompt**: the first time a
+  program macOS has not approved reads a protected place (a mounted share, iCloud Drive, …), macOS asks,
+  and the access waits until someone answers — on an unattended Mac, forever. A package update makes a
+  new program, which is asked again. Rewritten in [`platforms/macos.md`](platforms/macos.md) (what to do:
+  test as launchd runs it, watch for unanswered prompts, a stable launcher you approve once), E16, the
+  monitoring README, `fleet-local-check` and `local-checks.conf.template`. The `ssh localhost` advice is
+  gone; for hung-detection, read inside the share from a `command` check (it has a time limit).
+  The `mount` check itself was right and is unchanged.
+- **`fleet-update-check`:**
+  - **Homebrew's warnings are read, not discarded.** Homebrew 7 ignores formulae from a tap nobody has
+    trusted and says so only on stderr; the digest now names each untrusted tap as an error.
+  - **A method whose command fails is never "current".** It now reports *not installed*, *timed out* or
+    *check failed (exit N)*. Commands run without pipes, so the status is the tool's own.
+  - **The pipx check never worked:** `pipx list --outdated --short` is refused by pipx (exit 1). It now
+    runs `pipx list --outdated`.
+- **`fleet-local-check`:** the alert subject names **new** failures first. It is cut at 60 characters,
+  and in config order a new failure behind older ones was cut off.
+- **Monitoring README:** the relay-watch examples turn `ssh`'s exit 255 (could not connect) into 3, so an
+  unreachable node is unknown, not failing.
+- **Smaller corrections:** chapter 17 — the settings registry is built in the fleet this came from, and
+  `py_compile` is not a read-only parse (it writes `__pycache__` even with `PYTHONDONTWRITEBYTECODE=1`);
+  chapter 19 — CI checks the generic patterns, never your names (the names list is local by design);
+  GETTING-STARTED — the peer-messaging rule is rule **13** of the CLAUDE template, not 12; the Windows
+  service-manager section is **partial**, not filled (and an earlier entry below now says so).
+- **Tests:** 7 new (55 in all), each with the planted defect that makes it fail.
+
 ## 2026-10-02 — a quick start for a session joining peer messaging
 
 - **New: [`skeleton/peer-messaging/QUICKSTART.md`](skeleton/peer-messaging/QUICKSTART.md)** — one
@@ -154,7 +186,8 @@ earlier today.**
   1 new test; 11 planted defects, each caught at its own assertion. One survived at first, and
   that exposed the raw exit-code comparison as wrong.
 - **`platforms/windows.md`:** its TODO is filled. Define scheduled tasks from a tracked script that
-  reads its registration back, because task settings live only in the scheduler.
+  reads its registration back, because task settings live only in the scheduler. *(Corrected later:
+  partly filled — the Podman headless-at-boot pattern is still to do, and the section is marked partial.)*
 - **Design templates 1.2 → 1.3:** Durability asks *"is the file you are changing generated?"*.
 - **Corrected in `platforms/windows.md`:** Group Policy is Pro and above only (Home has none), and the
   repair service is the likely cause of a reverted update pin, not a proven one.

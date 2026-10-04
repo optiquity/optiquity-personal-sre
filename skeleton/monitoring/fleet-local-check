@@ -29,14 +29,15 @@ Config (default $HOME/.config/fleet-monitoring/local-checks.conf, override --con
                                                                 last run succeeded, if <job> is named)
 A malformed line is REPORTED as a failing check, never silently skipped.
 
-IMPORTANT (the `mount` type never reads INSIDE the share): on macOS an NFS/SMB mount is bound to the
-GUI login session, so I/O (ls/stat) inside it HANGS from a launchd/background context even when the
-mount is perfectly healthy. So `mount` checks the mount point and the mount table (ismount +
+IMPORTANT (the `mount` type never reads INSIDE the share): on macOS a scheduled job's first read inside
+a share can raise a privacy prompt that waits until someone answers it — on an unattended Mac, forever
+(platforms/macos.md). So `mount` checks the mount point and the mount table (ismount +
 `mount`/`findmnt`) instead. ⚠ That is less I/O, not none: ismount() stats the mount point (a server
 round-trip on a network mount; an unreachable server reads as "not a mount point"), and the table
 read can block on an unresponsive server. So the probe retries, and a table it cannot read is
-UNKNOWN, never "unmounted". It catches "unmounted", not "mounted-but-hung" — use a `command` check
-via a login shell (e.g. `ssh localhost 'ls <path>'`) if you need hung-detection.
+UNKNOWN, never "unmounted". It catches "unmounted", not "mounted-but-hung" — for hung-detection, use a
+`command` check that reads inside the share (30 s limit; a timeout is UNKNOWN), run by a program macOS
+has approved.
 
 WHY `hash` AND `synclag` EXIST. A config manager keeps the nodes it manages in step — and nothing
 else. A file you installed by hand (on a node it doesn't manage, or outside its tree) falls behind
@@ -313,10 +314,14 @@ def main():
     # Mail on a transition AND on a failure with no previous state (a new check, a first run, a
     # lost state file) — otherwise a check that starts red never says so.
     if transitions or new_failures or a.always:
+        # The subject is cut short, so name what is NEW first. Listed in config order, a new failure
+        # behind older ones was cut off — invisible to anyone triaging by subject, which is what an
+        # alert is proven by (guide § 17, "Prove the alert path").
+        named = [n for n in failing if n in new_failures] + [n for n in failing if n not in new_failures]
         if new_failures:
-            kind, text = "Alert", f"{len(failing)} failing — {', '.join(failing)[:60]}"
+            kind, text = "Alert", f"{len(failing)} failing — {', '.join(named)[:60]}"
         elif failing:
-            kind, text = "Alert", f"{len(failing)} still failing — {', '.join(failing)[:60]}"
+            kind, text = "Alert", f"{len(failing)} still failing — {', '.join(named)[:60]}"
         else:
             kind, text = "Report", "all checks recovered"
         body = f"Local health checks on {os.uname().nodename}:\n\n{report}\n"

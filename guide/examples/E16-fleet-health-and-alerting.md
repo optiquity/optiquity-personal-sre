@@ -128,12 +128,13 @@ command | workflows active | test "$(…count active…)" -ge 1   # escape hatch
   drops **native** services (a launchd/systemd agent, a gateway daemon that isn't containerised).
   List what's *running by role*, not what's *containerised* — the thing you forget is exactly the
   thing with no obvious dashboard.
-- **A `mount` check must not read inside the share.** On macOS an NFS/SMB share is bound to the GUI
-  login session, so `ls`/`stat` inside it **hangs from a launchd/background run even when the mount
-  is healthy** — a guaranteed false alarm on a timer. Check the **mount point and the kernel mount
-  table** (`ismount` / `mount`) instead. That is less I/O, not none: both can still block on an
-  unresponsive server, so a probe that cannot answer is **unknown**, not "unmounted". For real
-  hung-detection, go through a login shell (`ssh localhost 'ls <path>'`) as a `command` check.
+- **A `mount` check must not read inside the share.** On macOS, a scheduled job's first read inside a
+  share can raise a privacy prompt that waits until someone answers it
+  ([macOS platform notes](../../platforms/macos.md)): on an unattended Mac, a hang on a timer. Check the
+  **mount point and the kernel mount table** (`ismount` / `mount`) instead. That is less I/O, not none:
+  both can still block on an unresponsive server, so a probe that cannot answer is **unknown**, not
+  "unmounted". For hung-detection, read inside the share from a `command` check, which has a time limit,
+  run by a program macOS has approved; a timeout reads as unknown.
 
 ### 5. Install-method audit — catch "installed two ways"
 

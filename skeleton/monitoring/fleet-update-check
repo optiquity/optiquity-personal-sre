@@ -204,6 +204,44 @@ def reconcile_node(node):
     return lines, count, []
 
 
+def brew_warnings(text):
+    """Homebrew's stderr -> digest error lines. An untrusted tap is named with what to do; any other
+    "Warning:" or "Error:" line is passed through, because a warning nobody reads is the failure.
+    Homebrew 7 IGNORES formulae from a tap nobody has trusted and says so only on stderr, so a checker
+    that discards stderr reports those tools as current however far behind they are."""
+    errs, taps, lines = [], [], text.splitlines()
+    for i, l in enumerate(lines):
+        if "taps are not trusted" in l:
+            for t in lines[i + 1:]:
+                if not t.startswith("  ") or not t.strip():
+                    break
+                taps.append(t.strip())
+        elif l.startswith(("Warning:", "Error:")):
+            errs.append(f"brew: {l.strip()[:200]}")
+    if taps:
+        errs.insert(0, f"brew: Homebrew is IGNORING {len(taps)} untrusted tap(s) ({', '.join(taps)}) — "
+                       "their formulae never show as outdated; trust the installed ones: "
+                       "brew trust --formula <tap>/<formula>")
+    return errs
+
+
+def method_failed(m, rc, err, ok=(0,)):
+    """None if the method's command answered; otherwise the error line for the digest.
+
+    A method's OWN exit code decides "checked" vs "could not check". Without this, an absent tool, a
+    flag the installed version refuses, and a node with nothing outdated all print nothing — and all
+    read as "current". Each command therefore runs without a pipe, so `rc` is the tool's, not the
+    last stage's (`apt list | grep -v …` returns grep's status: 1 when apt itself failed)."""
+    if rc in ok:
+        return None
+    if rc == 127:
+        return f"{m}: declared for this node but not installed — nothing was checked"
+    if rc == 124:
+        return f"{m}: timed out — nothing was checked"
+    detail = f" — {err.strip().splitlines()[-1][:120]}" if err and err.strip() else ""
+    return f"{m}: check failed (exit {rc}){detail} — nothing was checked"
+
+
 def check_node(node, refresh):
     """Return (lines, count, errors) for one node across its methods."""
     lines, count, errs = [], 0, []
@@ -211,12 +249,17 @@ def check_node(node, refresh):
     for m in [m for m in node["methods"] if m in checked]:
         if m == "brew":
             upd = "brew update >/dev/null 2>&1; " if refresh else ""
-            rc, out, err = run_on(node, f'{upd}echo "==F=="; brew outdated --formula --verbose 2>/dev/null; '
-                                        f'echo "==C=="; brew outdated --cask 2>/dev/null')
-            if rc == 124 or (rc != 0 and not out):
-                errs.append(f"brew: {err or 'failed'}"); continue
+            # ⚠ Homebrew's warnings are READ, not discarded (see brew_warnings). The subshell matters:
+            # zsh's default MULTIOS would also copy stdout into the pipe with a bare `2>&1 >/dev/null |`.
+            rc, out, err = run_on(node, f'command -v brew >/dev/null || exit 127; {upd}'
+                                        f'echo "==F=="; brew outdated --formula --verbose 2>/dev/null; '
+                                        f'echo "==C=="; brew outdated --cask 2>/dev/null; '
+                                        f'echo "==W=="; (brew outdated --formula 2>&1 >/dev/null) | head -60')
+            if rc in (124, 127) or (rc != 0 and not out):
+                errs.append(method_failed("brew", rc, err) or f"brew: {err or 'failed'}"); continue
             formula = out.split("==C==")[0].replace("==F==", "").strip()
-            cask = out.split("==C==")[1].strip() if "==C==" in out else ""
+            cask = out.split("==C==")[1].split("==W==")[0].strip() if "==C==" in out else ""
+            errs += brew_warnings(out.split("==W==")[1] if "==W==" in out else "")
             if not refresh and (formula or cask):
                 lines.append("(brew index not refreshed — run with --refresh for exact counts)")
             for label, blob in (("Homebrew formulae", formula), ("Homebrew casks", cask)):
@@ -224,28 +267,38 @@ def check_node(node, refresh):
                 if items:
                     count += len(items); lines.append(f"{label} ({len(items)}):"); lines += [f"  {l}" for l in items]
         elif m == "npm":
-            rc, out, err = run_on(node, "npm outdated -g 2>/dev/null")
+            rc, out, err = run_on(node, "npm outdated -g")
+            failed = method_failed("npm", rc, err, ok=(0, 1))   # npm outdated exits 1 when something IS outdated
+            if failed:
+                errs.append(failed); continue
             items = [l for l in out.splitlines() if l.strip() and not l.startswith("Package")]
             if items:
                 count += len(items); lines.append(f"npm globals ({len(items)}):"); lines += [f"  {l}" for l in items]
         elif m == "softwareupdate":
             rc, out, err = run_on(node, "softwareupdate -l 2>&1")
+            failed = method_failed("softwareupdate", rc, out)
+            if failed:
+                errs.append(failed); continue
             items = [l.strip() for l in out.splitlines() if l.strip().startswith("*") or l.strip().startswith("Title:")]
             if items:
                 count += len(items); lines.append("macOS (softwareupdate — not auto-applied):"); lines += [f"  {l}" for l in items]
         elif m == "apt":
             upd = "sudo apt-get update -qq >/dev/null 2>&1; " if refresh else ""
-            rc, out, err = run_on(node, f'{upd}apt list --upgradable 2>/dev/null | grep -v "^Listing"')
-            items = [l for l in out.splitlines() if l.strip()]
-            if rc == 124:
-                errs.append(f"apt: {err or 'timed out'}")
-            elif items:
+            rc, out, err = run_on(node, f'{upd}apt list --upgradable')
+            failed = method_failed("apt", rc, err)
+            if failed:
+                errs.append(failed); continue
+            items = [l for l in out.splitlines() if l.strip() and not l.startswith("Listing")]
+            if items:
                 count += len(items); lines.append(f"apt upgradable ({len(items)}):"); lines += [f"  {l}" for l in items]
         elif m == "uvtool":
             # Tools installed by a Python tool-installer are a classic blind spot: they sit
             # outside brew/npm/apt entirely, so nothing reports them stale. uv has no
             # --outdated, so compare `uv tool list` against the package index.
-            rc, out, err = run_on(node, "uv tool list 2>/dev/null")
+            rc, out, err = run_on(node, "uv tool list")
+            failed = method_failed("uvtool", rc, err)
+            if failed:
+                errs.append(failed); continue
             pairs = [(p_[0], p_[1].lstrip("v")) for p_ in
                      (l.split() for l in out.splitlines()) if len(p_) >= 2 and p_[1].startswith("v")]
             behind = []
@@ -261,8 +314,14 @@ def check_node(node, refresh):
             if behind:
                 count += len(behind); lines.append(f"uv tools ({len(behind)}):"); lines += [f"  {b}" for b in behind]
         elif m == "pipx":
-            rc, out, err = run_on(node, "pipx list --outdated --short 2>/dev/null")
-            items = [l for l in out.splitlines() if l.strip() and not l.lower().startswith(("nothing", "no "))]
+            # `--outdated` prints "name: current -> latest" per package. ⚠ It refuses `--short`
+            # ("--outdated cannot be combined with --short", exit 1) — the old `--outdated --short`
+            # failed on every run and, with stderr discarded, read as "current".
+            rc, out, err = run_on(node, "pipx list --outdated")
+            failed = method_failed("pipx", rc, err)
+            if failed:
+                errs.append(failed); continue
+            items = [l.strip() for l in out.splitlines() if " -> " in l]
             if items:
                 count += len(items); lines.append(f"pipx ({len(items)}):"); lines += [f"  {l}" for l in items]
         elif m == "winget":

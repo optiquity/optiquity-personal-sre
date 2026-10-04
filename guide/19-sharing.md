@@ -113,7 +113,9 @@ Wire it in two places:
 1. **Pre-commit hook** ([`scripts/pre-commit.hook`](../scripts/pre-commit.hook)) — scans the
    **index** (`--staged`), exactly what the commit will contain. A hit **blocks the commit**.
 2. **CI check** (a GitHub Action — see [`skeleton/github/`](../skeleton/github/)) — every push/PR
-   is scanned server-side, so a bypassed local hook is still caught.
+   is scanned server-side, so a bypassed local hook is still caught **for the generic patterns**.
+   ⚠ CI has no names list: that file is local and untracked by design, so it never reaches the server,
+   and the names are checked only where the list exists — the maintainer's own clone, through the hook.
 
 Both run **`--self-test` first.** It plants one leak of each shape — **one per file** — and
 proves each is caught on that machine's git and grep. This is not ceremony. On macOS,

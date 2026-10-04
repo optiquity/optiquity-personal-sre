@@ -211,6 +211,17 @@ class LocalCheck(LocalCheckBase):
         self.check()
         self.assertEqual(self.mails()[-1]["subject"], "[Fleet/Alert/Health] 1 failing — gamma")
 
+    def test_subject_names_a_new_failure_first(self):
+        """The subject is cut at 60 characters: listed in config order, a new failure behind older
+        ones was cut off — invisible to anyone triaging by subject."""
+        olds = [f"command | old check number {i} | false" for i in range(3)]
+        self.write_conf(olds + [f"command | beta | test -f {self.flag}"])
+        write(self.flag, "")
+        self.check()                                        # three old failures; beta ok
+        os.remove(self.flag)                                # beta breaks: new, and LAST in config order
+        self.check()
+        self.assertIn("4 failing — beta, ", self.mails()[-1]["subject"])
+
     def test_dry_run_neither_mails_nor_saves(self):
         self.check("--dry-run")
         self.assertEqual(self.mails(), [])
@@ -481,6 +492,16 @@ Runtime Pack         Vendor.Runtime.8        8.0.1     8.0.4     winget
 """
 
 
+# Homebrew 7's stderr when a tap is untrusted — its real wording, with the tap names generalised
+BREW_UNTRUSTED = """Warning: The following taps are not trusted:
+  example/tools
+  another/tap
+
+Homebrew is currently ignoring formulae, casks and commands
+from these taps because tap trust is required.
+"""
+
+
 class UpdateCheckRegistry(unittest.TestCase):
     """Coverage statuses, registries and parsers — in-process, the SSH layer replaced."""
 
@@ -542,6 +563,77 @@ class UpdateCheckRegistry(unittest.TestCase):
                            env=dict(os.environ, PATH=bindir + os.pathsep + os.environ["PATH"]))
         # parse it exactly as reconcile_node does — no strip(): the padding IS the bug
         self.assertRegex("brew=" + r.stdout, r"^brew=2\b", "the count must be parseable as the probe emits it")
+
+    def test_brew_warnings_are_reported_not_discarded(self):
+        """Homebrew 7 IGNORES formulae from an untrusted tap and says so only on stderr."""
+        uc = self.uc
+        out = "==F==\nfoo (1.0) < 1.1\n==C==\nsome-app\n==W==\n" + BREW_UNTRUSTED
+        uc.run_on = lambda node, cmd, timeout=300: (0, out, "")
+        lines, count, errs = uc.check_node(self.node(["brew"], os_="macos"), False)
+        self.assertEqual(count, 2, "the warning text is not counted as updates")
+        self.assertEqual(len(errs), 1, errs)
+        self.assertIn("IGNORING 2 untrusted tap(s) (example/tools, another/tap)", errs[0])
+
+    def test_brew_warning_probe_keeps_stdout_out_of_the_pipe(self):
+        """Run the REAL brew command line against a fake brew. Without the subshell, zsh's MULTIOS also
+        copies stdout into the warnings pipe (bash has no MULTIOS, so only zsh can catch that)."""
+        uc = self.uc
+        seen = []
+        uc.run_on = lambda node, cmd, timeout=300: seen.append(cmd) or (0, "==F==\n==C==\n==W==\n", "")
+        uc.check_node(self.node(["brew"], os_="macos"), False)
+        bindir = os.path.join(self.tmp, "bin")
+        os.makedirs(bindir)
+        write(os.path.join(bindir, "brew"), "#!/bin/sh\necho 'pkg (1.0) < 1.1'\necho 'Warning: careful' >&2\n")
+        os.chmod(os.path.join(bindir, "brew"), 0o755)
+        env = dict(os.environ, PATH=bindir + os.pathsep + os.environ["PATH"])
+        shells = [sh for sh in ("zsh", "bash") if shutil.which(sh)]
+        self.assertTrue(shells)
+        for shell in shells:
+            # zsh -f: the user's zsh startup files may put the REAL brew first on PATH, ahead of the fake
+            argv = [shell, "-f", "-c", seen[0]] if shell == "zsh" else [shell, "-c", seen[0]]
+            r = subprocess.run(argv, capture_output=True, text=True, env=env)
+            warn = r.stdout.split("==W==")[1]
+            self.assertIn("Warning: careful", warn, shell)
+            self.assertNotIn("pkg (1.0)", warn, f"{shell}: stdout leaked into the warnings section")
+
+    def test_a_failed_method_is_never_current(self):
+        """An absent tool, a refused flag and a node with nothing outdated used to look the same."""
+        uc = self.uc
+        for m in ("brew", "npm", "softwareupdate", "apt", "uvtool", "pipx"):
+            uc.run_on = lambda node, cmd, timeout=300: (127, "", "zsh: command not found")
+            lines, count, errs = uc.check_node(self.node([m]), False)
+            self.assertNotIn("current — nothing outdated", lines, m)
+            self.assertEqual(len(errs), 1, (m, errs))
+            self.assertIn("not installed", errs[0], m)
+        uc.run_on = lambda node, cmd, timeout=300: (2, "", "usage: …\nerror: unrecognized arguments")
+        lines, count, errs = uc.check_node(self.node(["pipx"]), False)
+        self.assertEqual(errs, ["pipx: check failed (exit 2) — error: unrecognized arguments — nothing was checked"])
+
+    def test_npm_exit_1_means_outdated_not_failed(self):
+        uc = self.uc
+        uc.run_on = lambda node, cmd, timeout=300: (1, "Package  Current  Wanted  Latest\nfoo  1.0  1.1  1.1\n", "")
+        lines, count, errs = uc.check_node(self.node(["npm"]), False)
+        self.assertEqual((count, errs), (1, []))
+
+    def test_pipx_reads_outdated_without_short(self):
+        """`pipx list --outdated --short` is refused (exit 1) — it failed on every run."""
+        uc = self.uc
+        seen = []
+        uc.run_on = lambda node, cmd, timeout=300: seen.append(cmd) or (0, "sometool: 1.0.0 -> 1.2.0\n", "")
+        lines, count, errs = uc.check_node(self.node(["pipx"]), False)
+        self.assertNotIn("--short", seen[0])
+        self.assertEqual((count, errs), (1, []))
+
+    def test_apt_status_is_apts_own(self):
+        """`apt list | grep -v …` returned grep's status — 1 when apt itself had failed."""
+        uc = self.uc
+        seen = []
+        uc.run_on = lambda node, cmd, timeout=300: seen.append(cmd) or (100, "", "E: lists are locked")
+        lines, count, errs = uc.check_node(self.node(["apt"]), False)
+        self.assertNotIn("|", seen[0], "no pipe: the status must be apt's own")
+        self.assertEqual(errs, ["apt: check failed (exit 100) — E: lists are locked — nothing was checked"])
+        uc.run_on = lambda node, cmd, timeout=300: (0, "Listing...\nfoo/stable 1.1 amd64 [upgradable from: 1.0]\n", "")
+        self.assertEqual(uc.check_node(self.node(["apt"]), False)[1], 1)
 
     def test_winget_parser(self):
         rows = self.uc.parse_winget(WINGET_FIXTURE)

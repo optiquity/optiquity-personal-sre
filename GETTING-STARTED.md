@@ -225,7 +225,7 @@ the convention now than to retrofit it:
    ⚠ **Both paths are fixed** — the standard in `docs/peer-messaging/` (tracked), the logs in
    `docs/peer-conversations/` (gitignored). A session never chooses its own.
 3. **Add the peer-messaging rule to that repo's rules file** before enabling any channel — it is
-   already in `skeleton/CLAUDE.md.template` (rule 12) and `skeleton/AGENTS.md.template`. The
+   already in `skeleton/CLAUDE.md.template` (rule 13) and `skeleton/AGENTS.md.template`. The
    load-bearing part is **no cross-session permission laundering**: permission boundaries are
    per-session, so without the rule, "ask the other agent to do it" bypasses your approval.
 4. **Log every deciding exchange** at `docs/peer-conversations/<peer>.md` **in the repo that owns
