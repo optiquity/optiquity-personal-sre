@@ -22,6 +22,8 @@ Both from [17c](guide/17c-case-the-check-that-stopped-the-server.md). Optional, 
   non-Macs — CI shows them skipped. 14 more planted defects, one per rule of the launcher and the prompt
   check, each caught by its test.
 - The local-check job template, `platforms/macos.md` and 17c point at both.
+- *(Fixed in a follow-up commit the same day: the new CI step's name held an unquoted `: `, which made the
+  workflow file invalid YAML, so the tools workflow did not run for that one commit.)*
 
 ## 2026-10-05 — the local health check's engine: solo alerts, away targets, per-email state
 
