@@ -45,9 +45,10 @@ These bite silently, so plan for them (see your [platform spoke](../../platforms
   `PATH`** and **no interactive login** — no ssh-agent, sometimes no `HOME`. So: reference every
   tool by **absolute path**, use a **dedicated passwordless SSH key** by explicit path, and don't
   assume anything your interactive shell provides.
-- **Can't write a network mount.** On macOS especially, a scheduled job is often **blocked from
-  writing a mounted network volume** (a privacy/permission restriction on background processes) —
-  even when your interactive shell can. **The robust fix: don't write through the mount — push
+- **Can't use a network mount unattended.** On macOS especially, a scheduled job's first read or
+  write of a mounted network volume **waits on a privacy prompt** that nobody answers on an
+  unattended machine — even when your interactive shell can
+  ([platform spoke](../../platforms/macos.md)). **The robust fix: don't write through the mount — push
   over SSH to the remote host directly** (`gzip -c file | ssh <target> "cat > dest"`), which
   sidesteps the whole class of failure. Test the job **as the scheduler runs it**, not just from
   your shell.
@@ -134,7 +135,7 @@ do not — and those are rarely the services that look important.
 ## What you learn from this example
 
 - A scheduled job's **stripped environment** (minimal PATH, no agent) and the **network-mount
-  write block** are the two traps — **push over SSH, use absolute paths + a dedicated key**.
+  privacy prompt** are the two traps — **push over SSH, use absolute paths + a dedicated key**.
 - **Verify-then-publish + loud failure** is what separates a backup from a false sense of security.
 - **The bootstrap is gated; the verification is the real "done"** — install *and* proof, both
   tracked.

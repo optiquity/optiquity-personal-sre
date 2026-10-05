@@ -75,7 +75,8 @@ network/NAT layers to reason about on a small box), cap optional services with s
 (`Nice=`, `CPUWeight=`, `MemoryMax=`), and **test the critical role after every change**. The generic
 [Linux appliance/gateway pattern](linux.md#single-purpose-headless-appliance-eg-a-mesh-gateway) applies
 directly; the Pi just makes "stay lean" non-negotiable. A Pi like this is also the ideal home for a
-lightweight **fleet health page + alerts** (native Gatus, in-memory storage, capped) — see
+lightweight **fleet health page + alerts** (native Gatus, capped; in-memory storage spares the SD card but re-sends open alerts on every
+restart — the starter's README weighs it against sqlite) — see
 [E16 · Health + alerting](../guide/examples/E16-fleet-health-and-alerting.md).
 
 - **Wired appliance?** Disable Wi-Fi for determinism (`dtoverlay=disable-wifi` in the boot config +

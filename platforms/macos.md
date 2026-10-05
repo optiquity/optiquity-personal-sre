@@ -25,7 +25,7 @@ read the linked `guide/` sections for the *why*, then use this for the macOS *ho
 
 # The framework's hard core:
 brew install chezmoi git
-brew install --cask claude          # or your AI CLI; check its own docs for the current cask/installer
+brew install --cask claude-code     # the Claude Code CLI (the `claude` cask is the desktop chat app); or your AI CLI
 # secret store — one of:
 brew install --cask keepassxc       # or 1password, or `brew install pass`
 # multi-node substrate (optional):

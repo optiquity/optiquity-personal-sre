@@ -131,9 +131,9 @@ That last row is the one people skip, because it means logging into the other ma
 ~40% of one core is not "using 40% of the CPU"; it is idle 60% of the time waiting on input.
 Low CPU alone doesn't tell you whether that's link latency, remote disk, or a lock. Measure each.
 
-A real case: a multi-week analysis job, client at **3.6% of 14 cores**, link at **32% of gigabit**,
-single-stream reads at **36 MB/s**. Everything visible locally screamed "add concurrency" — three
-separate times. Then the NAS was checked: **42% I/O wait, 278 ms average read latency**, load
+A real case: a multi-week analysis job, client at **a few percent of a many-core CPU**, link at **about a third of gigabit**,
+single-stream reads at **a few tens of MB/s**. Everything visible locally screamed "add concurrency" — three
+separate times. Then the NAS was checked: **around 40% I/O wait, read latency in the hundreds of milliseconds**, load
 almost entirely I/O rather than CPU. The array was already saturated. Raising the client's job
 count would have put six concurrent readers on spinning disks and multiplied random seeks —
 *reducing* throughput, on hardware that had failed this exact way before.

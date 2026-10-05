@@ -217,13 +217,14 @@ Start with your platform's **spoke** for install specifics: `platforms/macos.md`
 
 ## Requirements
 
-**Hard (single node):** git + a git host · **Node.js + npm/npx** (for the AI CLI + most MCP
-servers) · an **AI coding CLI + account** (Claude Code = reference) · a config manager
-(chezmoi) · a secret store (OS keychain / vault).
-**Recommended:** **GitHub CLI (`gh`) + GitHub auth** (lets setup create your repo + lets the
+**Hard (single node):** git + a git host · an **AI coding CLI + account** (Claude Code =
+reference) · a config manager (chezmoi) · a secret store (OS keychain / vault).
+**Recommended:** **Node.js + npm/npx** (most MCP servers launch via `npx`; the reference CLI
+installs natively and does not need it) · **GitHub CLI (`gh`) + GitHub auth** (lets setup create your repo + lets the
 operator manage repos/PRs — *more token scope = more the operator can automate without asking*,
 see `guide/10-permissions.md`) · a **backup target** (governance Rule 4 requires backups) · `jq` ·
-**Python 3** (standard library only — the monitoring and website starter tools are Python).
+**Python 3** (standard library only — the monitoring starter tools are Python; the website deploy
+script is bash).
 **Hard (multi-node):** a private mesh (Tailscale) · SSH with keys.
 **Optional:** **MCP servers** (GitHub, filesystem, … — each a capability grant, `guide/11-mcp.md`)
 · a container runtime · an automation runtime · the multi-node coordination layer.

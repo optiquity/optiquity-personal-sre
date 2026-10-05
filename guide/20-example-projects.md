@@ -46,7 +46,7 @@ the **gated service-bootstrap** rule become concrete, plus the classic platform 
 
 - **[B4 · A nightly backup daemon](examples/B4-nightly-backup-daemon.md)** — ship a database or
   directory to a backup target over SSH on a schedule, with a remote integrity check and *loud*
-  failure. Covers scheduled services, the bare-PATH / can't-write-a-network-mount traps, and the
+  failure. Covers scheduled services, the bare-PATH / network-mount privacy-prompt traps, and the
   approval-gated bootstrap.
 - **[B5 · A network-mount keeper](examples/B5-network-mount-keeper.md)** — a passive scheduled job
   that keeps a network volume (NFS/SMB) mounted and re-mounts it if it drops. A minimal always-on
@@ -124,7 +124,7 @@ exposure creep in.
   fails **silently**: client-side integrations that only resolve on your mesh, a **CDN caching 404s**
   for hours after the origin is fixed, an **admin panel exposed** as a side effect of proxying a path,
   and monitoring that stays green because it watches the wrong hostname. **Built and verified**, traps
-  included. Also: running **several sites, each with its own AI session**, where a platform-side
+  included (one scheduled form test designed, not yet built). Also: running **several sites, each with its own AI session**, where a platform-side
   registry decides what a deploy may publish, with a starter in
   [`skeleton/websites/`](../skeleton/websites/).
 - **[E18 · Search and answer-engine visibility](examples/E18-search-and-answer-engines.md)** —

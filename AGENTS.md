@@ -74,7 +74,7 @@ explained") far more cheaply than reading files.
 If no index exists, just work normally; nothing here depends on it.
 
 **There is deliberately NO refresh hook on this repo, and that is not an oversight.** This repo is
-~90% prose (50 markdown chapters + templates against a handful of scripts). On a prose-heavy repo
+~90% prose (29 chapters and 18 worked examples, plus templates, against a handful of scripts). On a prose-heavy repo
 the cheap *structural* refresh can replace a curated semantic index — concept-level nodes — with
 raw heading-level nodes, and it looks like it succeeded. So the index here is refreshed
 **deliberately**, via the graphify skill's `/graphify . --update`, not automatically on commit.

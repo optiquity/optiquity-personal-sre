@@ -14,7 +14,7 @@ never auto-mutates a running node. The tools + templates are in
 
 ## The scenario
 
-You have services and nodes doing real work. Two blind spots hurt:
+You have services and nodes doing real work. Three blind spots hurt:
 
 1. **"Is it actually working?"** — a node answering `ping` tells you nothing about whether its
    app still serves requests. You want *functional* checks: the API returns 200 **with the
@@ -30,7 +30,7 @@ You have services and nodes doing real work. Two blind spots hurt:
    **actually installed**, and reports anything present-but-undeclared — see
    [17 · Monitoring](../17-monitoring.md).
 
-And when either goes wrong, you want to **find out by email**, not by stumbling on it.
+And when any of them goes wrong, you want to **find out by email**, not by stumbling on it.
 
 ## Why do it "the framework way"
 
@@ -260,9 +260,9 @@ alert covers both "finished" and "died at 12%", with neither able to impersonate
   hour are the tell. See § 17 for the pattern, including why a *manual* trigger often escapes the
   window's start but not its end — and why the daily nudge that exploits that should
   **retire itself** once the backlog clears.
-- **The remote store, not the local box.** The client sat at 3.6% CPU and 32% of its link, which
-  read as idle capacity begging for more concurrency. The NAS said otherwise: 42% I/O wait, 278 ms
-  read latency. More readers on a saturated array multiplies seeks and *reduces* throughput. See
+- **The remote store, not the local box.** The client sat at a few percent CPU and about a third of its link, which
+  read as idle capacity begging for more concurrency. The NAS said otherwise: around 40% I/O wait,
+  read latency in the hundreds of milliseconds. More readers on a saturated array multiplies seeks and *reduces* throughput. See
   § 08 for isolating which layer is actually binding before you tune anything.
 
 **Both bugs found in this section were found by testing, not review.** The state-file handling had

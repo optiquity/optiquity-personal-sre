@@ -11,9 +11,10 @@
 **/.grep-guard.local
 **/*.pem
 **/*.key
-**/id_ed25519*
-**/id_rsa*
-**/*.kdbx                 # vault files
+# SSH private keys (id_rsa, id_ed25519, id_ecdsa, …) and vault files. ⚠ A comment must be on its OWN
+# line: git reads `pattern   # note` as part of the pattern, and then ignores nothing.
+**/id_*
+**/*.kdbx
 **/*.p12
 **/*.pfx
 **/credentials.json

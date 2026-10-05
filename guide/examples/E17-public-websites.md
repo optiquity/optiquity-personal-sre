@@ -11,7 +11,8 @@ several ways this fails **silently**.
 > Generic pattern, no personal config. `<placeholders>` are yours to fill.
 
 **Status: built and verified.** Every step below was executed end to end, including the parts that
-went wrong. The traps are marked ⚠ and are the reason this document is longer than the plan was.
+went wrong — except the scheduled real-browser test of the contact form, which is marked as designed
+but not yet built. The traps are marked ⚠ and are the reason this document is longer than the plan was.
 
 ---
 
@@ -286,10 +287,20 @@ logs and every server-side check saw nothing, because nothing arrived.
 
 - **You can't alert on "no messages".** Zero deliveries means either total success or total
   failure, and that ambiguity is exactly what let fifteen days pass.
-- **Submit the real form from a real browser, on a schedule.** A headless browser loads the page
-  and submits it against an instance that cannot deliver mail (a staging copy set to discard).
-  Staging is safe but misses breakage that exists only in production. Probing production needs a
-  marked submission that gets discarded, and a bot challenge may block the headless browser.
+- **Submit the real form from a real browser, on a schedule.** A headless browser drives the real
+  page, two ways:
+  - **Staging, end to end:** a copy set to discard. The submission goes all the way, and the check
+    confirms the instance logged that exact one. Safe, but staging is deployed separately, so it can
+    miss breakage that exists only in production.
+  - **Production, up to the network edge only:** the page's own script builds and sends its request,
+    the browser stops it, and the check asserts it was correct — and proves on every run that nothing
+    reached production. A real submission there is a real email.
+  - **Don't add a "discard if marked" mode to production** for the check's sake: anyone who learns
+    the marker can get a real message silently dropped.
+  - **The bot challenge** blocks a headless browser by design; don't fight it. Swap in the provider's
+    documented always-pass test key **only inside the check's own browser**, and assert that the real
+    page still carries the real key.
+
   ⚠ *Designed in the fleet this came from; not yet built there.*
 - **A clean lint run doesn't prove the page works.** The linter in use missed the undefined name.
   That was shown by planting one, and it still reported nothing

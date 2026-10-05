@@ -147,7 +147,8 @@ the surrounding tools are in [`../skeleton/monitoring/`](../skeleton/monitoring/
 narrative is [E16](../guide/examples/E16-fleet-health-and-alerting.md):
 
 - **Up/down of always-on infrastructure** — a lightweight health checker (e.g. Gatus) with
-  **in-memory storage** (no disk writes), checking internet / DNS / router / servers by
+  **in-memory storage** (no disk writes — but every restart re-sends open alerts; sqlite avoids that,
+  see E16's starter), checking internet / DNS / router / servers by
   TCP/HTTP/DNS. Bind it to loopback and publish via the mesh's private proxy ("serve"). If the tool
   ships **Docker-only** (no arm64/native binary), build the static binary from source rather than
   dragging a container runtime onto a lean node.

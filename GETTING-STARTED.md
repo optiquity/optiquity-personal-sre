@@ -132,7 +132,6 @@ Set these up first (or let the AI path / `bootstrap.sh` help). Full detail:
 | Requirement | Why | Notes |
 |---|---|---|
 | **git + a git host account** (e.g. GitHub) | source of truth | you'll create a private repo |
-| **Node.js + npm/npx** | the AI CLI + many **MCP servers** run on Node | install first; several MCP servers launch via `npx` (others are native binaries or Docker — e.g. GitHub's official server) |
 | **An AI coding CLI + account** | the operator | Claude Code = reference; needs an Anthropic (or your provider's) account/subscription |
 | **A config manager — chezmoi** | renders the repo onto the machine | `guide/05-chezmoi.md` |
 | **A secret store** (OS keychain / vault) | runtime secrets, zero-in-git | `guide/06-secrets.md` + your platform spoke |
@@ -143,7 +142,8 @@ Set these up first (or let the AI path / `bootstrap.sh` help). Full detail:
 | **GitHub CLI (`gh`) + GitHub auth** | lets setup create your repo + lets the operator manage repos/PRs. **The more permission you grant the token, the more the operator can automate without stopping to ask you** — a read-only token means it drafts and you push; a token that can create repos / merge PRs means it can do those unattended. Same convenience-vs-blast-radius trade-off as the permission presets (`guide/10-permissions.md`). Grant deliberately. |
 | **A backup target** | governance requires "back up before apply" (Rule 4). Decide where — a local dir, an external disk, a NAS — before you apply config. |
 | **`jq`** | JSON parsing (handy with `gh` and scripts). |
-| **Python 3** | the monitoring and website starter tools are Python — standard library only, no packages to install. |
+| **Node.js + npm/npx** | many **MCP servers** launch via `npx` (others are native binaries or Docker — e.g. GitHub's official server). The reference AI CLI installs natively and does not need it. |
+| **Python 3** | the monitoring starter tools are Python — standard library only, no packages to install. (The website deploy script is bash.) |
 
 ### Hard — only if multi-node
 | Requirement | Why |

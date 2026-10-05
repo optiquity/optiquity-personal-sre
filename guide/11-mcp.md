@@ -45,7 +45,9 @@ Each AI CLI stores MCP config differently, but the shape is the same — a list 
 with a launch command/args and (often) a scope. The framework ships **config templates** in
 `skeleton/mcp/` with **placeholders, never real paths or tokens**:
 
-- **Claude Code** — MCP servers declared in its settings; plugins can bundle common ones.
+- **Claude Code** — a project's `.mcp.json` (shared with the repo), or `claude mcp add` for your own
+  servers (stored in `~/.claude.json`); plugins can bundle common ones. ⚠ **Not `settings.json`:** an
+  `mcpServers` block there is silently ignored — the servers simply never load.
 - **Codex** — its own config file (`config.toml`) with an MCP section.
 - **Other CLIs** — their respective config; the template notes the location.
 

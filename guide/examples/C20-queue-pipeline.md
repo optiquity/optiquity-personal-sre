@@ -86,7 +86,7 @@ and says so in the step's output. An overwrite loses the item that was already t
 |---|---|
 | **STALLED** | an item has waited in a queue past a threshold **while that pipeline is idle**. Waiting behind a running job is healthy, not stalled. |
 | **STUCK** | a job is running and **nothing has been written in its work area** for N minutes. A long job is not a stuck one: a large batch can run for hours. |
-| **Failure, one check per workflow** | a run exited with **any** non-zero code, not just the last step's. Also when the runtime **stopped** a run (canceled, error, crashed; see [C6](C6-automation-runtime.md), "Time limits"), or when two runs of one workflow overlapped. One combined check would hide a second workflow's failure behind the first. |
+| **Failure, one check per workflow** | a run exited with **any** non-zero code, not just the last step's. Also when the runtime **stopped** a run (canceled, error, crashed; see [C6](C6-automation-runtime.md), "Time limits"), or when two runs of one workflow overlapped in their guarded worker step (judged on that step's own timing, not the whole run — see [14](../14-automation.md)). One combined check would hide a second workflow's failure behind the first. |
 
 The measurements have traps of their own:
 

@@ -6,7 +6,9 @@ project needs, scope it tightly, and know whether it's read-only or mutating.
 
 ## Files here
 
-- `claude.mcp.json` — MCP servers for Claude Code (goes in its settings' `mcpServers`).
+- `claude.mcp.json` — MCP servers for Claude Code. Copy the server entries you want (not the `//`
+  comment keys) into your project's `.mcp.json`, or add them with `claude mcp add`. ⚠ Claude Code
+  does **not** read MCP servers from `settings.json`; a block there is ignored without an error.
 - `codex.mcp.toml` — the equivalent for Codex (`~/.codex/config.toml` MCP section).
 
 ## The GitHub server — use GitHub's OFFICIAL one

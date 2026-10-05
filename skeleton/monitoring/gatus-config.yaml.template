@@ -1,14 +1,19 @@
 # Gatus config — fleet health (infra + your app stack), with email alerts on failure.
 # Gatus (https://github.com/TwiN/gatus) is a tiny Go health-check dashboard: it periodically
 # hits each endpoint and asserts CONDITIONS, then alerts when they fail. Runs great native on a
-# gateway/Pi with in-memory storage (zero disk writes).
+# gateway/Pi.
 #
 # Install to the Gatus config path on the node running it (e.g. /etc/gatus/config.yaml) and fill
 # every <placeholder>. Alerts go through gatus-mail-relay (README § Gatus), which needs the SMTP
 # settings in /etc/gatus/gatus.env (see gatus.env.template). Conditions verify FUNCTION (status + body + latency), not just a
 # ping — that's what catches "up but broken".
+# ⚠ Storage is a trade-off. `memory` writes nothing to disk, but every Gatus restart forgets which
+# alerts are open and SENDS THEM ALL AGAIN — and you restart it after every config edit. `sqlite`
+# remembers them across restarts, at the cost of many small writes a day (it matters on an SD card).
+# For sqlite: `type: sqlite`, `path: /var/lib/gatus/data.db`, and `StateDirectory=gatus` in the unit
+# (README § Gatus) — without it a hardened unit cannot open the file.
 storage:
-  type: memory                       # no disk writes; history lives in RAM
+  type: memory                       # or sqlite (above) if duplicate alerts after a restart matter
   maximum-number-of-results: 100
 
 web:

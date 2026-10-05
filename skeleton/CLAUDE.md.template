@@ -86,7 +86,8 @@ here, in the guide and in every other repo built from it. Your own rules start a
     to no repo; crossing that line is a hand-off, not an edit. (Exception: a public repo
     derived from this one may share its owner — name it here if you have one.) Exactly one
     document is canonical — every other mention is a pointer. Changes to it are requested, not
-    made. IDs are permanent; disagreement blocks until the user rules.
+    made. IDs are permanent; disagreement blocks until the user rules. A session that owns
+    infrastructure never authors content, and vice versa — even when asked, even when faster.
 
 13. **A channel between agents is also an escalation path.** *(Per this repo's copy of
     `docs/peer-messaging/PEER-MESSAGING.md`, **v4**.)* (a) This session is
@@ -101,8 +102,9 @@ here, in the guide and in every other repo built from it. Your own rules start a
 
 14. **Every completed project leaves a postmortem.** Created from `docs/postmortems/TEMPLATE.md`
     when the project **opens** — or when it is reopened or gains follow-on work — appended as work
-    happens, finalised at close. Re-read `docs/postmortems/RULES.md` at each of those moments — never
-    recall it. Before writing up new
+    happens, finalised at close. Re-read `docs/postmortems/RULES.md` at each of those moments, and before
+    writing any retroactive postmortem — never recall it. Projects already open when you adopt
+    this get one at close, never a back-dated draft. Before writing up new
     work, read the related finished projects and cite what you found, including "nothing
     relevant".
 

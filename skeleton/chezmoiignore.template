@@ -7,7 +7,8 @@
 **/.env
 **/*.kdbx
 **/*.key
-**/id_ed25519*
+**/*.pem
+**/id_*
 .config/*/auth/**
 
 # ── Docs/design live in the repo but aren't dotfiles to apply ───────────────

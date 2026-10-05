@@ -98,7 +98,7 @@ keeps the *pattern* portable:
 
 | CLI | Rules file | Model/global config | MCP config | Permissions |
 |---|---|---|---|---|
-| **Claude Code** (reference) | `CLAUDE.md` | `settings.json` | `settings.json` → `mcpServers` | `settings.json` → `permissions` (3 presets, [10](10-permissions.md)) |
+| **Claude Code** (reference) | `CLAUDE.md` | `settings.json` | `.mcp.json` in the project, or `claude mcp add` (stored in `~/.claude.json`) — **not** `settings.json` | `settings.json` → `permissions` (3 presets, [10](10-permissions.md)) |
 | **Codex** | `AGENTS.md` | `~/.codex/config.toml` | `config.toml` → `[mcp_servers]` | Codex's approval settings |
 | **Gemini / agy** | its own rules doc | its own config | its own MCP section | its own approval settings |
 | **Others** | their equivalent | varies | varies | varies |

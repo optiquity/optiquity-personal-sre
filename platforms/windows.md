@@ -32,8 +32,8 @@ Prefer **winget** for system tools, **scoop** where you want no-admin userspace 
 **Gotcha — non-interactive *install*:** over SSH/automation, `winget` *installs and upgrades*
 frequently need an **elevated, interactive** session. They can return *"Access is denied"* from a
 plain non-interactive SSH shell, so run them from an **elevated PowerShell on the box** (local
-console or RDP). **Detecting is different:** `winget list --disable-interactivity` reports available
-upgrades fine over SSH. It cannot refresh its source index without elevation, so results come from
+console or RDP). **Detecting is different:** `winget upgrade --include-unknown --disable-interactivity` reports
+available upgrades fine over SSH. It cannot refresh its source index without elevation, so results come from
 cache; say so wherever you report them. Installing needs privilege, detecting usually does not
 ([16](../guide/16-multinode.md)): don't let the first become an excuse for skipping the second.
 
@@ -116,7 +116,7 @@ chezmoi runs on Windows, but templating and script hooks differ:
 ## ⛏ Service manager on Windows — partial
 
 For fleet monitoring, the practical note today: **detecting** Windows updates works over SSH
-(`winget list --disable-interactivity`, cached results); **applying** them needs an elevated
+(`winget upgrade --include-unknown --disable-interactivity`, cached results); **applying** them needs an elevated
 interactive session. So the skeleton's update checker has a `winget` method: declare it for a Windows
 node and the digest lists what is available (from the cached index, and it says so), while you run
 the upgrade itself from an elevated session. Metrics are fine: `windows_exporter` scrapes like any

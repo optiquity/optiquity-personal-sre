@@ -90,7 +90,8 @@ repo, so it lives at the root rather than in the skeleton). It has two layers.
   `100.64–127.x.x` that mesh VPNs use; tailnet hostnames (`<host>.tail<hex>.ts.net`)
 - Email addresses
 - Secret shapes: private-key headers, `password = "…"`-style assignments, unquoted
-  `*_KEY=`, `*_TOKEN=` and `*_PASSWORD=` values, and common token prefixes (OpenAI/Anthropic `sk-`,
+  values for names containing `API_KEY`, `SECRET`, `TOKEN` or `PASSWORD` (a generic `*_KEY=`, such as
+  `SIGNING_KEY=`, is **not** caught — add a pattern if your stack uses them), and common token prefixes (OpenAI/Anthropic `sk-`,
   GitHub `ghp_`/`github_pat_`, AWS `AKIA`, Slack `xox?-`, Google `AIza`)
 
 It does **not** detect arbitrary high-entropy strings. A random secret with no recognisable
@@ -175,7 +176,7 @@ what lets you share the work at all.
 
 ---
 
-*This is the last section of the master guide. For platform-specific commands, see the spokes
+*This is the last chapter of the guide's main sequence; [20](20-example-projects.md) catalogues the worked examples. For platform-specific commands, see the spokes
 (`platforms/`); for starter files, see `skeleton/`; to begin, see [18 · Setup](18-setup.md).*
 
 ---

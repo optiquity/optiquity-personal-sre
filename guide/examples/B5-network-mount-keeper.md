@@ -43,16 +43,18 @@ backup that writes to a mount needs the mount to *be there*.
 Keep it **cheap** (it runs frequently), **idempotent** (a no-op when the mount is present) and
 **passive**. ⚠ Two tempting additions are wrong:
 
-- **Don't read inside the share to test it.** On macOS a network share is bound to the GUI login
-  session, so `ls`/`stat` inside it from a scheduled job can hang even when the mount is healthy
-  ([platform spoke](../../platforms/macos.md)). A probe that runs as root can also be refused by
+- **Don't read inside the share to test it.** On macOS the first read inside a share by a program
+  macOS has not approved waits on a privacy prompt, and on an unattended Mac nobody answers, so
+  `ls`/`stat` from a scheduled job can hang even when the mount is healthy
+  ([platform spoke](../../platforms/macos.md), case study [17c](../17c-case-the-check-that-stopped-the-server.md)). A probe that runs as root can also be refused by
   the server's root squash, and then it fails on every run.
 - **Don't auto-heal a present mount.** A keeper that force-unmounts after a failed probe cannot tell
   *broken* from *busy*, so on a timer it kills in-flight writes. Recovering a stale mount that is
   still present is a manual runbook step.
 
-Detecting a *hung* mount is monitoring's job, not the keeper's: a separate check through a login
-shell, with a timeout, where a timeout means **unknown**, not down
+Detecting a *hung* mount is monitoring's job, not the keeper's: a separate check that reads inside
+the share with a time limit, run by a program macOS has approved, where a timeout means **unknown**,
+not down
 ([E16](E16-fleet-health-and-alerting.md), [17 · Monitoring](../17-monitoring.md)).
 
 ### 2. Run it passively on a schedule / keep-alive

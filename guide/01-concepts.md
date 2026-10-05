@@ -185,7 +185,7 @@ You do not adopt everything at once. The framework has a **hard core** and **opt
   digest of what's fallen behind, delivered by mail ([E16](examples/E16-fleet-health-and-alerting.md)).
 
 A complete requirements matrix (hard/optional × single/multi-node) is in
-[18 · Setup](18-setup.md). The point here: **a working adoption can be one machine with four
+[07 · Tools & requirements](07-tools-requirements.md). The point here: **a working adoption can be one machine with four
 tools.** Everything else is opt-in.
 
 ## Vocabulary (used throughout)

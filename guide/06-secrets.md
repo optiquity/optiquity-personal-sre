@@ -147,14 +147,21 @@ only if you use Gatus's built-in email. Narrated in [E16](examples/E16-fleet-hea
 Values under a compose file's `environment:` show in `docker inspect`, and in the process's
 environment, which every child process inherits and which ends up pasted into diagnostics. So:
 
-1. **Mount the secret as a read-only file.** Bind a `chmod 600` host file to `/run/secrets/<name>`
+1. **Mount the secret as a read-only file.** Bind a host file to `/run/secrets/<name>`
    (`- ./secrets/<name>:/run/secrets/<name>:ro`), or use compose's own `secrets:` section, which
-   mounts the same way. The application reads the file.
+   outside Swarm mounts the same way. The application reads the file. ⚠ **Check who reads it.** A
+   bind-mounted file keeps its host owner and mode, so a `chmod 600` file is readable only by a
+   container process running as that owner — usually root. Many images start as root and then switch
+   to their own user (databases' first-start scripts, most Node apps); for those, `600` fails with a
+   permission error, and `644` (still kept out of git and out of `inspect`) is what works.
 2. **Use the image's `*_FILE` variables where it has them** (for example, set `DB_PASSWORD_FILE` to `/run/secrets/db`).
    Where an image reads only environment variables, record that as a known exception rather than
    pretend.
-3. **Know the scope.** This keeps the secret out of `inspect` output, child processes and pasted
-   diagnostics. It is not access control: anyone who can run the container runtime's commands is
+3. **Know the scope.** This keeps the secret out of `inspect` output and pasted diagnostics. Whether
+   it also leaves the **process environment** depends on the image: most official images implement
+   `*_FILE` in their start script by reading the file and **exporting** the value before the server
+   starts, so the server and its child processes still have it. Only an app that reads a file itself
+   keeps it out. It is not access control: anyone who can run the container runtime's commands is
    effectively root on the host.
 
 > `~/.zshenv` itself is a dotfile you may config-manage — but it should only ever *load* the

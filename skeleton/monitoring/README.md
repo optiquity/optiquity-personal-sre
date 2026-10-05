@@ -147,7 +147,7 @@ after every change to `fleet-mail`. A fix that reaches every other node through 
 never reaches this one on its own.
 
 Gatus needs a `gatus.service` unit, which a bare binary does not bring with it. If you have none,
-this minimal one (hardened; fine with the template's in-memory storage) goes at
+this minimal one (hardened; as written it suits the template's in-memory storage) goes at
 `/etc/systemd/system/gatus.service`, run as a dedicated system user
 (`sudo useradd --system --no-create-home --shell /usr/sbin/nologin gatus`):
 
@@ -173,8 +173,13 @@ ProtectHome=true
 WantedBy=multi-user.target
 ```
 
-Then `sudo systemctl daemon-reload && sudo systemctl enable --now gatus`. If you switch Gatus to disk
-storage, `ProtectSystem=strict` makes its data path read-only: add a `StateDirectory=`.
+Then `sudo systemctl daemon-reload && sudo systemctl enable --now gatus`.
+
+⚠ **In-memory storage re-sends every open alert each time Gatus restarts** — after every config edit,
+for instance — because it forgets which alerts it already sent. If those duplicates matter, use sqlite
+(`type: sqlite`, `path: /var/lib/gatus/data.db`) and add `StateDirectory=gatus` to the unit:
+`ProtectSystem=strict` makes everything else read-only, and without it Gatus cannot open the file. The
+cost is many small writes a day, which matters on an SD card.
 
 **Test the alert path** before trusting it: add a throwaway endpoint that fails immediately
 (`url: "tcp://127.0.0.1:1"`, `conditions: ["[CONNECTED] == true"]`, `failure-threshold: 1`),
@@ -391,7 +396,7 @@ Write these instead as **coverage probes**:
 - **Count the artifact**, not the process — the rows, files, or records the work actually produces.
   If you can't name the artifact, you can't write the probe.
 - **Report `done / total` as a percentage.** A percentage cannot silently mean zero the way a
-  boolean can. `complete: true` is a claim; `41,802 of 71,623 (58.4%)` is a measurement.
+  boolean can. `complete: true` is a claim; `12,400 of 20,000 (62%)` is a measurement.
 - **Two phases, so it stays useful after the backlog clears.** While below target, report milestones
   and treat *no progress for N hours* as the terminal signal (a multi-week sweep has no clean end
   event, and this one alert covers both "finished" and "died early" — the percentage says which).
@@ -429,8 +434,9 @@ remembers the reason for. Build the exit in:
 
 Both `.env` files are **host-local secrets** — `chmod 600`, never committed (guide § 06). Version
 the *config* (`config.yaml`, `fleet-nodes.conf`) in your private repo if you like; keep the
-credentials out. The from/to addresses are not secret (they live in `config.yaml`); only the
-password is.
+credentials out. The from/to addresses are not secret (they sit beside the password in `gatus.env` and `mail.env`,
+or in `config.yaml` if you use Gatus's own email provider instead of the relay); only the password
+is.
 
 ## Why notify-only
 

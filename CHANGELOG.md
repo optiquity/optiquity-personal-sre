@@ -3,6 +3,32 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-05 — corrections from the round's final re-check
+
+**Re-check your own repo for the first two.**
+
+- **`skeleton/gitignore.template` did not ignore vault files or ECDSA keys.** A trailing `# comment` on the
+  `*.kdbx` line made the comment part of the pattern, and the key patterns named only `id_ed25519*`/`id_rsa*`.
+  Now `**/id_*` and `**/*.kdbx` on their own lines (proven with `git check-ignore`). `chezmoiignore.template`
+  gains `*.pem` and `id_*`.
+- **Claude Code does not read MCP servers from `settings.json`** — a block there is silently ignored. Chapters
+  11 and 12 and `skeleton/mcp/` now say `.mcp.json` or `claude mcp add` (stored in `~/.claude.json`).
+- **Wrong teaching corrected:** the macOS install line (`claude-code` is the CLI cask; `claude` is the
+  desktop app) · B4/B5's hung-share cause (a privacy prompt, not the login session; A1 missed B5) · E17's
+  production form test (stop the request in the browser; no "discard if marked" mode) · chapter 06's
+  container secrets (a `600` file is unreadable to images that drop root; `*_FILE` usually still exports the
+  value into the server's environment) · Gatus in-memory storage re-sends every open alert on restart
+  (template, README, Linux and Pi notes) · overlap is judged on the guarded step, not the whole run (14,
+  C20) · 17a's sixth discovery · the leak guard's `*_KEY` claim (19).
+- **Rules templates:** rule 12 gains "infrastructure never authors content"; rule 14 gains the retroactive
+  re-read and no back-dated drafts; the AGENTS template's rules 1 and 15–18 now carry the same substance as
+  the CLAUDE template.
+- **Smaller:** Node.js is recommended, not required (the reference CLI installs natively) · the website
+  deploy script is bash · `winget upgrade` is the detection command · requirements matrix is in 07 · the
+  relay's addresses live in the env files · E16's three blind spots · 19 is not the last chapter · E17's
+  status names its one unbuilt check · exact figures copied from a real fleet rounded · the install-audit
+  plist template's comment is valid XML.
+
 ## 2026-10-05 — a production publish gate for websites, and the installer's re-run caution
 
 - **`skeleton/websites/deploy-site.sh`: a production publish gate.** A `sites.conf` row's optional 5th field

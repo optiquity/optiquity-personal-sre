@@ -138,8 +138,11 @@ beside the first. Test something a person can't move instead:
 - **Fail closed.** If the guard can't tell, it reports busy.
 - **An item stranded in the fence keeps it shut.** That is correct, and it needs a human, so say
   so in the alert.
-- **Detect a failed guard afterwards:** flag two runs of one workflow that overlapped in time,
-  counting only runs that reached the worker.
+- **Detect a failed guard afterwards:** flag two runs of one workflow whose **guarded steps**
+  overlapped in time. Judge it on the worker step's own start and end, not the whole run: a run's
+  bookkeeping after the worker (moving files, logging) can overlap the next run's start without the
+  guard having failed, and that raised a false alarm. Fall back to whole runs only when the step
+  can't be found — that can over-report, never hide.
 - **Test the self-match from a shell inside a shell.** A test run from the direct parent passed
   against a guard that *did* match itself ([17 · Monitoring](17-monitoring.md), "Prove each test").
 

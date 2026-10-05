@@ -53,7 +53,7 @@ used the system and hit the missing result.
 
 **A second instance, with a different mechanism — worth recognising because the first fix does not
 catch it.** An automation platform ran a media-conversion job every 30 seconds and recorded
-**2,256 consecutive successful executions** while converting nothing at all. Its status was not
+**more than two thousand consecutive successful executions** while converting nothing at all. Its status was not
 lying about a *process*: the workflow genuinely ran, genuinely completed, and genuinely took the
 correct branch — its own failure branch, which filed each item in a `failed/` directory exactly as
 designed. Detection was never broken. **The runner's status means "the workflow ran", never "the
@@ -78,7 +78,7 @@ So for anything batch, long-running, or queue-driven:
 **Count the artifact the work produces.** Not the process, not the trigger, not the log line saying
 it started. If the job writes rows, count rows. If it writes files, count files. Then express it as
 **coverage** — `done / total`, a percentage — because a percentage cannot silently mean zero the way
-a boolean can. `complete: true` is a claim; `41,802 of 71,623 (58.4%)` is a measurement.
+a boolean can. `complete: true` is a claim; `12,400 of 20,000 (62%)` is a measurement.
 
 **A percentage also gives you the completion signal a long job otherwise lacks.** A multi-week sweep
 has no clean end event, so the honest terminal signal is *absence of progress*: coverage stopped

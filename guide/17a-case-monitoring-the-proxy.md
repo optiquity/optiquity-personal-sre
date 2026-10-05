@@ -36,7 +36,7 @@ twenty days.
 #### 1 · The probe watched a process that was not doing the work
 
 A media server can generate a per-file analysis artifact that enables a downstream feature. A
-watcher was written to report progress on that generation across a library of roughly 71,600 items.
+watcher was written to report progress on that generation across a library of roughly seventy thousand items.
 
 The watcher checked **whether a particular scanner process was running**, and emailed *"generation
 complete"* when the process exited.
@@ -62,9 +62,9 @@ A workflow engine drove a transcode pipeline. A directory holding conversion pre
 with a capitalisation change; the network share was case-sensitive; every preset import failed;
 the encoder exited non-zero; each file was correctly routed to a *failed* directory.
 
-The workflow engine recorded **2,256 consecutive successful executions.**
+The workflow engine recorded **more than two thousand consecutive successful executions.**
 
-⚠ **It was not lying.** The workflow *did* run, 2,256 times, to completion, without an engine-level
+⚠ **It was not lying.** The workflow *did* run, every one of those times, to completion, without an engine-level
 error. **An execution status means "the workflow ran." It has never meant "the work succeeded."**
 
 Nothing watched the failed-output directory, so the pipeline produced nothing for at least 19 hours
@@ -129,7 +129,7 @@ application had begun rewriting its own config file, so the config manager wante
 overwriting it. A scheduled job has no terminal to prompt on, so **the run aborted before applying
 anything else.**
 
-It reported **failure, on both machines, for roughly 962 consecutive runs — about 20 days.**
+It reported **failure, on both machines, for nearly a thousand consecutive runs — about 20 days.**
 
 The cost was not the one contested file. It was everything the abort took with it: one machine was
 missing a tool entirely and running three stale ones; the other had 14 pending changes queued,
@@ -193,7 +193,7 @@ Worth listing, because none was found by monitoring:
 | 3 | An **unrelated** package upgrade that made someone look at the machine |
 | 4 | Investigating a different incident |
 | 5 | An application on another machine crashing repeatedly |
-| 6 | An SSH session unexpectedly falling back to a password prompt |
+| 6 | A routine update pass that happened to read the scheduler's exit code |
 
 ⚠ **Six for six, by accident or by a human noticing.** A monitoring system with this much coverage
 and this failure mode is not neutral — **it is worse than none, because it actively tells you
