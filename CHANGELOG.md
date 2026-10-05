@@ -3,6 +3,19 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-05 — security-flagged updates in the update checker
+
+- **`fleet-update-check --security`** — a daily, security-only run that alerts once on each **new** item:
+  `apt` (any release's `-security` suite), `uvtool` and `pipx` (PyPI: vulnerabilities of the installed
+  version; withdrawn advisories ignored; "no fixed release yet" when the latest is affected too), `npm`
+  globals (OSV, with the version that fixes them). A **canary** per source every run, so a source that
+  changes shape reads *flagging broken*, never "nothing found". State saved only after the mail went out;
+  a fixed item is forgotten only when its source answered.
+- **The weekly digest opens with a Security-relevant section**, names every declared method that cannot be
+  flagged (Homebrew, macOS softwareupdate, winget …, container images), and flags a daily run that stopped.
+- **New `fleet-security-check.plist.template`** (daily 09:30); `bootstrap-monitoring.sh --with-timer` loads it.
+- **Tests:** 9 new (82); 13 planted defects, one per rule, each caught. No test touches the network.
+
 ## 2026-10-05 — macOS: an alarm for a prompt nobody answers, and a launcher that stops the prompts
 
 Both from [17c](guide/17c-case-the-check-that-stopped-the-server.md). Optional, and macOS only.

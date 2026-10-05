@@ -38,9 +38,17 @@ COVERAGE — the question a list of checks cannot answer is "what is installed t
   · a malformed row in any of these files is REPORTED, never silently skipped.
 An unreachable node is noted and skipped — a laptop asleep is not an error.
 
-Exit: 0 ok · 1 the digest email failed to send · 2 config error
+SECURITY (guide § 17, "Security updates: raised the same day, and honest about what cannot be flagged").
+--security runs only the security classifiers — daily, from fleet-security-check.plist.template — and sends
+ONE Alert listing NEW items (state in $FLEET_SECURITY_STATE, saved only after the mail went out). The weekly
+digest opens with a security section, names every declared method that CANNOT be flagged, and flags a daily
+run that has stopped. Sources with a signal: apt (the distribution's -security suite) · uv tools and pipx
+(PyPI: vulnerabilities of the INSTALLED version) · npm globals (OSV). Each source has a CANARY — a known
+positive checked every run — so a source that changes shape reads UNKNOWN, never "nothing found".
+
+Exit: 0 ok · 1 the digest (or security alert) email failed to send · 2 config error
 """
-import argparse, os, re, shlex, subprocess, sys, datetime
+import argparse, json, os, re, shlex, subprocess, sys, datetime, urllib.error, urllib.request
 
 SSH = ["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes"]
 CONF_DIR = os.path.expanduser("~/.config/fleet-monitoring")
@@ -451,6 +459,312 @@ def decisions_block():
         lines.append(f"  {kind} ({len(by_kind[kind])}): {', '.join(by_kind[kind])}")
     return lines or ["  none recorded"], count, errs
 
+# ═══ SECURITY FLAGGING ════════════════════════════════════════════════════════════════════════════
+SECURITY_STATE = os.environ.get("FLEET_SECURITY_STATE", os.path.join(CONF_DIR, "security-alerted.state"))
+STALE_RUN_DAYS = 2           # a daily run older than this is reported by the weekly digest
+OSV_URL = "https://api.osv.dev/v1/query"
+# Known positives: an old version with published vulnerabilities. A canary that stops returning a hit
+# means its source changed shape or went away — that source is UNKNOWN, never "nothing found".
+CANARY = {"PyPI": ("requests", "2.19.0"), "OSV": ("npm", "lodash", "4.17.15")}
+SECURITY_SOURCE = {"apt": "apt", "uvtool": "PyPI", "pipx": "PyPI", "npm": "npm"}   # method -> source
+NO_SIGNAL_NAMES = {"brew": "Homebrew", "softwareupdate": "macOS softwareupdate", "winget": "winget",
+                   "manual": "manual updates"}
+NO_SIGNAL_ALWAYS = "container images · Node versions and Go-built binaries (no classifier in this starter)"
+
+
+def fetch_json(url, payload=None, timeout=20):
+    """GET, or POST a JSON payload. The one network door for the security classifiers, so a test
+    replaces one function and no test touches the network."""
+    data = json.dumps(payload).encode() if payload is not None else None
+    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"} if data else {})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.load(r)
+
+
+def _vtuple(v):
+    return tuple(int(x) for x in re.findall(r"\d+", v or ""))
+
+
+def _item(role, method, pkg, frm, to, reason):
+    source = SECURITY_SOURCE.get(method, method)
+    return {"node": role, "method": method, "pkg": pkg, "from": frm, "to": to, "reason": reason,
+            "key": f"{role}|{source}|{pkg}|{frm}"}
+
+
+def _osv(ecosystem, name, version):
+    """OSV query -> vulnerability records ([] = none known). Raises when it could not answer."""
+    return fetch_json(OSV_URL, {"package": {"name": name, "ecosystem": ecosystem}, "version": version}).get("vulns") or []
+
+
+def _osv_fix(vulns, name):
+    """The version that fixes every vulnerability, or "" when any has no fixed release yet."""
+    fixes = []
+    for v in vulns:
+        best = ""
+        for aff in v.get("affected", []):
+            if (aff.get("package") or {}).get("name") not in (name, None):
+                continue
+            for rng in aff.get("ranges", []):
+                for ev in rng.get("events", []):
+                    if "fixed" in ev and (not best or _vtuple(ev["fixed"]) > _vtuple(best)):
+                        best = ev["fixed"]
+        if not best:
+            return ""
+        fixes.append(best)
+    return max(fixes, key=_vtuple) if fixes else ""
+
+
+def _ids(vulns):
+    return ", ".join(v.get("id", "?") for v in vulns[:3]) + (", …" if len(vulns) > 3 else "")
+
+
+def security_scan(nodes, reach):
+    """Run every classifier. -> {items, signal, notes, checked, no_signal}.
+    signal    {source: "ok" | "UNKNOWN — <why>"} for the sources the fleet's declared methods use
+    checked   {(role, source)} that answered this run — only those may be pruned from the alert state
+    no_signal the declared methods that can never be flagged, named so "no flag" never reads as "safe"
+    """
+    items, notes, checked = [], [], set()
+    declared = {n["role"]: [m for m in method_sets(n)[0]] for n in nodes}
+    signal = {src: "ok" for src in ("apt", "PyPI", "npm")
+              if any(SECURITY_SOURCE.get(m) == src for ms in declared.values() for m in ms)}
+    no_signal = sorted({NO_SIGNAL_NAMES[m] for ms in declared.values() for m in ms if m in NO_SIGNAL_NAMES})
+
+    def unknown(src, why):
+        if signal.get(src) == "ok":
+            signal[src] = f"UNKNOWN — {why}"
+
+    # ── canaries: a known positive per source, every run ───────────────────────────────────────
+    if "npm" in signal:
+        try:
+            eco, name, ver = CANARY["OSV"]
+            if not _osv(eco, name, ver):
+                unknown("npm", "security flagging broken for npm (OSV canary found nothing)")
+        except Exception as e:
+            unknown("npm", f"security flagging broken for npm (OSV unreachable: {type(e).__name__})")
+    if "PyPI" in signal:
+        try:
+            name, ver = CANARY["PyPI"]
+            if not fetch_json(f"https://pypi.org/pypi/{name}/{ver}/json").get("vulnerabilities"):
+                unknown("PyPI", "security flagging broken for PyPI (canary found nothing)")
+        except Exception as e:
+            unknown("PyPI", f"security flagging broken for PyPI (unreachable: {type(e).__name__})")
+
+    for node in nodes:
+        role = node["role"]
+        mine = [m for m in declared[role] if m in SECURITY_SOURCE]
+        if not mine:
+            continue
+        if not reach.get(role):
+            notes.append(f"{role}: unreachable — its security sources are UNKNOWN this run")
+            for m in mine:
+                unknown(SECURITY_SOURCE[m], f"{role} unreachable")
+            continue
+
+        if "apt" in mine:
+            # match ANY -security suite, not one release's name, or the next release switches this off
+            _, src, _ = run_on(node, "grep -rhE '^(Suites:.*[a-z]+-security|deb .*[a-z]+-security)' "
+                                     "/etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null")
+            if not src.strip():
+                unknown("apt", f"{role}: no -security suite in its apt sources")
+            rc, out, err = run_on(node, "apt list --upgradable")
+            failed = method_failed("apt", rc, err)
+            if failed:
+                unknown("apt", f"{role}: {failed}")
+            elif signal.get("apt") == "ok":
+                checked.add((role, "apt"))
+                for line in out.splitlines():
+                    m = re.match(r"^([^/\s]+)/(\S+)\s+(\S+)\s+\S+\s+\[upgradable from: ([^\]]+)\]", line.strip())
+                    if m:
+                        pkg, suites, new, old = m.groups()
+                        sec = [x for x in suites.split(",") if x.endswith("-security")]
+                        if sec:
+                            items.append(_item(role, "apt", pkg, old, new, f"from the security suite ({sec[0]})"))
+
+        pypi_methods = [m for m in mine if SECURITY_SOURCE[m] == "PyPI"]
+        if pypi_methods:
+            pkgs, err_seen = [], ""
+            if "uvtool" in pypi_methods:
+                rc, out, err = run_on(node, "uv tool list")
+                failed = method_failed("uvtool", rc, err)
+                err_seen = failed or err_seen
+                pkgs += [("uvtool", p[0], p[1].lstrip("v")) for p in (l.split() for l in out.splitlines())
+                         if len(p) >= 2 and p[1].startswith("v")] if not failed else []
+            if "pipx" in pypi_methods:
+                rc, out, err = run_on(node, "pipx list --short")
+                failed = method_failed("pipx", rc, err)
+                err_seen = failed or err_seen
+                pkgs += [("pipx", p[0], p[1]) for p in (l.split() for l in out.splitlines()) if len(p) == 2] if not failed else []
+            if err_seen:
+                unknown("PyPI", f"{role}: {err_seen}")
+            if signal.get("PyPI") == "ok" and not err_seen:
+                node_ok = True
+                for method, name, ver in pkgs:
+                    try:
+                        vulns = [v for v in fetch_json(f"https://pypi.org/pypi/{name}/{ver}/json")
+                                 .get("vulnerabilities", []) if not v.get("withdrawn")]
+                    except urllib.error.HTTPError as e:
+                        if e.code == 404:
+                            notes.append(f"{role} {method} {name} {ver}: not on PyPI — cannot be checked")
+                            continue
+                        node_ok = False; unknown("PyPI", f"{role} {name}: HTTP {e.code}"); continue
+                    except Exception as e:
+                        node_ok = False; unknown("PyPI", f"{role} {name}: {type(e).__name__}"); continue
+                    if not vulns:
+                        continue
+                    to, reason = "?", f"installed version has {len(vulns)} known vulnerabilit{'y' if len(vulns) == 1 else 'ies'}"
+                    try:
+                        latest = fetch_json(f"https://pypi.org/pypi/{name}/json")
+                        to = latest["info"]["version"]
+                        if [v for v in latest.get("vulnerabilities", []) if not v.get("withdrawn")]:
+                            reason += "; the latest release is affected too — no fixed release yet"
+                    except Exception:
+                        pass
+                    items.append(_item(role, method, name, ver, to, f"{reason} (PyPI: {_ids(vulns)})"))
+                if node_ok:
+                    checked.add((role, "PyPI"))
+
+        if "npm" in mine and signal.get("npm", "").startswith("ok"):
+            rc, out, err = run_on(node, "npm ls -g --depth=0 --json")
+            try:
+                deps = (json.loads(out) if out.strip() else None)
+            except ValueError:
+                deps = None
+            if deps is None:                     # npm ls can exit 1 and still print the list; no list is UNKNOWN
+                unknown("npm", f"{role}: {method_failed('npm', rc, err) or 'npm printed no package list'}")
+            else:
+                node_ok = True
+                for name, d in sorted((deps.get("dependencies") or {}).items()):
+                    ver = (d or {}).get("version", "")
+                    if not ver:
+                        continue
+                    try:
+                        vulns = _osv("npm", name, ver)
+                    except Exception as e:
+                        node_ok = False; unknown("npm", f"{role} {name}: OSV {type(e).__name__}"); continue
+                    if vulns:
+                        fix = _osv_fix(vulns, name)
+                        items.append(_item(role, "npm", name, ver, fix or "no fixed release yet",
+                                           f"installed version has {len(vulns)} known vulnerabilit"
+                                           f"{'y' if len(vulns) == 1 else 'ies'} (OSV: {_ids(vulns)})"))
+                if node_ok:
+                    checked.add((role, "npm"))
+    return {"items": items, "signal": signal, "notes": notes, "checked": checked, "no_signal": no_signal}
+
+
+def _signal_line(signal):
+    return "Security signal this run: " + (" · ".join(f"{m} {'ok' if s == 'ok' else 'UNKNOWN'}"
+                                                       for m, s in signal.items()) or "no flag-capable method declared")
+
+
+def _no_signal_line(scan):
+    return "No security signal (never flagged): " + " · ".join(scan["no_signal"] + [NO_SIGNAL_ALWAYS])
+
+
+def _item_line(i):
+    return f"  {i['node']:<10}{i['method']:<8}{i['pkg']} {i['from']} → {i['to']}   {i['reason']}"
+
+
+def load_security_state():
+    try:
+        with open(SECURITY_STATE) as fh:
+            st = json.load(fh)
+        if isinstance(st, dict):
+            st.setdefault("alerted", {}); st.setdefault("broken", []); st.setdefault("last_run", "")
+            return st
+    except (OSError, ValueError):
+        pass
+    return {"alerted": {}, "broken": [], "last_run": ""}
+
+
+def save_security_state(st):
+    os.makedirs(os.path.dirname(SECURITY_STATE), exist_ok=True)
+    tmp = SECURITY_STATE + ".tmp"
+    with open(tmp, "w") as fh:
+        json.dump(st, fh, indent=1, sort_keys=True)
+    os.replace(tmp, SECURITY_STATE)
+
+
+def security_run(scan, mailer, dry_run=False):
+    """--security: ONE Alert listing NEW items, and any source whose flagging just broke. Nothing new,
+    no mail. State is saved only after the mail went out, so a failed send is retried next run."""
+    st = load_security_state()
+    alerted = st["alerted"]
+    new = [i for i in scan["items"] if i["key"] not in alerted]
+    broken = sorted(m for m, s in scan["signal"].items() if "flagging broken" in s)
+    newly_broken = [m for m in broken if m not in st["broken"]]
+    if new or newly_broken:
+        parts = []
+        if new:
+            parts.append(f"{len(new)} security update(s) — " + ", ".join(f"{i['node']} {i['pkg']}" for i in new))
+        if newly_broken:
+            parts.append("security flagging broken for " + ", ".join(newly_broken))
+        text = "; ".join(parts)
+        text = text if len(text) <= 110 else text[:107] + "…"
+        body = [_item_line(i) for i in new] + ([""] if new else [])
+        still = [i for i in scan["items"] if i["key"] in alerted]
+        if still:
+            body.append(f"Already alerted and still open: {len(still)} (listed in the weekly digest)")
+        body += [f"⚠ security flagging broken for {m}: {scan['signal'][m]}" for m in newly_broken]
+        body += ["", "Nothing was installed.", _signal_line(scan["signal"])]
+        body += [f"  {m}: {s}" for m, s in scan["signal"].items() if s != "ok"]
+        body += [_no_signal_line(scan)] + [f"  note: {n}" for n in scan["notes"]]
+        body = "\n".join(body)
+        if dry_run:
+            print(f"[Alert] {text}\n\n{body}\n\n(--dry-run: not sent, state not saved)")
+            return 0
+        p = subprocess.run([mailer, "--kind", "Alert", "--source", "Updates", "--text", text, "--body", body],
+                           stdin=subprocess.DEVNULL)
+        if p.returncode != 0:
+            sys.stderr.write("fleet-update-check --security: the mailer failed; state not saved, so the next run retries\n")
+            return 1
+    elif dry_run:
+        print("Nothing new to alert.\n" + _signal_line(scan["signal"]) + "\n" +
+              "\n".join(_item_line(i) + "   (already alerted)" for i in scan["items"]))
+        return 0
+    today = datetime.date.today().isoformat()
+    for i in new:
+        alerted[i["key"]] = today
+    current = {i["key"] for i in scan["items"]}
+    for k in list(alerted):
+        role, src = k.split("|")[:2]
+        if (role, src) in scan["checked"] and k not in current:
+            del alerted[k]                     # fixed or upgraded: a recurrence is a new alert
+    st["broken"] = broken
+    st["last_run"] = datetime.datetime.now().isoformat(timespec="minutes")
+    save_security_state(st)
+    return 0
+
+
+def security_digest_block(scan):
+    """The weekly digest's first section. -> (lines, count, errs)."""
+    lines, errs = [f"  SECURITY{_item_line(i)[1:]}" for i in scan["items"]], []
+    if not scan["signal"]:
+        return ["  no flag-capable method is declared on any node", "  " + _no_signal_line(scan)], 0, []
+    if not scan["items"]:
+        lines.append("  no security items on the flag-capable methods")
+    lines.append("  " + _signal_line(scan["signal"]))
+    for m, s in scan["signal"].items():
+        if "flagging broken" in s:
+            errs.append(f"{m}: {s}")
+        elif s != "ok":
+            lines.append(f"  {m}: {s}")
+    lines.append("  " + _no_signal_line(scan))
+    lines += [f"  note: {n}" for n in scan["notes"]]
+    last = load_security_state().get("last_run", "")
+    try:
+        age = (datetime.datetime.now() - datetime.datetime.fromisoformat(last)).days if last else None
+    except ValueError:
+        age = None
+    if age is None:
+        errs.append("the daily security run (--security) has never recorded a run — is its job scheduled?")
+    elif age >= STALE_RUN_DAYS:
+        errs.append(f"the daily security run last ran {last} ({age} days ago) — is its job still loaded?")
+    else:
+        lines.append(f"  last daily security run: {last}")
+    return lines, len(scan["items"]), errs
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default=os.environ.get("FLEET_NODES", DEFAULT_CONFIG))
@@ -458,11 +772,22 @@ def main():
     ap.add_argument("--refresh", action="store_true", help="refresh package indexes first (brew/apt update)")
     ap.add_argument("--always", action="store_true", help="email even when nothing is outdated")
     ap.add_argument("--dry-run", action="store_true", help="print the digest; do not email")
+    ap.add_argument("--security", action="store_true",
+                    help="daily mode: only the security classifiers; alert on NEW items; no digest")
     a = ap.parse_args()
 
     nodes, conf_errs = load_nodes(a.config)
     reach = {n["role"]: reachable(n) for n in nodes}
+    scan = security_scan(nodes, reach)
+    if a.security:
+        return security_run(scan, a.mailer, a.dry_run)
     blocks, summary, any_updates, any_errs = [], [], False, bool(conf_errs)
+    sec_lines, sec_count, sec_errs = security_digest_block(scan)
+    any_updates = any_updates or sec_count > 0
+    any_errs = any_errs or bool(sec_errs)
+    tag = f"{sec_count} item(s)" if sec_count else ("ERROR" if sec_errs else "none flagged")
+    blocks.append("\n".join([f"== Security-relevant — {tag} =="] + [f"  {e}  ⚠" for e in sec_errs] + sec_lines))
+    summary.append(f"security {sec_count if sec_count else ('ERR' if sec_errs else 'ok')}")
     if conf_errs:
         blocks.append("\n".join(["== Config problems — fix these; a skipped row is a node nobody checks =="]
                                  + [f"  {e}  ⚠" for e in conf_errs]))

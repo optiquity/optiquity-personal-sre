@@ -3,8 +3,8 @@
 #
 # Run on your ALWAYS-ON node (the one that SSHes out to the rest of the fleet). Idempotent:
 # installs the five CLIs, seeds config + secret stubs (never clobbering ones you've filled), and
-# — with --with-timer — loads three launchd jobs: the weekly update digest, the ~15-min local
-# health probe, and the after-install WatchPaths audit trigger. Deploying Gatus itself and its
+# — with --with-timer — loads four launchd jobs: the weekly update digest, the daily security-only
+# check, the ~15-min local health probe, and the after-install WatchPaths audit trigger. Deploying Gatus itself and its
 # config is a separate, node-specific step (see README.md § Gatus), because Gatus usually runs
 # on a different node (a gateway/Pi) with root-owned config.
 #
@@ -20,6 +20,7 @@ CFG="$HOME/.config/fleet-monitoring"
 LABEL="${FLEET_LABEL:-com.example.fleet-update-check}"
 LOCAL_LABEL="${FLEET_LOCAL_LABEL:-com.example.fleet-local-check}"
 AUDIT_LABEL="${FLEET_AUDIT_LABEL:-com.example.fleet-install-audit}"
+SEC_LABEL="${FLEET_SECURITY_LABEL:-com.example.fleet-security-check}"
 DO_TIMER=0
 [ "${1:-}" = "--with-timer" ] && DO_TIMER=1
 
@@ -53,11 +54,12 @@ if [ "$DO_TIMER" = 1 ]; then
         echo "timer: $pl  ($3)"
       }
       load_timer "$LABEL"       fleet-update-check.plist.template "weekly Mon 09:00"
+      load_timer "$SEC_LABEL"   fleet-security-check.plist.template "daily 09:30, security only"
       load_timer "$LOCAL_LABEL" fleet-local-check.plist.template  "every 15 min"
       load_timer "$AUDIT_LABEL" fleet-install-audit.plist.template "WatchPaths, after any install"
       ;;
     *)
-      echo "timer: on Linux, wrap fleet-update-check (weekly) + fleet-local-check (~15 min) in systemd timers or cron, and fleet-install-audit --local in a systemd .path unit watching your install dirs (see README)."
+      echo "timer: on Linux, wrap fleet-update-check (weekly), fleet-update-check --security (daily) + fleet-local-check (~15 min) in systemd timers or cron, and fleet-install-audit --local in a systemd .path unit watching your install dirs (see README)."
       ;;
   esac
 fi

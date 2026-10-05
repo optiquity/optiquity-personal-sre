@@ -41,6 +41,7 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 | `gatus.env.template` | SMTP secret stub for Gatus (root-owned on the Gatus node) |
 | `gatus-smtp.dropin.conf` | systemd drop-in so Gatus loads the SMTP env |
 | `fleet-update-check.plist.template` | launchd weekly timer (macOS always-on node) |
+| `fleet-security-check.plist.template` | launchd daily timer for `fleet-update-check --security` (09:30) |
 | `bootstrap-monitoring.sh` | installs the tools + seeds config/secret stubs (+ optional timer) |
 
 ## Quick start (the update digest + failure email)
@@ -76,6 +77,20 @@ that matters is *"what is installed that **nothing** checks?"*
 - **Windows:** declare `winget`. Detection works over SSH, from the cached index.
 
 A malformed row in any of these files is reported, never skipped.
+
+## Security updates — the same day, not in Monday's digest
+
+`fleet-update-check --security` (daily, from `fleet-security-check.plist.template`; `bootstrap-monitoring.sh
+--with-timer` loads it) runs only the security classifiers and sends **one** Alert listing the **new** items;
+nothing new, no mail. The weekly digest opens with a **Security-relevant** section. Sources with a signal:
+`apt` (the distribution's `-security` suite, matched for any release) · `uvtool` and `pipx` (PyPI's known
+vulnerabilities **of the installed version**, withdrawn advisories ignored) · `npm` globals (OSV). Every
+other declared method is **named** as unflaggable in every digest and alert, so "no flag" never reads as
+"safe". Each source has a **canary** — a package version known to be vulnerable — checked every run; a
+canary that finds nothing marks that source *flagging broken*, never "nothing found". Alert state lives in
+`$FLEET_SECURITY_STATE`, is saved only after the mail went out, and forgets a fixed item only when its source
+answered; the weekly digest flags a daily run that has stopped (more than two days old). Guide § 17,
+*"Security updates: raised the same day, and honest about what cannot be flagged"*.
 
 ## Gatus (health checks + alerts)
 

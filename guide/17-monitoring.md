@@ -479,6 +479,9 @@ them apart — which depends on the install method, because each has a different
 - **The daily job has a last-run stamp**, and the weekly digest flags it when it is more than two days
   old — a stopped job is otherwise indistinguishable from nothing new.
 
+The starter's `fleet-update-check --security` does this for `apt`, Python tools and npm globals
+([`skeleton/monitoring/`](../skeleton/monitoring/README.md#security-updates--the-same-day-not-in-mondays-digest)).
+
 **Two tempting shortcuts that don't work:** grepping changelogs for `CVE-` over-flags (a whitespace-only
 fix can name a CVE), and a hand-curated list of "security-critical" packages is a guess dressed as a
 signal — the list, not any advisory, decides what counts.

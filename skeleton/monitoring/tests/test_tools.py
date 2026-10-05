@@ -12,7 +12,7 @@ FAKE mailer. The fake calls the REAL fleet-mail with --dry-run, so each subject 
 is built and validated by the real code — then records what it was asked to send, and can be
 told to fail (FAKE_MAIL_RC) to prove a failed send is retried rather than forgotten.
 """
-import contextlib, datetime, importlib.util, json, os, shutil, subprocess, sys, tempfile, textwrap, time, unittest, urllib.error
+import contextlib, datetime, importlib.util, json, os, re, shutil, subprocess, sys, tempfile, textwrap, time, unittest, urllib.error
 from importlib.machinery import SourceFileLoader
 
 sys.dont_write_bytecode = True
@@ -919,6 +919,140 @@ class UpdateCheckRegistry(unittest.TestCase):
         self.assertNotIn("REVISIT DUE  laptop: editor", text)
         self.assertEqual(count, 1)
         self.assertEqual(len(errs), 1, "a date that isn't YYYY-MM-DD is reported")
+
+
+class SecurityFlagging(Sandbox):
+    """Security-flagged updates (guide § 17) — in-process, with the shell and the network replaced:
+    run_on answers per command, fetch_json per URL. No test touches the network."""
+
+    def setUp(self):
+        super().setUp()
+        self.uc = load(os.path.join(TOOLS, "fleet-update-check"), "fleet_update_check_security")
+        self.uc.SECURITY_STATE = os.path.join(self.tmp, "security.state")
+
+    def node(self, methods, role="gw", os_="linux"):
+        return {"role": role, "target": role, "os": os_, "methods": methods}
+
+    def shell(self, answers):
+        """run_on stub: the first answer whose key is in the command."""
+        def run_on(node, cmd, timeout=300):
+            for k, v in answers.items():
+                if k in cmd:
+                    return v
+            return 127, "", "not stubbed"
+        self.uc.run_on = run_on
+
+    def web(self, routes):
+        """fetch_json stub: a route (substring of the URL, or of the OSV package name) -> reply or exception."""
+        def fetch(url, payload=None, timeout=20):
+            key = url if payload is None else payload["package"]["name"]
+            for k, v in routes.items():
+                if k in key:
+                    if isinstance(v, Exception):
+                        raise v
+                    return v
+            raise AssertionError("unrouted: " + key)
+        self.uc.fetch_json = fetch
+
+    CANARIES = {"requests/2.19.0": {"vulnerabilities": [{"id": "PYSEC-X"}]}, "lodash": {"vulns": [{"id": "GHSA-X"}]}}
+
+    def test_apt_flags_only_the_security_suite_matched_generically(self):
+        """Any release's -security suite, not one release's name — the next release must not switch it off."""
+        for suite in ("trixie-security", "bookworm-security", "noble-security"):
+            with self.subTest(suite=suite):
+                sources = f"deb http://deb.example.org/debian-security {suite} main"
+                apt = ("Listing...\n" f"openssl/{suite} 3.0.2 amd64 [upgradable from: 3.0.1]\n"
+                       "curl/stable 8.2 amd64 [upgradable from: 8.1]\n")
+                def run_on(node, cmd, timeout=300, sources=sources, apt=apt):
+                    if cmd.startswith("grep -rhE"):      # apply the command's OWN pattern to the sources file
+                        pattern = cmd.split("'")[1]
+                        return (0, sources, "") if re.search(pattern, sources, re.M) else (1, "", "")
+                    return (0, apt, "") if "apt list" in cmd else (127, "", "")
+                self.uc.run_on = run_on
+                scan = self.uc.security_scan([self.node(["apt"])], {"gw": True})
+                self.assertEqual(scan["signal"]["apt"], "ok", scan["signal"])
+                self.assertEqual([i["pkg"] for i in scan["items"]], ["openssl"])
+
+    def test_apt_without_a_security_suite_is_unknown(self):
+        self.shell({"grep -rhE": (1, "", ""), "apt list": (0, "Listing...\n", "")})
+        scan = self.uc.security_scan([self.node(["apt"])], {"gw": True})
+        self.assertTrue(scan["signal"]["apt"].startswith("UNKNOWN"), scan["signal"])
+
+    def test_a_canary_that_finds_nothing_marks_its_source_broken(self):
+        self.shell({"uv tool list": (0, "", ""), "npm ls": (0, "{}", "")})
+        self.web({"requests/2.19.0": {"vulnerabilities": []}, "lodash": {"vulns": []}})
+        scan = self.uc.security_scan([self.node(["uvtool", "npm"])], {"gw": True})
+        self.assertIn("flagging broken for PyPI", scan["signal"]["PyPI"])
+        self.assertIn("flagging broken for npm", scan["signal"]["npm"])
+
+    def test_pypi_flags_the_installed_version_and_says_when_no_fix_exists(self):
+        self.shell({"uv tool list": (0, "sometool v1.0.0\n- sometool\nfixed v2.0.0\n", ""),
+                    "pipx list --short": (0, "othertool 2.0\ngone 0.1\n", "")})
+        self.web({**self.CANARIES,
+                  "sometool/1.0.0": {"vulnerabilities": [{"id": "PYSEC-1"}]},
+                  "sometool/json": {"info": {"version": "1.2.0"}, "vulnerabilities": []},
+                  "fixed/2.0.0": {"vulnerabilities": [{"id": "PYSEC-2"}]},
+                  "fixed/json": {"info": {"version": "2.0.1"}, "vulnerabilities": [{"id": "PYSEC-2"}]},
+                  "othertool/2.0": {"vulnerabilities": [{"id": "PYSEC-3", "withdrawn": "2030-01-01"}]},
+                  "gone/0.1": urllib.error.HTTPError("u", 404, "not found", {}, None)})
+        scan = self.uc.security_scan([self.node(["uvtool", "pipx"])], {"gw": True})
+        items = {i["pkg"]: i for i in scan["items"]}
+        self.assertEqual(sorted(items), ["fixed", "sometool"], "a withdrawn advisory is not a vulnerability")
+        self.assertEqual(items["sometool"]["to"], "1.2.0")
+        self.assertIn("no fixed release yet", items["fixed"]["reason"])
+        self.assertTrue(any("gone" in n and "not on PyPI" in n for n in scan["notes"]), scan["notes"])
+        self.assertEqual(scan["signal"]["PyPI"], "ok")
+
+    def test_npm_globals_are_checked_against_osv(self):
+        self.shell({"npm ls": (0, json.dumps({"dependencies": {"leftpad": {"version": "1.0.0"},
+                                                               "nofix": {"version": "2.0.0"}}}), "")})
+        fixed = {"vulns": [{"id": "GHSA-1", "affected": [{"package": {"name": "leftpad"},
+                                                          "ranges": [{"events": [{"introduced": "0"}, {"fixed": "1.0.3"}]}]}]}]}
+        nofix = {"vulns": [{"id": "GHSA-2", "affected": [{"package": {"name": "nofix"},
+                                                          "ranges": [{"events": [{"introduced": "0"}]}]}]}]}
+        self.web({"lodash": self.CANARIES["lodash"], "leftpad": fixed, "nofix": nofix})
+        scan = self.uc.security_scan([self.node(["npm"])], {"gw": True})
+        items = {i["pkg"]: i["to"] for i in scan["items"]}
+        self.assertEqual(items, {"leftpad": "1.0.3", "nofix": "no fixed release yet"})
+
+    def test_an_unreachable_node_makes_its_sources_unknown(self):
+        scan = self.uc.security_scan([self.node(["apt"])], {"gw": False})
+        self.assertTrue(scan["signal"]["apt"].startswith("UNKNOWN"))
+
+    def scan_with(self, items, checked=(("gw", "PyPI"),)):
+        return {"items": items, "signal": {"PyPI": "ok"}, "notes": [], "checked": set(checked), "no_signal": ["Homebrew"]}
+
+    def test_the_daily_run_alerts_each_new_item_once_and_saves_after_sending(self):
+        item = self.uc._item("gw", "pipx", "sometool", "1.0.0", "1.2.0", "installed version has 1 known vulnerability")
+        os.environ["FAKE_MAIL_RC"] = "1"
+        try:
+            self.assertEqual(self.uc.security_run(self.scan_with([item]), self.fake), 1)
+        finally:
+            del os.environ["FAKE_MAIL_RC"]
+        self.assertFalse(os.path.exists(self.uc.SECURITY_STATE), "a failed send must leave the state unsaved")
+        self.assertEqual(self.uc.security_run(self.scan_with([item]), self.fake), 0)
+        self.assertEqual(self.uc.security_run(self.scan_with([item]), self.fake), 0)
+        sent = [m for m in self.mails() if m["rc"] == 0]
+        self.assertEqual(len(sent), 2, "the failed send was retried, then nothing new: no third mail")
+        self.assertTrue(sent[-1]["subject"].startswith("[Fleet/Alert/Updates] 1 security update(s)"), sent[-1])
+
+    def test_a_fixed_item_is_forgotten_only_when_its_source_answered(self):
+        item = self.uc._item("gw", "pipx", "sometool", "1.0.0", "1.2.0", "r")
+        self.uc.security_run(self.scan_with([item]), self.fake)
+        self.uc.security_run(self.scan_with([], checked=()), self.fake)          # PyPI did not answer
+        self.assertIn(item["key"], self.uc.load_security_state()["alerted"])
+        self.uc.security_run(self.scan_with([], checked=[("gw", "PyPI")]), self.fake)   # it answered: fixed
+        self.assertNotIn(item["key"], self.uc.load_security_state()["alerted"])
+
+    def test_the_digest_names_what_cannot_be_flagged_and_a_stopped_daily_run(self):
+        lines, count, errs = self.uc.security_digest_block(self.scan_with([]))
+        self.assertIn("Homebrew", "\n".join(lines))
+        self.assertTrue(any("never recorded a run" in e for e in errs), errs)
+        st = self.uc.load_security_state()
+        st["last_run"] = (datetime.datetime.now() - datetime.timedelta(days=3)).isoformat(timespec="minutes")
+        self.uc.save_security_state(st)
+        errs = self.uc.security_digest_block(self.scan_with([]))[2]
+        self.assertTrue(any("3 days ago" in e for e in errs), errs)
 
 
 class UpdateCheckReachability(Sandbox):

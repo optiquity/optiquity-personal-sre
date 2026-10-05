@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- launchd timer for the DAILY security-only check (macOS): fleet-update-check in security mode alerts on
+     NEW security items only, and the weekly digest flags this job if it stops running. Run it on your
+     ALWAYS-ON node only (the one that SSHes out to the rest of the fleet), beside the weekly digest.
+     bootstrap-monitoring.sh substitutes __HOME__ and __LABEL__ and installs it to
+     $HOME/Library/LaunchAgents/, then: launchctl bootstrap gui/$(id -u) <plist>. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>__LABEL__</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HOME__/.local/bin/fleet-update-check</string>
+        <string>--security</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:__HOME__/.local/bin</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/tmp/fleet-security-check.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/fleet-security-check.err</string>
+</dict>
+</plist>
