@@ -3,6 +3,25 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-05 — the local health check's engine: solo alerts, away targets, per-email state
+
+`fleet-local-check` gains what the fleet it came from needed once it watched more than a handful of things:
+
+- **`solo | <name>`** — that check mails on its own. It stays in the combined digest's body but no longer
+  triggers the digest, so one event sends one mail.
+- **`away | <name>`** — its target may simply be away (a laptop asleep or travelling): its unknowns carry
+  the last state forward and never escalate to a failure.
+- **A failed email holds back only its own checks.** Before, one failed send kept the whole run's state
+  back, so every other check repeated its alert next time; now only the checks that email covered are
+  retried. A directive naming no check is reported, never ignored.
+- **A check may return several rows** (one per row of a registry it reads), each with its own state.
+- **`synclag` on another node:** a `host:path` directory is read over SSH, by that node's own clock, with
+  its sync job's last run (launchd or systemd); unreachable is unknown.
+- **The `mount` probe can't freeze the checker:** the mount-point stat runs in a child process with a time
+  limit; no answer is unknown, not an unmount.
+- **The digest body names a check failing from its first run.**
+- **Tests:** 8 new (63), and 9 planted defects each caught by its test.
+
 ## 2026-10-04 — security updates raised the same day; writing for the owner
 
 - **§ 17, *Security updates: raised the same day, and honest about what cannot be flagged*:** which install

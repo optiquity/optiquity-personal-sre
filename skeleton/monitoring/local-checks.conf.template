@@ -7,8 +7,11 @@
 #     http    | <name> | <url>                              200 == ok (e.g. cross-ping your Gatus)
 #     command | <name> | <shell command>                    exit 0 = OK · exit 3 = UNKNOWN · else FAIL
 #     hash    | <name> | <[host:]installed> | <reference>  installed copy identical to its reference?
-#     synclag | <name> | <git dir> | <max hours> [| <job>] last successful fetch within <max hours>?
-#                                                          (+ the sync job's last run succeeded)
+#     synclag | <name> | <[host:]git dir> | <max hours> [| <job>]  last successful fetch within
+#                                                          <max hours>? (+ the sync job's last run succeeded)
+#   Two directives change how a named check ALERTS:
+#     solo    | <name>      mails on its own; stays in the combined digest's body, but does not trigger it
+#     away    | <name>      its target may be away (a laptop): its unknowns never escalate to a failure
 #
 # Every check has THREE outcomes: OK, FAIL, or UNKNOWN (the probe could not answer — a timeout, an
 # unreadable table, a command exiting 3). UNKNOWN keeps the previous state and sends no mail; four in
@@ -45,3 +48,6 @@ http    | gatus cross-ping | https://<gatus-host>/
 # hash    | gateway relay    | gateway:/usr/local/bin/<relay> | ~/.local/share/chezmoi/<path>/relay
 # hash    | backup daemon    | /usr/local/bin/<job> | ~/.local/share/<staging-dir>/<job>.sh
 # synclag | dotfile sync     | ~/.local/share/chezmoi | 3 | <your-sync-job-label>
+# synclag | laptop sync      | laptop:~/.local/share/chezmoi | 3 | <its-sync-job-label>
+# away    | laptop sync
+# solo    | media share

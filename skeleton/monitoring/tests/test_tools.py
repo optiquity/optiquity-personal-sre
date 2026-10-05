@@ -58,6 +58,9 @@ class Sandbox(unittest.TestCase):
                 with open({self.log!r}, "a") as fh:
                     fh.write(json.dumps({{"argv": sys.argv[1:], "rc": r.returncode, "subject": subject,
                                           "stderr": r.stderr}}) + "\\n")
+                fail_on = os.environ.get("FAKE_MAIL_FAIL_ON")
+                if fail_on and any(fail_on in a for a in sys.argv[1:]):
+                    sys.exit(1)
                 sys.exit(int(os.environ.get("FAKE_MAIL_RC", "0")) or r.returncode)
                 """))
         os.chmod(self.fake, 0o755)
@@ -222,6 +225,58 @@ class LocalCheck(LocalCheckBase):
         self.check()
         self.assertIn("4 failing — beta, ", self.mails()[-1]["subject"])
 
+    def test_solo_row_mails_alone_and_does_not_trigger_the_digest(self):
+        self.write_conf(["command | alpha | true", f"command | beta | test -f {self.flag}", "solo | beta"])
+        self.check()                                        # beta fails on its first run
+        m = self.mails()
+        self.assertEqual(len(m), 1, "one event, one mail")
+        self.assertTrue(m[0]["subject"].startswith("[Fleet/Alert/Health] beta: "), m[0]["subject"])
+        write(self.flag, "")
+        self.check()                                        # beta recovers
+        self.assertEqual(self.mails()[-1]["subject"], "[Fleet/Report/Health] beta recovered")
+        self.assertEqual(len(self.mails()), 2)
+
+    def test_a_directive_naming_no_check_is_reported(self):
+        self.write_conf(["command | alpha | true", "solo | nonesuch"])
+        r = self.check("--dry-run")
+        self.assertIn("names no check", r.stdout)
+        self.assertEqual(r.returncode, 1)
+
+    def test_an_away_target_never_escalates(self):
+        """A laptop asleep is not an outage: its unknowns carry the last state forward, however long."""
+        flag = os.path.join(self.tmp, "awake")
+        write(flag, "")
+        self.write_conf(["command | alpha | true", f"command | laptop | test -f {flag} || exit 3", "away | laptop"])
+        self.check()                                        # all ok, state saved
+        os.remove(flag)                                     # the laptop goes away
+        for _ in range(UNKNOWN_RUNS):
+            r = self.check()
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertEqual(self.mails(), [])
+        self.assertIs(read_json(self.state)["states"]["laptop"], True)
+
+    def test_a_failed_email_keeps_only_its_own_checks_back(self):
+        """Per check: the digest went out, the solo mail did not — only the solo row is retried."""
+        self.write_conf(["command | gamma | false", f"command | beta | test -f {self.flag}", "solo | beta"])
+        r = self.check(FAKE_MAIL_FAIL_ON="This check mails on its own")   # only the solo mail says this
+        self.assertEqual(r.returncode, 3)
+        states = read_json(self.state)["states"]
+        self.assertNotIn("beta", states, "an unsent alert must not be recorded as seen")
+        self.assertIs(states["gamma"], False, "a sent alert is recorded")
+        before = len(self.mails())
+        self.check()                                        # mailer back
+        again = [x["subject"] for x in self.mails()[before:]]
+        self.assertEqual(len(again), 1, again)
+        self.assertTrue(again[0].startswith("[Fleet/Alert/Health] beta: "), again)
+
+    def test_the_digest_body_names_a_check_failing_from_its_first_run(self):
+        write(self.flag, "")
+        self.check()
+        self.write_conf(["command | alpha | true", f"command | beta | test -f {self.flag}", "command | gamma | false"])
+        self.check()
+        body = self.mails()[-1]["argv"][self.mails()[-1]["argv"].index("--body") + 1]
+        self.assertIn("New this run, failing from its first check: gamma", body)
+
     def test_dry_run_neither_mails_nor_saves(self):
         self.check("--dry-run")
         self.assertEqual(self.mails(), [])
@@ -341,25 +396,74 @@ class LocalCheckStates(LocalCheckBase):
         self.assertIn("[FAIL] sync: last successful fetch 5.0 h ago (limit 3 h)", self.dry())
 
 
+UNKNOWN_RUNS = 6     # past the escalation streak (4), so an away target's never-escalating is real
+
+
 class LocalCheckProbes(unittest.TestCase):
     """The probes' three-way classification, in-process with the system calls replaced."""
 
     def setUp(self):
         self.lc = load(os.path.join(TOOLS, "fleet-local-check"), "fleet_local_check_under_test")
         self.lc.RETRY_PAUSE = 0
+        self.real_sh = self.lc.sh
 
     def test_mount(self):
         lc = self.lc
-        lc.os.path.ismount = lambda p: True
+        lc._ismount = lambda p: True
         lc.sh = lambda *a, **k: (124, "", "timed out")
         self.assertIsNone(lc.chk_mount("m", "/mnt/x")[1], "an unreadable table is UNKNOWN, never an unmount")
         lc.sh = lambda *a, **k: (0, "server:/share on /mnt/x (nfs)", "")
         self.assertIs(lc.chk_mount("m", "/mnt/x")[1], True)
         calls = []
-        lc.os.path.ismount = lambda p: calls.append(p) or False
+        lc._ismount = lambda p: calls.append(p) or False
         r = lc.chk_mount("m", "/mnt/x")
         self.assertIs(r[1], False)
         self.assertEqual(len(calls), lc.MOUNT_RETRIES, "an unmount is confirmed over several attempts")
+        lc._ismount = lambda p: None
+        self.assertIsNone(lc.chk_mount("m", "/mnt/x")[1], "a mount point that did not answer is UNKNOWN")
+
+    def test_mount_point_is_probed_in_a_child_with_a_time_limit(self):
+        """os.path.ismount() stats the mount point; on a dead network server that blocks. In-process it
+        would freeze every later check, so it runs in a child process that the time limit can kill."""
+        lc = self.lc
+        seen = []
+        lc.sh = lambda args, *a, **k: seen.append((args, k)) or (124, "", "timed out")
+        self.assertIsNone(lc._ismount("/mnt/x"))
+        self.assertEqual(seen[0][0][0], sys.executable, "a child process, not this one")
+        self.assertIn("timeout", seen[0][1])
+        lc.sh = self.real_sh
+        self.assertIs(lc._ismount("/"), True)
+        self.assertIs(lc._ismount(os.path.join(tempfile.gettempdir(), "no-such-mount-point")), False)
+
+    def test_a_check_may_return_several_rows(self):
+        lc = self.lc
+        lc.DISPATCH["registry"] = lambda name, arg: [(f"{name}: a", True, "ok"), (f"{name}: b", False, "drifted")]
+        results, origin = lc.collect([("registry", "settings", "x"), ("command", "plain", "true")])
+        self.assertEqual([r[0] for r in results], ["settings: a", "settings: b", "plain"])
+        self.assertEqual(origin["settings: b"], "settings", "each row knows the check it came from")
+
+    def test_synclag_on_another_node(self):
+        """Read over SSH by that node's own clock; a node that cannot be reached is UNKNOWN."""
+        lc = self.lc
+        now = 1_800_000_000
+        cases = [
+            ((0, f"#MTIME {now - 3600}\n#NOW {now}\n", ""), "", 2, True),
+            ((0, f"#MTIME {now - 3 * 3600}\n#NOW {now}\n", ""), "", 2, False),
+            ((0, f"#MTIME \n#NOW {now}\n", ""), "", 2, None),                       # never fetched
+            ((255, "", "ssh: connect to host lap: Operation timed out"), "", 2, None),
+            ((0, f"#MTIME {now - 60}\n#NOW {now}\n#LAUNCHD\n\tlast exit code = 0\n", ""), "sync", 2, True),
+            ((0, f"#MTIME {now - 60}\n#NOW {now}\n#LAUNCHD\n\tlast exit code = 1\n", ""), "sync", 2, False),
+            ((113, f"#MTIME {now - 60}\n#NOW {now}\n#LAUNCHD\nCould not find service \"sync\"\n", ""), "sync", 2, False),
+            ((0, f"#MTIME {now - 60}\n#NOW {now}\n#SYSTEMD\nLoadState=loaded\nResult=success\nExecMainStatus=0\n", ""), "sync.service", 2, True),
+            ((0, f"#MTIME {now - 60}\n#NOW {now}\n#SYSTEMD\nLoadState=not-found\nResult=success\nExecMainStatus=0\n", ""), "sync.service", 2, False),
+        ]
+        for ret, job, hours, want in cases:
+            with self.subTest(out=ret[1][:60], job=job):
+                seen = []
+                lc.sh = lambda args, *a, ret=ret, **k: seen.append(args) or ret
+                arg = f"lap:~/repo | {hours}" + (f" | {job}" if job else "")
+                self.assertIs(lc.chk_synclag("sync", arg)[1], want)
+                self.assertEqual(seen[0][0], "ssh")
 
     def test_synclag_job(self):
         """A fresh fetch is not an applied sync: the named job's last run must have succeeded.

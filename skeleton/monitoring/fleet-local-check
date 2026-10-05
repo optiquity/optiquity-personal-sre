@@ -25,9 +25,16 @@ Config (default $HOME/.config/fleet-monitoring/local-checks.conf, override --con
       http    | <name> | <url>                              does <url> return 200?
       command | <name> | <shell command>                    exit 0 = OK · exit 3 = UNKNOWN · else FAIL
       hash    | <name> | <[host:]installed file> | <reference>  byte-identical to its reference copy?
-      synclag | <name> | <git dir> | <max hours> [| <job>]  fetched within <max hours>? (and the sync job's
-                                                                last run succeeded, if <job> is named)
-A malformed line is REPORTED as a failing check, never silently skipped.
+      synclag | <name> | <[host:]git dir> | <max hours> [| <job>]  fetched within <max hours>? (and the sync
+                                                                job's last run succeeded, if <job> is named)
+    Two directives change how a named check ALERTS, not what it checks:
+      solo    | <name>      it mails on its OWN (an alert you want as its own message). It stays in the
+                            combined digest's body, but no longer triggers the digest — one event, one mail.
+      away    | <name>      its target may simply be away (a laptop asleep or travelling): its UNKNOWNs carry
+                            the last state forward and never escalate to a failure.
+A malformed line, or a directive naming no check, is REPORTED as a failing check, never silently skipped.
+A check may return SEVERAL results (one per row of a registry it reads); each is its own row, with its
+own state and transitions.
 
 IMPORTANT (the `mount` type never reads INSIDE the share): on macOS a scheduled job's first read inside
 a share can raise a privacy prompt that waits until someone answers it — on an unattended Mac, forever
@@ -49,7 +56,8 @@ never a pass. `synclag` asks whether sync is
 actually HAPPENING: a status command that never fetches reports "clean" while days behind (guide
 05b), so it reads the age of the last successful fetch instead.
 
-Exit: 0 all ok · 1 one or more failing · 3 the alert email failed to send (state kept; next run retries).
+Exit: 0 all ok · 1 one or more failing · 3 an email failed to send (the checks it covered keep their
+previous state, so the next run sends it again; every other check's state is saved).
 Flags: --dry-run (print, no email/state), --always (email regardless).
 Environment: $FLEET_MAILER (default ~/.local/bin/fleet-mail), $FLEET_LOCAL_CHECK_STATE (state file).
 """
@@ -93,10 +101,22 @@ def chk_service(name, label):
         ok = out.strip() == "active"
     return name, ok, ("running" if ok else "NOT running")
 
+ISMOUNT = "import os, sys; sys.exit(0 if os.path.ismount(sys.argv[1]) else 1)"
+
+def _ismount(path):
+    """True / False, or None when the stat did not answer in time. It runs in a CHILD process with a time
+    limit: os.path.ismount() stats the mount point, and on a dead network server that stat can block
+    for as long as the server is gone — inside this process it would freeze every check after it."""
+    rc, _, _ = sh([sys.executable, "-c", ISMOUNT, path], timeout=MOUNT_TIMEOUT)
+    return True if rc == 0 else (False if rc == 1 else None)
+
 def chk_mount(name, path):
     last = ""
     for attempt in range(MOUNT_RETRIES):
-        if not os.path.ismount(path):
+        mounted = _ismount(path)
+        if mounted is None:
+            return name, None, f"the mount point did not answer within {MOUNT_TIMEOUT} s — not an unmount"
+        if not mounted:
             last = "NOT mounted"
         else:
             tbl = "mount" if shutil.which("mount") else "findmnt"
@@ -174,6 +194,16 @@ def chk_hash(name, arg):
     return name, got == want, ("matches its reference" if got == want
                                else f"{installed} differs from {reference} — reinstall it")
 
+def _launchd_last_run(job, out):
+    """Parse `launchctl print`'s output for a job's last run (see _job_last_run)."""
+    m = re.search(r"^\s*last exit code = (.+)$", out, re.M)
+    if not m:
+        return None, f"launchctl printed no last exit code for {job}"
+    code = m.group(1).strip()
+    if not code.lstrip("-").isdigit():
+        return True, f"sync job {job} has not finished a run yet"
+    return int(code) == 0, f"sync job {job} last exited {code}"
+
 def _job_last_run(job):
     """(True|False|None, detail) for a scheduled job's LAST run: a launchd label on macOS, a
     systemd unit elsewhere. False = it failed, or isn't loaded; None = the probe couldn't tell."""
@@ -183,16 +213,14 @@ def _job_last_run(job):
             if rc == 124 or not err or "could not find" not in err.lower():
                 return None, f"launchctl gave no answer ({err or 'rc=' + str(rc)})"
             return False, f"sync job {job} is NOT loaded"
-        m = re.search(r"^\s*last exit code = (.+)$", out, re.M)
-        if not m:
-            return None, f"launchctl printed no last exit code for {job}"
-        code = m.group(1).strip()
-        if not code.lstrip("-").isdigit():
-            return True, f"sync job {job} has not finished a run yet"
-        return int(code) == 0, f"sync job {job} last exited {code}"
+        return _launchd_last_run(job, out)
     rc, out, err = sh(["systemctl", "show", "-p", "LoadState", "-p", "Result", "-p", "ExecMainStatus", job])
     if rc == 124 or not out:
         return None, f"systemctl gave no answer ({err or 'rc=' + str(rc)})"
+    return _systemd_last_run(job, out)
+
+def _systemd_last_run(job, out):
+    """Parse `systemctl show`'s properties for a job's last run (see _job_last_run)."""
     props = dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
     # ⚠ An unknown unit reports Result=success, ExecMainStatus=0 — so a misspelled unit would read
     # as a healthy sync. Check it is loaded FIRST (measured on systemd 257).
@@ -205,6 +233,49 @@ def _job_last_run(job):
         return False, f"sync job {job} last run: {result} (exit {status})"
     return True, f"sync job {job} last run succeeded"
 
+def _fetch_verdict(age, limit, where):
+    if age is None:
+        return None, f"cannot read {where} (never fetched, or not a git clone)"
+    if age > limit:
+        return False, (f"last successful fetch {age:.1f} h ago (limit {limit:g} h) — "
+                       "a status command that never fetches cannot see this")
+    return True, f"fetched {age:.1f} h ago"
+
+def _synclag_remote(host, gitdir, limit, job):
+    """(fetched, ran) for a clone on ANOTHER node, read over SSH: the age of its FETCH_HEAD by that
+    node's own clock, and (if named) its sync job's last run — launchd or systemd, whichever it has.
+    A node that cannot be reached is UNKNOWN, never a failure (mark a laptop `away` too)."""
+    q = ('"$HOME"/' + shlex.quote(gitdir[2:])) if gitdir.startswith("~/") else shlex.quote(gitdir)
+    f = f"{q}/.git/FETCH_HEAD"
+    script = (f"m=$(stat -c %Y {f} 2>/dev/null || stat -f %m {f} 2>/dev/null); "
+              f'echo "#MTIME $m"; echo "#NOW $(date +%s)"')
+    if job:
+        j = shlex.quote(job)
+        script += (f"; if command -v systemctl >/dev/null 2>&1; then echo '#SYSTEMD'; "
+                   f"systemctl show -p LoadState -p Result -p ExecMainStatus {j}; "
+                   f"else echo '#LAUNCHD'; launchctl print gui/$(id -u)/{j} 2>&1; fi")
+    rc, out, err = sh(["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes", host, script], timeout=25)
+    marks = dict(l.split(" ", 1) for l in out.splitlines() if l.startswith("#") and " " in l)
+    if rc == 255 or "#NOW" not in marks:
+        unknown = (None, f"could not reach {host} ({(err or f'rc={rc}').strip()[:60]})")
+        return unknown, (True, "")
+    try:
+        age = (float(marks["#NOW"]) - float(marks.get("#MTIME", "").strip())) / 3600.0
+    except ValueError:
+        age = None
+    fetched = _fetch_verdict(age, limit, f"{host}:{gitdir}/.git/FETCH_HEAD")
+    if not job:
+        return fetched, (True, "")
+    body = out.split("#SYSTEMD", 1)[1] if "#SYSTEMD" in out else out.split("#LAUNCHD", 1)[-1]
+    if "#SYSTEMD" in out:
+        ran = (_systemd_last_run(job, body) if body.strip()
+               else (None, f"systemctl on {host} gave no answer"))
+    elif "could not find" in body.lower():
+        ran = (False, f"sync job {job} is NOT loaded on {host}")
+    else:
+        ran = _launchd_last_run(job, body)
+    return fetched, ran
+
 def chk_synclag(name, arg):
     gitdir, _, rest = (p.strip() for p in arg.partition("|"))
     hours, _, job = (p.strip() for p in rest.partition("|"))
@@ -212,18 +283,19 @@ def chk_synclag(name, arg):
         limit = float(hours)
     except ValueError:
         return name, False, f"max hours {hours!r} is not a number"
-    fetch_head = os.path.join(os.path.expanduser(gitdir), ".git", "FETCH_HEAD")
-    try:
-        age = (time.time() - os.path.getmtime(fetch_head)) / 3600.0
-    except OSError:
-        fetched = (None, f"cannot read {fetch_head} (never fetched, or not a git clone)")
+    remote = REMOTE_PATH.match(gitdir)
+    if remote:
+        fetched, ran = _synclag_remote(remote.group(1), remote.group(2), limit, job)
     else:
-        fetched = ((False, f"last successful fetch {age:.1f} h ago (limit {limit:g} h) — "
-                           "a status command that never fetches cannot see this")
-                   if age > limit else (True, f"fetched {age:.1f} h ago"))
-    # A fresh fetch is not an applied sync: a job that fetches fine and then fails to apply leaves
-    # every fetch-based check green. Naming the job adds its last run's result.
-    ran = _job_last_run(job) if job else (True, "")
+        fetch_head = os.path.join(os.path.expanduser(gitdir), ".git", "FETCH_HEAD")
+        try:
+            age = (time.time() - os.path.getmtime(fetch_head)) / 3600.0
+        except OSError:
+            age = None
+        fetched = _fetch_verdict(age, limit, fetch_head)
+        # A fresh fetch is not an applied sync: a job that fetches fine and then fails to apply leaves
+        # every fetch-based check green. Naming the job adds its last run's result.
+        ran = _job_last_run(job) if job else (True, "")
     for state in (False, None):
         bad = [d for s, d in (fetched, ran) if s is state]
         if bad:
@@ -234,30 +306,55 @@ def chk_synclag(name, arg):
 DISPATCH = {"service": chk_service, "mount": chk_mount, "http": chk_http, "command": chk_command,
             "hash": chk_hash, "synclag": chk_synclag}
 
+DIRECTIVES = ("solo", "away")
+
 def load_checks(path):
-    """[(type, name, arg)]; a line that cannot be read becomes a ('config', …) entry that FAILS."""
+    """(checks, solo, away). checks = [(type, name, arg)]; a line that cannot be read — or a directive
+    naming no check — becomes a ('config', …) entry that FAILS."""
     if not os.path.isfile(path):
         sys.exit(f"fleet-local-check: config not found: {path}  (copy local-checks.conf.template)")
-    checks = []
+    checks, directives = [], []
     with open(path) as f:
         for n, line in enumerate(f, 1):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
             parts = [p.strip() for p in line.split("|", 2)]
+            if len(parts) == 2 and parts[0] in DIRECTIVES and parts[1]:
+                directives.append((n, parts[0], parts[1], line))
+                continue
             if len(parts) != 3 or parts[0] not in DISPATCH or not parts[1] or not parts[2]:
                 checks.append(("config", f"config line {n}", line))
                 continue
             checks.append(tuple(parts))  # (type, name, arg)
-    return checks
+    names = {c[1] for c in checks}
+    solo, away = set(), set()
+    for n, kind, target, line in directives:
+        # A check that returns several rows is named by its config name; each of its rows matches too.
+        if target not in names:
+            checks.append(("config", f"config line {n}", f"{line}  ← names no check"))
+            continue
+        (solo if kind == "solo" else away).add(target)
+    return checks, solo, away
 
 def run_check(typ, name, arg):
+    """A LIST of (name, state, detail): most checks give one result, a registry check gives one per row."""
     if typ == "config":
-        return name, False, f"malformed or unknown check type — {arg[:80]!r}"
+        return [(name, False, f"malformed or unknown check type — {arg[:80]!r}")]
     try:
-        return DISPATCH[typ](name, arg)
+        r = DISPATCH[typ](name, arg)
     except Exception as e:
-        return name, None, f"check crashed: {e}"      # a crashed probe has not told us anything either
+        r = (name, None, f"check crashed: {e}")      # a crashed probe has not told us anything either
+    return r if isinstance(r, list) else [r]
+
+def collect(checks):
+    """Run every check and flatten: (results, {result name: the config name it came from})."""
+    results, origin = [], {}
+    for typ, name, arg in checks:
+        for r in run_check(typ, name, arg):
+            results.append(r)
+            origin[r[0]] = name
+    return results, origin
 
 def load_state():
     """(states, unknown_streaks); tolerates the old flat {name: bool} format."""
@@ -277,7 +374,10 @@ def main():
     ap.add_argument("--always", action="store_true")
     a = ap.parse_args()
 
-    results = [run_check(*c) for c in load_checks(a.config)]
+    checks, solo_checks, away_checks = load_checks(a.config)
+    results, origin = collect(checks)
+    solo = {r[0] for r in results if origin[r[0]] in solo_checks}     # a check's rows inherit its directives
+    away = {r[0] for r in results if origin[r[0]] in away_checks}
     prev, streak = load_state()
 
     # Resolve UNKNOWN: carry the previous state forward (no transition, no mail) — but count it.
@@ -286,12 +386,14 @@ def main():
         if ok is None:
             n = streak.get(name, 0) + 1
             streak[name] = n
-            if n >= UNKNOWN_FAIL_STREAK:
+            carried = prev.get(name)
+            carried = carried if carried is not None else True
+            if name in away:                     # a target that is simply away is never escalated
+                resolved.append((name, carried, f"unknown — away ({n} run{'s' if n > 1 else ''}) — {detail}", True))
+            elif n >= UNKNOWN_FAIL_STREAK:
                 resolved.append((name, False, f"could not determine state for {n} consecutive runs — {detail}", False))
             else:
-                carried = prev.get(name)
-                resolved.append((name, carried if carried is not None else True,
-                                 f"unknown ({n}/{UNKNOWN_FAIL_STREAK}) — {detail}", True))
+                resolved.append((name, carried, f"unknown ({n}/{UNKNOWN_FAIL_STREAK}) — {detail}", True))
         else:
             streak.pop(name, None)
             resolved.append((name, ok, detail, False))
@@ -299,6 +401,7 @@ def main():
     cur = {r[0]: r[1] for r in resolved}
     transitions = [n for n in cur if prev.get(n) is not None and prev[n] != cur[n]]
     new_failures = [n for n in cur if not cur[n] and prev.get(n, True)]
+    born_failing = [n for n in new_failures if prev.get(n) is None]   # a new check, a first run, a lost state
     failing = [r[0] for r in resolved if not r[1]]
     unknowns = [r[0] for r in resolved if r[3]]
 
@@ -311,34 +414,60 @@ def main():
             print(f"unknown this run (previous state kept, no mail): {unknowns}")
         return 1 if failing else 0
 
-    # Mail on a transition AND on a failure with no previous state (a new check, a first run, a
-    # lost state file) — otherwise a check that starts red never says so.
-    if transitions or new_failures or a.always:
+    # Mail first; save state last. A check whose email did not go out keeps its PREVIOUS state, so the
+    # next run sees the same change and sends it again — per check, so one failed email does not make
+    # every other check repeat its alert.
+    unsent = set()
+    def send(kind, text, body, covers):
+        # fleet-mail builds the subject — never a hand-made one here (guide § 17, "Alerts a human will actually read")
+        p = subprocess.run([MAILER, "--kind", kind, "--source", "Health", "--text", text, "--body", body])
+        if p.returncode != 0:
+            sys.stderr.write(f"fleet-local-check: email FAILED (mailer exit {p.returncode}): {text[:70]} — "
+                             "those checks keep their previous state, so the next run retries\n")
+            unsent.update(covers)
+
+    # A `solo` row mails on its own, on a transition or when it fails on its first run.
+    for name in [n for n in cur if n in solo and (n in transitions or n in born_failing)]:
+        r = next(x for x in resolved if x[0] == name)
+        kind, text = ("Report", f"{name} recovered") if r[1] else ("Alert", f"{name}: {r[2][:70]}")
+        send(kind, text, f"{name} on {os.uname().nodename}:\n\n  [{tag(r)}] {name}: {r[2]}\n\n"
+                         "This check mails on its own; it is also listed in the combined health digest.\n", [name])
+
+    # The combined digest. Solo rows stay in its BODY (a complete picture) but do not TRIGGER it, so
+    # one event sends one mail. Mail on a transition AND on a failure with no previous state (a new
+    # check, a first run, a lost state file) — otherwise a check that starts red never says so.
+    d_trans = [n for n in transitions if n not in solo]
+    d_new = [n for n in new_failures if n not in solo]
+    d_born = [n for n in born_failing if n not in solo]
+    if d_trans or d_new or a.always:
         # The subject is cut short, so name what is NEW first. Listed in config order, a new failure
         # behind older ones was cut off — invisible to anyone triaging by subject, which is what an
         # alert is proven by (guide § 17, "Prove the alert path").
         named = [n for n in failing if n in new_failures] + [n for n in failing if n not in new_failures]
-        if new_failures:
+        if d_new:
             kind, text = "Alert", f"{len(failing)} failing — {', '.join(named)[:60]}"
         elif failing:
             kind, text = "Alert", f"{len(failing)} still failing — {', '.join(named)[:60]}"
         else:
             kind, text = "Report", "all checks recovered"
         body = f"Local health checks on {os.uname().nodename}:\n\n{report}\n"
-        if transitions:
-            body += f"\nChanged this run: {', '.join(transitions)}\n"
+        if d_trans:
+            body += f"\nChanged this run: {', '.join(d_trans)}\n"
+        if d_born:
+            body += f"\nNew this run, failing from its first check: {', '.join(d_born)}\n"
         if unknowns:
             body += f"\nCould not be determined this run (previous state kept, not an alert): {', '.join(unknowns)}\n"
-        # fleet-mail builds the subject — never a hand-made one here (guide § 17, "Alerts a human will actually read")
-        p = subprocess.run([MAILER, "--kind", kind, "--source", "Health", "--text", text, "--body", body])
-        if p.returncode != 0:
-            sys.stderr.write(f"fleet-local-check: alert email FAILED (mailer exit {p.returncode}); "
-                             "state not saved, so the next run retries\n")
-            return 3
-    # Only now — after any needed email went out — record what was seen.
+        send(kind, text, body, d_trans + d_new)
+
+    # Only now — after the mail went out — record what was seen. A check whose email failed keeps its
+    # previous state (or none, if it had none), so the same change is seen and sent again next run.
+    saved = {n: v for n, v in cur.items() if n not in unsent}
+    saved.update({n: prev[n] for n in unsent if n in prev})
     os.makedirs(os.path.dirname(STATE), exist_ok=True)
     with open(STATE, "w") as f:
-        json.dump({"states": cur, "unknown_streaks": streak}, f)
+        json.dump({"states": saved, "unknown_streaks": streak}, f)
+    if unsent:
+        return 3
     return 1 if failing else 0
 
 if __name__ == "__main__":
