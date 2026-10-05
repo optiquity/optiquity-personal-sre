@@ -28,7 +28,7 @@ Editing one when you meant the other is the easiest mistake to make here.
 
 | Path | What it holds |
 |---|---|
-| `guide/` | The *why* — 21 numbered chapters (00–20) plus 7 case studies (`03a`, `05b`, …), platform-agnostic. Start at `guide/_contents.md`. |
+| `guide/` | The *why* — 21 numbered chapters (00–20) plus 8 case studies (`03a`, `05b`, …), platform-agnostic. Start at `guide/_contents.md`. |
 | `guide/examples/` | Worked end-to-end examples (A/B/C/D/E series), catalogued in chapter 20. |
 | `platforms/` | The *how*, per OS — macOS, Linux, Windows, Raspberry Pi, Cloud. |
 | `skeleton/` | Starter files users copy. Indexed by `skeleton/README.md`. |

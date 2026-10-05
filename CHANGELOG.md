@@ -3,6 +3,21 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-04 — a new case study, and four more shell traps
+
+- **New: [17c · Case study — the health check that stopped the media server](guide/17c-case-the-check-that-stopped-the-server.md).**
+  A routine update made the fleet's health check a new program to macOS; its next read of a share raised
+  a privacy prompt nobody could see, and the media server stalled behind it. The alert worked and pointed
+  at the share, not the screen; true measurements led to a wrong inference; only a kernel stack, taken
+  before any remount, told "refused" from "never sent". What was built: an alarm for a prompt nobody is
+  answering, and a launcher, approved once and never rebuilt, that keeps approvals across updates.
+- **§ 17, the shell traps** that make a check pass or fail falsely gain four: a pipe reports its last
+  stage's status (`validate | tail -1 && commit` is not a gate); under `pipefail`, `| grep -q` can fail a
+  correct check (a race); zsh's built-in `log` hides `/usr/bin/log`; zsh's `MULTIOS` copies stdout into a
+  `2>&1 >/dev/null |` pipe. And: **test a script whole, under its own shell options.**
+- Linked from `platforms/macos.md`, the reading order (17b → 17c → 18), `_contents`, the README and
+  `AGENTS.md` (now 8 case studies).
+
 ## 2026-10-04 — housekeeping: what a clean scan did not read, and indexes that match the repo
 
 - **The leak guard scans the secrets chapter now.** It used to skip `guide/06-secrets.md` whole for the

@@ -304,7 +304,8 @@ silence has to prove it ran: count what it examined, or print a sentinel line at
 missing count or sentinel as unknown ([above](#a-probe-that-could-not-answer-has-not-told-you-anything)),
 not as clean.
 
-Four ways a shell turns a failed check into clean-looking silence, each met in practice:
+Ways a shell turns a failed check into clean-looking silence — or a good one into a failure — each met
+in practice:
 
 - **`xargs` cannot run a shell function or alias.** A leak scan piped a file list to `xargs rg`. In
   that shell `rg` was a function, so `xargs` never ran it, and the empty output was recorded as "no
@@ -323,6 +324,25 @@ Four ways a shell turns a failed check into clean-looking silence, each met in p
 - **zsh does not word-split a variable.** `cmd="ls -l"; $cmd` looks for a program literally named
   `ls -l` in zsh (`command not found`), where bash runs `ls` with `-l`. A watcher that kept its
   command in a variable failed this way. Use an array or a function.
+- **A pipe reports its last stage's status.** `validate | tail -1 && commit` commits when the
+  validator fails, because `&&` sees `tail`'s exit status. One config gate shipped like that: the config
+  happened to be sound, but the gate had not worked. **A check whose exit status is discarded is not a
+  gate** — validate into a file, test its exit code, then act.
+- **…and under `set -o pipefail`, a reader that quits early breaks a good check.** `cmd | grep -q x`
+  stops reading at the first match; if `cmd` is still writing, it is cut off, and `pipefail` fails the
+  whole pipeline. It is a race: one installer's check refused a **correct** code signature in 17 runs
+  out of 30. Capture first (`out=$(cmd)`), then match the variable.
+- **In zsh, `log` is a built-in, not macOS's `/usr/bin/log`.** Searches of the unified log through a bare
+  `log show` return nothing in zsh, and "nothing in the log" gets written down. Call system tools by full
+  path in anything that may run under zsh ([17c](17c-case-the-check-that-stopped-the-server.md)).
+- **zsh copies output where you did not send it.** In zsh, `cmd 2>&1 >/dev/null | filter` sends stderr
+  into the pipe **and stdout too**: two output redirections of one stream become a copy to both
+  (`MULTIOS`, on by default). Wrap it in a subshell — `(cmd 2>&1 >/dev/null) | filter` — and the filter
+  sees only stderr.
+
+⚠ **Test a script whole, as its user runs it** — under its own shell options (`set -euo pipefail`), not
+line by line in your interactive shell. The `pipefail` trap above passed every time its line was tried
+alone, and failed inside the script — `pipefail` was the difference.
 
 ⚠ **An in-place edit can destroy evidence.** `sed -i` writes a new file, which resets its creation
 time. One investigation lost the only record of when a file had appeared, because the file had been
@@ -554,5 +574,8 @@ platform traps that cost real debugging, is
 Start with one health check and a working alert email. That single loop — something breaks, you
 find out without looking — is most of the value; everything else is refinement.
 
-Next: [17a · Case study — six green checks over one broken system](17a-case-monitoring-the-proxy.md) and [17b · Case study — it failed loudly, into a file nobody reads](17b-case-loud-into-the-void.md), then [18 · Setup](18-setup.md) — the onboarding journey that ties everything together into a
-first working adoption.
+Next: [17a · Case study — six green checks over one broken system](17a-case-monitoring-the-proxy.md),
+[17b · Case study — it failed loudly, into a file nobody reads](17b-case-loud-into-the-void.md) and
+[17c · Case study — the health check that stopped the media server](17c-case-the-check-that-stopped-the-server.md),
+then [18 · Setup](18-setup.md) — the onboarding journey that ties everything together into a first
+working adoption.

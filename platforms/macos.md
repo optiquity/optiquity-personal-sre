@@ -105,6 +105,9 @@ Three things decide when this bites:
 - Or **keep the job away from protected places**: push data over SSH to the host that holds it, rather
   than reading or writing through the mount.
 
+The whole incident, from the first wrong turn to the launcher, is case study
+[17c](../guide/17c-case-the-check-that-stopped-the-server.md).
+
 ⚠ **A network mount is not "bound to the login session".** Earlier versions of this guide said so, to
 explain why reading a share hangs from a scheduled job; the hang they described was this prompt. A check
 that a share is mounted should still not read inside it: check the **kernel mount table** (`mount`, or

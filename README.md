@@ -241,7 +241,7 @@ guide/          # THE HUB — platform-agnostic concepts (read these for the "wh
   06-secrets · 07-tools-requirements · 08-networking · 09-runtimes · 10-permissions ·
   11-mcp · 12-agents-skills · 13-repo-comprehension · 14-automation ·
   15-content-generation · 16-multinode · 17-monitoring · 18-setup · 19-sharing
-  03a/03b · 05a/05b · 07a · 17a/17b   # case studies, each beside its chapter
+  03a/03b · 05a/05b · 07a · 17a/17b/17c   # case studies, each beside its chapter
   20-example-projects · examples/   # worked, end-to-end install+maintenance examples
 platforms/      # THE SPOKES — per-OS "how" (macos ✓ · windows ◑ · linux ◑ · raspberry-pi ◑ · cloud ○)
 skeleton/       # generic starter files you copy + fill (all placeholders, no secrets)

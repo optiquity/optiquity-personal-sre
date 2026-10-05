@@ -136,4 +136,4 @@ up until the moment it is the only thing that matters.
 
 ---
 
-Next: [18 · Setup](18-setup.md).
+Next: [17c · Case study — the health check that stopped the media server](17c-case-the-check-that-stopped-the-server.md).
