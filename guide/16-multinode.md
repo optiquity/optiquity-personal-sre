@@ -59,9 +59,10 @@ are **options**, not requirements — adopt the ones that fit:
 - **Session transfer** — move a live operator session from one node to another (start on the
   `server`, continue on the `workstation`). Useful for going offline, forking work, or when the
   origin node is going down. Requires a way to serialize + relocate session state.
-- **Peer awareness** — multiple independent operator sessions on different nodes notice each
-  other's changes to a shared repo (so two sessions don't clobber each other). Earns its keep
-  only when 2+ live sessions target the same repo at once; overkill otherwise.
+- **Several sessions in one repo** — two or more sessions working in the *same* repo at once, each
+  on its own project. Awareness alone is not enough here: it cannot stop two sessions changing the
+  same machine. Earns its keep only when you actually run sessions side by side; overkill otherwise.
+  See [Several sessions in one repo](#several-sessions-in-one-repo) below.
 
 - **Peer messaging** — the operator sessions that own *different repos* message each other
   directly, instead of you copying questions between terminals. Increasingly this is **native** to
@@ -90,6 +91,62 @@ operator on the `workstation`, occasionally reaching other nodes, is plenty.
 > other](examples/E19-agents-that-talk-to-each-other.md)** is the worked example, including the
 > naming convention that turns out to be the addressing scheme and the conversation log that keeps
 > decisions visible to you.
+
+## Several sessions in one repo
+
+> ⛏ **Designed, not yet proven in use.** What follows is an agreed design, published before its pilot.
+> The setup steps — written for your AI session to follow with you — are in
+> [`skeleton/sessions/`](../skeleton/sessions/README.md).
+
+A repo that holds many small projects invites running several sessions at once: one on a backup, one
+on a network change, one on the public docs. Each is assigned one project by you and works on it alone.
+Four things collide when they share a repo, and each gets its own answer:
+
+| What collides | Why it matters | The answer |
+|---|---|---|
+| **Unfinished edits** in the same folder | A commit picks up another session's half-done work | **A git working copy per session.** The agent's own isolation then refuses that session's edits to the main folder |
+| **Files every project updates** — the registry, the dashboard | Every session edits the same lines | **A status file per project** ([04 · Structure](04-structure.md#where-a-project-stands--its-status-file)); the registry an index; dashboards assembled from per-project data by a written spec |
+| **The same machine or outside service** | Git merges files; nothing merges two half-applied changes to a NAS | **A lock** — a file in the repo, taken before a change and released after it |
+| **Names** | Session lists de-duplicate names on one machine only | **`<machine>-<repo>-<project>`** |
+
+### Federated, deliberately
+
+**No session controls another, and nothing keeps a list of them.** A "lead" session may draft a starter
+prompt or send a message; it cannot assign, approve or wait on anyone. Two designs were rejected for
+exactly this reason: **a register of live sessions** (one central place every session must keep current —
+the same failure as a shared per-machine rules file), and **a coordinator that hands out work** (one
+session that the others depend on). What coordinates the sessions is what each already has: its
+project's documents, git, cross-session messaging, and the locks folder.
+
+### Why the locks live in the repo, not on the machines
+
+Putting a lock on the machine being changed looks natural, and fails three ways: there is no standard
+location or owner across several operating systems; nothing guarantees it survives; and a service you can
+only configure through its web portal has nowhere to put one at all. A folder on `main` of your private
+repo is one place, one format, durable, and visible to every session on every machine. Two more options
+were weighed: a cloud key-value store with create-only writes (atomic, but every session needs cloud
+credentials and it is a second record outside the repo), and hidden git refs (atomic and quiet, but
+invisible on the host's web page and gone from history).
+
+What makes a folder of files safe is **one writer**: a helper that builds a single-file commit on top of
+the remote's main and pushes without force, so two sessions racing for one lock cannot both win. Because
+it can change nothing else, you can give lock commits a standing approval while every other commit still
+waits for yours.
+
+**`ALL` by default, and a second lock needs permission.** A lock names the resource and the project —
+`nas--ALL`, or `nas--share-cleanup` beside it. Any second lock on a resource needs the holder's permission,
+or yours. The permission covers sharing the lock only; the change itself still needs your approval, so a
+peer never grants escalation ([03 · Governance](03-governance-rules.md), principle 13).
+
+**A lock outlives a session that forgets it.** So every session checks for its own locks when it starts,
+resumes or is summarised; your monitoring lists locks older than a day; and **"can't tell whether the
+holder is alive" is never "stale"** — a holder that is offline, or silent while it works, is your call.
+
+### What it cannot do
+
+A session that changes a machine **without** taking a lock leaves no trace except the machine's state:
+lock-taking is a rule, not something a hook can reliably enforce. And none of this has yet survived a
+week of sessions working side by side — the pilot comes first, and this section will change with it.
 
 ## A fleet view
 

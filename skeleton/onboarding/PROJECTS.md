@@ -21,6 +21,7 @@ AI CLI should resume from `docs/onboarding/PLAN.md`. Node role: **<role>**.
 - `PLAN.md` — **open** (the resume-here checklist bootstrap left for you)
 - `DESIGN.md` — **draft** (short form: this setup's decisions — roles, posture, MCP)
 - `POSTMORTEM.md` — **draft** (entries appended as setup happens; finalised at close)
+- `STATUS.md` — **open** (where setup stands and what is next — a new session resumes from it)
 
 ---
 

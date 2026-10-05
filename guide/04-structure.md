@@ -13,15 +13,18 @@ you're adopting, a recurring maintenance thread. Each project is a folder:
 ```
 docs/
   <project-name>/
-    PLAN.md          # the plan + running status (or STATUS.md, SETUP.md — your call)
-    ...              # any supporting design/reference docs
+    DESIGN.md        # what it must survive — agreed before the work (below)
+    STATUS.md        # where it stands and what happens next (below)
+    POSTMORTEM.md    # what was tried and what went wrong — started at open, finished at close (below)
+    PLAN.md          # the plan or runbook, if it needs one
+    ...              # any supporting reference docs
   peer-conversations/  # one log per peer session, if your sessions message each other (E19);
                        # gitignored by default
 ```
 
 Projects are **the unit of organization and the unit of memory**. When the operator finishes a
-migration, the record isn't in the chat — it's in `docs/<project>/PLAN.md`, with what was
-done, verified, and deferred. Six months later, that folder answers "what did we do and why."
+migration, the record isn't in the chat — it's in `docs/<project>/`, with what was done, verified,
+and deferred. Six months later, that folder answers "what did we do and why."
 
 ## Where files live — mechanism, not topic
 
@@ -97,6 +100,10 @@ point to the whole system.
 
 The registry is **authoritative**. If a doc and the registry disagree, the registry wins and
 the doc is reconciled to it. This gives you one place to look and one place to trust.
+
+Keep each entry short once projects have status files (below): the registry is authoritative for
+**which projects exist and each one's status word**; the project's own `STATUS.md` holds where it stands.
+A registry that carries every project's running notes becomes the file every change touches.
 
 ### Status decays
 
@@ -204,6 +211,30 @@ start a refactor, finish it: **a half-updated set of references is worse than no
 
 **Starter files:** [`skeleton/design/`](../skeleton/design/) — both forms, rules, and a
 three-step install.
+
+## Where a project stands — its status file
+
+> ⛏ **Version 0.1 of the template — not yet proven in use.** The practice is settled; its section list
+> is expected to change.
+
+Between the design (before) and the postmortem (after) sits the question every session asks first:
+**where is this now, and what do I do next?** Each project answers it in one file,
+`docs/<project>/STATUS.md`, **created when the project opens** alongside the other two.
+
+| Section | Holds |
+|---|---|
+| Current state | Dated; each claim carries its evidence or says "unverified" ([rule 18](03-governance-rules.md)) |
+| Resume here | What a new session does first |
+| Queue | Ordered items: what, who, what each waits for, its state |
+| Dated items | What is due, and when — the record, since checks scheduled inside a session die with it |
+| Deferred | Each with a reason and a revisit date |
+| Machines and services | What this project changes — the names it would lock ([16 · Multi-node](16-multinode.md#several-sessions-in-one-repo)) |
+| Documents, related, session log | The project's docs and their status; neighbouring projects; exchanges with other sessions |
+
+**The test of a status file:** if the session that wrote it ended an hour ago, can a new one continue
+from this file alone? If "resume here" lives only in a chat, the answer is no.
+
+**Starter files:** [`skeleton/status/`](../skeleton/status/) — the template and a three-step install.
 
 ## What a finished project leaves behind
 

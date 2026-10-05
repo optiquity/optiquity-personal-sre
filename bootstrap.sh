@@ -231,14 +231,19 @@ if [ "$REPO_READY" = 1 ] && [ -d "$TARGET_DIR/.git" ]; then
   seed "$S/onboarding/PLAYBOOK.md"       "$TARGET_DIR/PLAYBOOK.md"  "${FILL[@]}"
   seed "$S/onboarding/onboarding-PLAN.md" "$TARGET_DIR/docs/onboarding/PLAN.md" \
        "${FILL[@]}" -e "s|<framework-dir>|$FRAMEWORK_DIR|g"
-  # The design + postmortem practice (principles 14–15): the rules and templates, plus the
-  # open onboarding project's own design doc and postmortem draft — created at open, not close.
+  # The design + postmortem practice (principles 14–15) and the status file: the rules and
+  # templates, plus the open onboarding project's own design doc, postmortem draft and status
+  # file — all three created at open, not close.
   for f in README.md RULES.md TEMPLATE-SHORT.md TEMPLATE-LONG.md; do seed "$S/design/$f" "$TARGET_DIR/docs/design/$f"; done
   for f in README.md RULES.md TEMPLATE.md; do seed "$S/postmortems/$f" "$TARGET_DIR/docs/postmortems/$f"; done
+  for f in README.md TEMPLATE.md; do seed "$S/status/$f" "$TARGET_DIR/docs/status/$f"; done
   seed "$S/design/TEMPLATE-SHORT.md" "$TARGET_DIR/docs/onboarding/DESIGN.md" \
        -e "1s|<project or thread>|onboarding|" -e "s|^opened:           <YYYY-MM-DD>|opened:           $TODAY|"
   seed "$S/postmortems/TEMPLATE.md" "$TARGET_DIR/docs/onboarding/POSTMORTEM.md" \
        -e "1s|<project or causal thread>|onboarding|" -e "s|^opened:             <YYYY-MM-DD>|opened:             $TODAY|"
+  seed "$S/status/TEMPLATE.md" "$TARGET_DIR/docs/onboarding/STATUS.md" \
+       -e "1s|<project>|onboarding|" -e "s|^opened:        <YYYY-MM-DD>|opened:        $TODAY|" \
+       -e "s|^last-updated:  <YYYY-MM-DD>|last-updated:  $TODAY|"
   # Peer messaging. See skeleton/peer-messaging/PEER-MESSAGING.md §2.
   #   docs/peer-messaging/     the standard -- TRACKED (peers bootstrap from it)
   #   docs/peer-conversations/ the logs -- IGNORED

@@ -3,6 +3,26 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-05 — a status file per project; several sessions in one repo (designed, not yet proven)
+
+**Re-check your own repo:** add the status file to the place your rules say a project gets a design
+doc and a postmortem at open.
+
+- **Every project now gets a status file when it opens** — `docs/<project>/STATUS.md`, beside its
+  `DESIGN.md` and `POSTMORTEM.md`: current state with evidence, where to resume, the queue, dated items,
+  deferrals, the machines it changes. It is what a new session reads to continue the work. Chapter 04
+  gains the section; `skeleton/status/` holds the template (**version 0.1 — its sections are expected
+  to change**) and its install steps; `bootstrap.sh` seeds it and creates the onboarding project's own.
+  The registry's entries shrink to an index line once projects have status files.
+- **New, optional, designed but not yet proven: several AI sessions in one repo at once**, each on its
+  own project. Chapter 16 has the why — a git working copy per session, status files instead of one
+  shared registry, locks for changes to a machine or outside service kept as files in the repo, and
+  federated sessions with no register and no lead. `skeleton/sessions/` is a **setup guide written for
+  your AI session** to follow with you, plus what to build for the lock helper and its tests. Nothing
+  in it is pre-filled for a particular fleet. Chapter 02 points to it.
+- ⚠ **Known:** this repo's own pre-commit hook is not yet safe to run from a linked git working copy;
+  the setup guide says so and how to test your own hooks first.
+
 ## 2026-10-05 — corrections from the round's final re-check
 
 **Re-check your own repo for the first two.**

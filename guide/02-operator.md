@@ -164,6 +164,10 @@ a new session picks up exactly where the last left off by reading them.
 - **You can run it on more than one node.** Same rules everywhere (symmetry —
   [Rule 7](03-governance-rules.md)); role-appropriate permission posture per node
   ([16 · Multi-node](16-multinode.md)).
+- **You can run several sessions in one repo at once**, each on its own project and in its own
+  working copy — a pattern designed but not yet proven in use
+  ([16 · Multi-node](16-multinode.md#several-sessions-in-one-repo)). What lets any of them pick up
+  a project is the project's status file ([04 · Structure](04-structure.md#where-a-project-stands--its-status-file)).
 
 ## Delegation and parallelism (briefly)
 

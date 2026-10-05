@@ -21,6 +21,8 @@ where the *why* lives; this table is just the map back.
 | `repo-index/` | Enabling a repo index: an annotated exclusion template + an idempotent per-repo enablement script. | [13 · Repo comprehension](../guide/13-repo-comprehension.md) |
 | `design/` | Design-phase templates (short + long) and rules — the pass that happens *before* the work, covering durability, detection and testing. Has its own [README](design/README.md). | [04 · Structure](../guide/04-structure.md) |
 | `postmortems/` | Template + rules for the postmortem practice — created when a project *opens*, not when it closes. Has its own [README](postmortems/README.md). | [04 · Structure](../guide/04-structure.md) |
+| `status/` | The status file every project gets when it opens, beside its design doc and postmortem — what a new session reads to continue the work. *Version 0.1, not yet proven in use.* Has its own [README](status/README.md). | [04 · Structure](../guide/04-structure.md#where-a-project-stands--its-status-file) |
+| `sessions/` | *Optional.* Several AI sessions in one repo at once: a setup guide written for your AI session to follow with you, and what to build for the lock helper. *Designed, not yet proven in use.* Has its own [README](sessions/README.md). | [16 · Multi-node](../guide/16-multinode.md#several-sessions-in-one-repo) |
 | `onboarding/` | The seed for a brand-new personal-SRE repo (registry, playbook, first docs). | [04 · Structure](../guide/04-structure.md) |
 | `github/` | CI workflow — runs the secret-scan on every push, so the never-leak rule is enforced by a machine. | [19 · Public/shared repos](../guide/19-sharing.md) |
 | `chezmoi.toml.example` | Config-manager settings: role/node data the templates branch on. | [05 · chezmoi](../guide/05-chezmoi.md) |
