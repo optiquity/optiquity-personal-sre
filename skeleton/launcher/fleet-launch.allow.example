@@ -1,0 +1,10 @@
+# fleet-launch allowlist — stage a copy per Mac (your config manager is the natural place), then install
+# it root-owned with:   install-fleet-launch.sh --list
+#
+# One command per line: its EXACT argument list, the program first, arguments separated by a TAB — not
+# spaces. fleet-launch runs a command only if that whole line matches. Lines starting with # are ignored.
+# Use absolute paths, and list only scripts and programs you would trust with this Mac's approvals.
+#
+# Examples (replace <you>, and use real TABs between arguments):
+/Users/<you>/.local/bin/fleet-local-check
+/Users/<you>/.local/bin/<your-sync-script>.sh

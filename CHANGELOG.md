@@ -3,6 +3,26 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-05 — macOS: an alarm for a prompt nobody answers, and a launcher that stops the prompts
+
+Both from [17c](guide/17c-case-the-check-that-stopped-the-server.md). Optional, and macOS only.
+
+- **New check type `prompts | <name> | local | <ssh-host>`** in `fleet-local-check`: alerts when a macOS
+  privacy prompt has waited five minutes on a Mac's screen. It reads the privacy service's log (per-user
+  requests only — the system-wide service logs some it never answers), treats a log with no traffic as
+  unknown, keeps its scan position in `$FLEET_PROMPT_STATE`, and a dry run never advances it. 10 tests on
+  a recorded log with generic identifiers; the live path is yours to prove once with a real prompt.
+- **New: [`skeleton/launcher/`](skeleton/launcher/)** — `fleet-launch`, built once per Mac and never
+  rebuilt, so scheduled jobs keep their privacy approvals across package updates. It runs only command
+  lines listed exactly in a root-owned file, gives them a fixed environment, is signed with the hardened
+  runtime so no library can be injected into it, and passes stop signals on. Its installer refuses to
+  rebuild, refuses any other signature, and checks itself. ⚠ It protects against library injection and
+  environment tricks, **not against a compromised account** (the README says why).
+- **Tests:** 16 for the launcher and its installer (run whole, with a stand-in for sudo), skipped on
+  non-Macs — CI shows them skipped. 14 more planted defects, one per rule of the launcher and the prompt
+  check, each caught by its test.
+- The local-check job template, `platforms/macos.md` and 17c point at both.
+
 ## 2026-10-05 — the local health check's engine: solo alerts, away targets, per-email state
 
 `fleet-local-check` gains what the fleet it came from needed once it watched more than a handful of things:

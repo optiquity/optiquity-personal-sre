@@ -12,7 +12,7 @@ FAKE mailer. The fake calls the REAL fleet-mail with --dry-run, so each subject 
 is built and validated by the real code — then records what it was asked to send, and can be
 told to fail (FAKE_MAIL_RC) to prove a failed send is retried rather than forgotten.
 """
-import contextlib, importlib.util, json, os, shutil, subprocess, sys, tempfile, textwrap, time, unittest, urllib.error
+import contextlib, datetime, importlib.util, json, os, shutil, subprocess, sys, tempfile, textwrap, time, unittest, urllib.error
 from importlib.machinery import SourceFileLoader
 
 sys.dont_write_bytecode = True
@@ -394,6 +394,110 @@ class LocalCheckStates(LocalCheckBase):
         old = time.time() - 5 * 3600
         os.utime(fh, (old, old))
         self.assertIn("[FAIL] sync: last successful fetch 5.0 h ago (limit 3 h)", self.dry())
+
+
+# The privacy service's log, in its real format (`log show --style compact`), with generic process numbers,
+# message IDs and programs. 100 is the system-wide service, 200 the per-user one. One request is
+# indirect (iCloud Drive), one is a package-manager Python prompting, one is answered in milliseconds.
+TCC_LINES = """2030-01-15 10:12:25.296 Df tccd[200:1a2b3c] [com.apple.TCC:access] REQUEST: tccd_uid=501, sender_pid=50, sender_uid=0, sender_auid=-1, function=TCCAccessRequestIndirect, msgID=50.1001
+2030-01-15 10:12:30.231 Df tccd[100:1a2b3d] [com.apple.TCC:access] REQUEST: tccd_uid=0, sender_pid=50, sender_uid=0, sender_auid=-1, function=TCCAccessRequest, msgID=50.1002
+2030-01-15 10:12:30.232 Df tccd[100:1a2b3d] [com.apple.TCC:access] AUTHREQ_CTX: msgID=50.1002, function=TCCAccessRequest, service=kTCCServiceSystemPolicyAllFiles, preflight=yes, query=1
+2030-01-15 10:12:30.241 Df tccd[100:1a2b3d] [com.apple.TCC:access] AUTHREQ_SUBJECT: msgID=50.1002, subject=/usr/libexec/some-helper,
+2030-01-15 10:12:30.253 Df tccd[100:1a2b3d] [com.apple.TCC:access] REPLY: (0) function=TCCAccessRequest, msgID=50.1002
+2030-01-15 10:26:27.129 Df tccd[200:1a2b3e] [com.apple.TCC:access] REQUEST: tccd_uid=501, sender_pid=50, sender_uid=0, sender_auid=-1, function=TCCAccessRequest, msgID=50.1003
+2030-01-15 10:26:27.130 Df tccd[200:1a2b3e] [com.apple.TCC:access] AUTHREQ_CTX: msgID=50.1003, function=TCCAccessRequest, service=kTCCServiceSystemPolicyNetworkVolumes, preflight=no, query=1
+2030-01-15 10:26:27.156 Df tccd[200:1a2b3e] [com.apple.TCC:access] AUTHREQ_PROMPTING: msgID=50.1003, service=kTCCServiceSystemPolicyNetworkVolumes, subject=Sub:{/opt/homebrew/Cellar/python@3.13/3.13.1/bin/python3.13}
+2030-01-15 10:26:27.156 Df tccd[200:1a2b3e] [com.apple.TCC:access] AUTHREQ_SUBJECT: msgID=50.1003, subject=/opt/homebrew/Cellar/python@3.13/3.13.1/bin/python3.13,
+2030-01-15 12:03:14.012 Df tccd[200:1a2b3e] [com.apple.TCC:access] REPLY: (501) function=TCCAccessRequest, msgID=50.1003
+2030-01-15 12:03:15.995 Df tccd[200:1a2b3c] [com.apple.TCC:access] REPLY: (501) function=TCCAccessRequestIndirect, msgID=50.1001"""
+SYS_UNANSWERED = ("2030-01-15 11:25:24.758 Df tccd[100:1a2b3f] [com.apple.TCC:access] REQUEST: tccd_uid=0, "
+                  "sender_pid=51, sender_uid=88, sender_auid=-1, function=TCCAccessRequest, msgID=51.2001")
+
+
+class PromptCheck(unittest.TestCase):
+    """macOS privacy prompts nobody answers (guide 17c) — scanned from a recorded log, in-process.
+    ⚠ The live path (a real prompt on a real screen) is NOT reached by these tests: prove it once on your
+    own Mac with a throwaway program, as guide 17c describes."""
+
+    def setUp(self):
+        self.lc = load(os.path.join(TOOLS, "fleet-local-check"), "fleet_local_check_prompts")
+        self.tmp = tempfile.mkdtemp(prefix="prompts-")
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.lc.PROMPT_STATE = os.path.join(self.tmp, "prompts.state")
+        self.at = lambda hm: datetime.datetime.strptime("2030-01-15 " + hm, "%Y-%m-%d %H:%M")
+        self.before = "\n".join(l for l in TCC_LINES.splitlines() if " 12:03:" not in l)
+
+    def test_unanswered_requests_older_than_the_limit_are_prompts(self):
+        lc = self.lc
+        o, req, rep = lc.prompt_scan(self.before, {}, {"100", "200"})
+        waiting = lc.prompt_waiting(o, self.at("11:00"))
+        self.assertEqual(len(waiting), 2, waiting)
+        self.assertIn("indirect request", waiting[0])
+        self.assertIn("since 10:12", waiting[0])
+        self.assertIn("python3.13 (Homebrew python@3.13 3.13.1)", waiting[1])
+        self.assertIn("SystemPolicyNetworkVolumes", waiting[1])
+        self.assertEqual((req, rep), (3, 1), "the request answered in milliseconds is never reported")
+
+    def test_answered_and_young_requests_are_not_prompts(self):
+        lc = self.lc
+        o, _, _ = lc.prompt_scan(TCC_LINES, {}, {"100", "200"})
+        self.assertEqual(lc.prompt_waiting(o, self.at("12:10")), [])
+        o, _, _ = lc.prompt_scan(self.before, {}, {"100", "200"})
+        young = [w for w in lc.prompt_waiting(o, self.at("10:30")) if "python" in w]
+        self.assertEqual(young, [], "4 minutes old is not yet a prompt")
+
+    def test_the_system_wide_service_is_not_tracked_by_request(self):
+        lc = self.lc
+        o, _, _ = lc.prompt_scan(SYS_UNANSWERED, {}, {"100", "200"})
+        self.assertEqual(lc.prompt_waiting(o, self.at("11:40")), [], "it logs some requests it never answers")
+        o, _, _ = lc.prompt_scan(SYS_UNANSWERED.replace("tccd_uid=0,", "tccd_uid=501,"), {}, {"100", "200"})
+        self.assertEqual(len(lc.prompt_waiting(o, self.at("11:40"))), 1, "the same line per-user IS a prompt")
+
+    def test_a_prompting_line_on_either_service_is_tracked(self):
+        lc = self.lc
+        line = SYS_UNANSWERED.replace("REQUEST: tccd_uid=0, sender_pid=51, sender_uid=88, sender_auid=-1, "
+                                      "function=TCCAccessRequest, msgID=51.2001",
+                                      "AUTHREQ_PROMPTING: msgID=51.2001, service=kTCCServiceScreenCapture, "
+                                      "subject=Sub:{/Applications/Some.app}")
+        o, _, _ = lc.prompt_scan(line, {}, {"100", "200"})
+        self.assertEqual(len(lc.prompt_waiting(o, self.at("11:40"))), 1)
+
+    def test_a_restarted_service_drops_its_old_requests(self):
+        lc = self.lc
+        o, _, _ = lc.prompt_scan(self.before, {}, {"100", "201"})         # the per-user service restarted
+        self.assertEqual(lc.prompt_waiting(o, self.at("11:00")), [])
+
+    def run_check(self, out, rc=0, dry=False, arg="local"):
+        lc = self.lc
+        lc.IS_MAC, lc.DRY_RUN = True, dry
+        lc.sh = lambda *a, **k: (rc, out, "")
+        return lc.chk_prompts("prompts", arg, now=self.at("11:00"))
+
+    def test_the_check_alerts_and_keeps_its_scan_position(self):
+        r = self.run_check(self.before + "\n#TCCD\n100\n200\n")
+        self.assertIs(r[1], False, r)
+        self.assertIn("2 permission prompt(s) waiting", r[2])
+        with open(self.lc.PROMPT_STATE) as f:
+            self.assertEqual(json.load(f)["prompts"]["scanned"], "2030-01-15 11:00:00")
+
+    def test_a_silent_log_is_unknown_not_clean(self):
+        r = self.run_check("#TCCD\n100\n200\n")
+        self.assertIsNone(r[1], r)
+
+    def test_an_unreachable_mac_is_unknown(self):
+        r = self.run_check("", rc=255, arg="laptop")
+        self.assertIsNone(r[1], r)
+
+    def test_a_dry_run_does_not_advance_the_scan_position(self):
+        self.run_check(TCC_LINES + "\n#TCCD\n100\n200\n", dry=True)
+        self.assertFalse(os.path.exists(self.lc.PROMPT_STATE))
+
+    def test_it_refuses_to_read_a_log_this_node_does_not_have(self):
+        lc = self.lc
+        lc.IS_MAC = False
+        r = lc.chk_prompts("prompts", "local")
+        self.assertIs(r[1], False)
+        self.assertIn("not macOS", r[2])
 
 
 UNKNOWN_RUNS = 6     # past the escalation streak (4), so an away target's never-escalating is real

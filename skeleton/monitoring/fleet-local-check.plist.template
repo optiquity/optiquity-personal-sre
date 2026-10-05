@@ -2,7 +2,10 @@
 <!-- launchd timer for the local health probe (macOS). Runs every 15 minutes; it emails only on
      state transitions (a state file dedups), so the tight cadence never spams. Run it on the node
      that can see the local-only things you're checking. bootstrap-monitoring.sh substitutes
-     __HOME__ and __LABEL__ and loads it. On Linux, use a systemd timer or cron instead. -->
+     __HOME__ and __LABEL__ and loads it. On Linux, use a systemd timer or cron instead.
+     ⚠ If a check reads a network share or iCloud Drive, start the job through the launcher
+     (skeleton/launcher/): run directly, it is charged to your package manager's Python, and every
+     update of that Python raises a privacy prompt nobody sees (guide 17c). -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>

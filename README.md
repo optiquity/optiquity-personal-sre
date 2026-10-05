@@ -252,7 +252,8 @@ skeleton/       # generic starter files you copy + fill (all placeholders, no se
   repo-index/ (make a repo legible to the operator) ·
   design/ (long + short templates, rules — what a project must survive, settled BEFORE the work) ·
   postmortems/ (template + rules — created when a project OPENS, not at close; feeds the design template) ·
-  peer-messaging/ (the standard + a quick start for a joining session) · websites/ (multi-site deploy starter)
+  peer-messaging/ (the standard + a quick start for a joining session) · websites/ (multi-site deploy starter) ·
+  launcher/ (macOS: keep privacy approvals across package updates — optional)
 scripts/        # grep-guard (the never-leak backstop) + pre-commit hook · check-guide-links.py · check-rules-templates.py
 CHANGELOG.md    # what changed, newest first — what to re-check in your own repo
 GETTING-STARTED.md # ▶ the front door: intro + requirements + step-by-step

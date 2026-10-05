@@ -92,7 +92,8 @@ So the jobs now start through a tiny launcher, approved once per Mac and **never
 carries approvals, it is built defensively: it runs only command lines listed exactly in a file only an
 administrator can change; it gives them a fixed environment, so a variable cannot point an allowed command
 at someone else's code; it is signed with the hardened runtime, so injected libraries are ignored; and it
-passes stop signals to its child. Network shares and iCloud Drive alike are charged to it, as the
+passes stop signals to its child ([`skeleton/launcher/`](../skeleton/launcher/), with the alarm as the
+`prompts` check in [`skeleton/monitoring/`](../skeleton/monitoring/)). Network shares and iCloud Drive alike are charged to it, as the
 privacy log showed on the first run. ⚠ Its installer refused a correct signature on its first real run —
 a `codesign | grep -q` line under `set -o pipefail` ([§ 17, the shell traps](17-monitoring.md)). The
 installer is now tested whole, the way its user runs it.

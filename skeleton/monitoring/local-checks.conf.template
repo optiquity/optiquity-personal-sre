@@ -9,6 +9,8 @@
 #     hash    | <name> | <[host:]installed> | <reference>  installed copy identical to its reference?
 #     synclag | <name> | <[host:]git dir> | <max hours> [| <job>]  last successful fetch within
 #                                                          <max hours>? (+ the sync job's last run succeeded)
+#     prompts | <name> | local | <ssh-host>               (macOS) a privacy prompt waiting unanswered on that
+#                                                          Mac's screen for 5+ minutes? (guide 17c)
 #   Two directives change how a named check ALERTS:
 #     solo    | <name>      mails on its own; stays in the combined digest's body, but does not trigger it
 #     away    | <name>      its target may be away (a laptop): its unknowns never escalate to a failure
@@ -51,3 +53,7 @@ http    | gatus cross-ping | https://<gatus-host>/
 # synclag | laptop sync      | laptop:~/.local/share/chezmoi | 3 | <its-sync-job-label>
 # away    | laptop sync
 # solo    | media share
+# prompts | prompts here     | local
+# prompts | prompts laptop   | laptop
+# away    | prompts laptop
+# solo    | prompts here

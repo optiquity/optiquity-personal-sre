@@ -24,6 +24,8 @@ jobs:
         run: python3 skeleton/monitoring/tests/test_tools.py </dev/null
       - name: Websites starter — deploy-site.sh refuses what it must (real git repos, real rsync)
         run: python3 skeleton/websites/tests/test_deploy_site.py </dev/null
+      - name: Launcher tests (macOS only: skipped on this runner, and they say so)
+        run: python3 skeleton/launcher/tests/test_fleet_launch.py </dev/null
       - name: Gatus relay self-test (real HTTP server, fake mailer built on the real fleet-mail)
         run: RELAY_FLEET_MAIL=$PWD/skeleton/monitoring/fleet-mail python3 skeleton/monitoring/gatus-mail-relay --self-test
       - name: Rules templates numbered like chapter 03

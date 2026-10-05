@@ -97,11 +97,13 @@ Three things decide when this bites:
 - Test a job **as launchd runs it**, and look at the screen (Screen Sharing) the first time it runs and
   after every update to a program it runs.
 - **Watch for unanswered prompts.** macOS's privacy service logs each request and its answer; a request
-  still unanswered after a few minutes is a prompt on a screen. Read that log with `/usr/bin/log`, by full
+  still unanswered after a few minutes is a prompt on a screen — the `prompts` check in
+  [`skeleton/monitoring/`](../skeleton/monitoring/) alerts on exactly that. Read that log with `/usr/bin/log`, by full
   path: in zsh, a bare `log` is a different, built-in command.
 - **Start jobs through a small launcher you approve once and never rebuild.** macOS then charges the
   access to the launcher, so updates to what it runs no longer ask again. Let it run only the commands you
-  list, in a file only an administrator can change, and give the commands a fixed environment.
+  list, in a file only an administrator can change, and give the commands a fixed environment. The starter
+  kit has one, with its tests: [`skeleton/launcher/`](../skeleton/launcher/).
 - Or **keep the job away from protected places**: push data over SSH to the host that holds it, rather
   than reading or writing through the mount.
 

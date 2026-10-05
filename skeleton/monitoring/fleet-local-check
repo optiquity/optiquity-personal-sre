@@ -27,6 +27,8 @@ Config (default $HOME/.config/fleet-monitoring/local-checks.conf, override --con
       hash    | <name> | <[host:]installed file> | <reference>  byte-identical to its reference copy?
       synclag | <name> | <[host:]git dir> | <max hours> [| <job>]  fetched within <max hours>? (and the sync
                                                                 job's last run succeeded, if <job> is named)
+      prompts | <name> | local | <ssh-host>             (macOS) a privacy prompt waiting unanswered on that
+                                                        Mac's screen for PROMPT_WAIT_MIN minutes?
     Two directives change how a named check ALERTS, not what it checks:
       solo    | <name>      it mails on its OWN (an alert you want as its own message). It stays in the
                             combined digest's body, but no longer triggers the digest — one event, one mail.
@@ -56,12 +58,22 @@ never a pass. `synclag` asks whether sync is
 actually HAPPENING: a status command that never fetches reports "clean" while days behind (guide
 05b), so it reads the age of the last successful fetch instead.
 
+WHY `prompts` EXISTS (guide 17c). macOS asks before a program it has not approved reads a protected place
+(a network share, iCloud Drive …), and the read WAITS until someone answers. On an unattended Mac nobody
+does: the job hangs, and every package update makes a new program that is asked again. macOS's privacy
+service logs each request and its answer within milliseconds, so a request still unanswered after
+PROMPT_WAIT_MIN means a prompt is on the screen. Only the per-user service's requests are tracked (the
+system-wide one logs some that are never answered at all), a log with no requests and no replies is
+UNKNOWN (silence is what a broken query also prints), and the log is read with /usr/bin/log — in zsh a
+bare `log` is a built-in. A laptop that may be away: mark the row `away`. --dry-run never advances the
+scan position it keeps in $FLEET_PROMPT_STATE.
+
 Exit: 0 all ok · 1 one or more failing · 3 an email failed to send (the checks it covered keep their
 previous state, so the next run sends it again; every other check's state is saved).
 Flags: --dry-run (print, no email/state), --always (email regardless).
 Environment: $FLEET_MAILER (default ~/.local/bin/fleet-mail), $FLEET_LOCAL_CHECK_STATE (state file).
 """
-import argparse, hashlib, json, os, platform, re, shlex, shutil, subprocess, sys, time
+import argparse, datetime, hashlib, json, os, platform, re, shlex, shutil, subprocess, sys, time
 
 STATE = os.environ.get("FLEET_LOCAL_CHECK_STATE",
                        os.path.expanduser("~/.config/fleet-monitoring/local-check.state"))
@@ -72,6 +84,7 @@ UNKNOWN_FAIL_STREAK = 4    # at a 15-min cadence: an hour blind before blindness
 MOUNT_RETRIES = 3          # transient slowness must not look like an unmount
 MOUNT_TIMEOUT = 20         # reading the mount table can block behind a busy network server
 RETRY_PAUSE = 2            # seconds between mount attempts
+DRY_RUN = False            # set by main(): a check that keeps its own state must not advance it on a dry run
 
 def sh(args, timeout=15, shell=False):
     try:
@@ -303,8 +316,128 @@ def chk_synclag(name, arg):
                                                    if ran[0] is False and fetched[0] is True else "")
     return name, True, "; ".join(d for _, d in (fetched, ran) if d)
 
+PROMPT_WAIT_MIN = 5
+PROMPT_STATE = os.environ.get("FLEET_PROMPT_STATE",
+                              os.path.expanduser("~/.config/fleet-monitoring/permission-prompts.state"))
+PROMPT_FIRST_SCAN_H = 2     # how far back the very first scan reads
+PROMPT_PREDICATE = ('process == "tccd" AND (eventMessage BEGINSWITH "REQUEST:" OR eventMessage BEGINSWITH '
+                    '"REPLY:" OR eventMessage BEGINSWITH "AUTHREQ_CTX" OR eventMessage BEGINSWITH '
+                    '"AUTHREQ_SUBJECT" OR eventMessage BEGINSWITH "AUTHREQ_PROMPTING" OR eventMessage '
+                    'BEGINSWITH "AUTHREQ_RESULT")')
+_TCC_LINE = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)\S*\s+\S+\s+tccd\[(\d+):[^\]]*\]\s+"
+                       r"(?:\[[^\]]*\]\s+)?(REQUEST|REPLY|AUTHREQ_CTX|AUTHREQ_SUBJECT|AUTHREQ_PROMPTING|AUTHREQ_RESULT):?\s*(.*)$")
+
+def _prompt_subject(s):
+    """A subject path or bundle id -> a short, recognisable name."""
+    s = s.strip().rstrip(",").replace("Sub:{", "").rstrip("}")
+    m = re.match(r"/opt/homebrew/Cellar/([^/]+)/([^/]+)/", s)
+    if m:
+        return f"{os.path.basename(s.split(',')[0])} (Homebrew {m.group(1)} {m.group(2)})"
+    return os.path.basename(s) if s.startswith("/") else s
+
+def prompt_scan(text, open_reqs, tccd_pids):
+    """Fold one window of privacy-service log lines into the open-request map. Returns (open_reqs,
+    requests, replies) — the counts are the canary: a log with no traffic at all is not "no prompts"."""
+    requests = replies = 0
+    for line in text.splitlines():
+        m = _TCC_LINE.match(line)
+        if not m:
+            continue
+        when, pid, kind, rest = m.groups()
+        mid = re.search(r"msgID=([\d.]+)", rest)
+        if not mid:
+            continue
+        key = f"{pid}:{mid.group(1)}"
+        if kind == "REQUEST":
+            requests += 1
+            fn = re.search(r"function=(\w+)", rest)
+            # only the PER-USER service: the system-wide one (tccd_uid=0) logs some requests that are
+            # never answered at all, which would be a false alarm every run
+            if (fn and fn.group(1).startswith("TCCAccessRequest") and "tccd_uid=0," not in rest
+                    and key not in open_reqs):
+                open_reqs[key] = {"asked": when, "fn": fn.group(1)}
+        elif kind in ("REPLY", "AUTHREQ_RESULT"):
+            replies += 1
+            open_reqs.pop(key, None)
+        else:
+            if kind == "AUTHREQ_PROMPTING" and key not in open_reqs:
+                open_reqs[key] = {"asked": when, "fn": "TCCAccessRequest"}  # a prompt, on either service
+            if key not in open_reqs:
+                continue
+            r = open_reqs[key]
+            svc = re.search(r"service=kTCCService(\w+)", rest)
+            if kind in ("AUTHREQ_CTX", "AUTHREQ_PROMPTING") and svc:
+                r["service"] = svc.group(1)
+            if kind == "AUTHREQ_SUBJECT":
+                r["subject"] = _prompt_subject(rest.split("subject=", 1)[-1].split(",")[0])
+            elif kind == "AUTHREQ_PROMPTING":
+                r["prompted"] = True
+                sub = re.search(r"subject=(Sub:\{[^}]*\}?)", rest)
+                if sub:
+                    r["subject"] = _prompt_subject(sub.group(1))
+    # A privacy service that has restarted never replies to its old requests.
+    for k in [k for k in open_reqs if k.split(":")[0] not in tccd_pids]:
+        open_reqs.pop(k)
+    return open_reqs, requests, replies
+
+def prompt_waiting(open_reqs, now):
+    """The open requests older than PROMPT_WAIT_MIN, as readable lines (oldest first)."""
+    out = []
+    for r in sorted(open_reqs.values(), key=lambda r: r["asked"]):
+        asked = datetime.datetime.strptime(r["asked"], "%Y-%m-%d %H:%M:%S")
+        mins = (now - asked).total_seconds() / 60
+        if mins < PROMPT_WAIT_MIN:
+            continue
+        who = r.get("subject") or ("an indirect request (e.g. iCloud Drive)" if r["fn"].endswith("Indirect")
+                                   else "an unnamed program")
+        out.append(f"{who} asks for {r.get('service', 'a permission')} — waiting since {asked:%H:%M} ({int(mins)} min)")
+    return out
+
+def chk_prompts(name, arg, now=None):
+    host = None if arg.strip() == "local" else arg.strip()
+    if host is None and not IS_MAC:
+        return name, False, "`prompts` reads macOS's privacy log — this node is not macOS (name a Mac's ssh host)"
+    now = now or datetime.datetime.now()
+    try:
+        with open(PROMPT_STATE) as f:
+            state = json.load(f)
+    except (OSError, ValueError):
+        state = {}
+    mine = state.setdefault(name, {})
+    since = mine.get("scanned")
+    start = (datetime.datetime.strptime(since, "%Y-%m-%d %H:%M:%S") - datetime.timedelta(minutes=1)
+             if since else now - datetime.timedelta(hours=PROMPT_FIRST_SCAN_H))
+    cmd = (f"/usr/bin/log show --style compact --start {shlex.quote(start.strftime('%Y-%m-%d %H:%M:%S'))} "
+           f"--predicate {shlex.quote(PROMPT_PREDICATE)} 2>/dev/null; echo '#TCCD'; pgrep -x tccd")
+    if host:
+        rc, out, err = sh(["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes", host, cmd], timeout=120)
+        if rc == 255 or (rc != 0 and not out):
+            return name, None, f"{host} not reachable — not checked (mark it `away` if it is a laptop)"
+    else:
+        rc, out, err = sh(["/bin/sh", "-c", cmd], timeout=120)
+    where = host or "this Mac"
+    if "#TCCD" not in out:
+        return name, None, f"could not read {where}'s privacy log ({err or 'no output'})"
+    text, pids = out.split("#TCCD", 1)
+    open_reqs, requests, replies = prompt_scan(text, mine.get("open", {}), set(pids.split()))
+    mine.update(open=open_reqs, scanned=now.strftime("%Y-%m-%d %H:%M:%S"))
+    if not DRY_RUN:                       # a dry run must not advance the scan position
+        os.makedirs(os.path.dirname(PROMPT_STATE), exist_ok=True)
+        tmp = PROMPT_STATE + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(state, f)
+        os.replace(tmp, PROMPT_STATE)
+    if requests == 0 or replies == 0:
+        return name, None, (f"{where}'s privacy log shows no requests at all since {start:%H:%M} — its format "
+                            "may have changed; cannot tell whether a prompt is waiting")
+    waiting = prompt_waiting(open_reqs, now)
+    if waiting:
+        return name, False, (f"{len(waiting)} permission prompt(s) waiting on {where}'s screen: "
+                             + "; ".join(waiting) + " — answer it there (Screen Sharing)")
+    return name, True, f"no prompt waiting ({requests} requests, all answered)"
+
 DISPATCH = {"service": chk_service, "mount": chk_mount, "http": chk_http, "command": chk_command,
-            "hash": chk_hash, "synclag": chk_synclag}
+            "hash": chk_hash, "synclag": chk_synclag, "prompts": chk_prompts}
 
 DIRECTIVES = ("solo", "away")
 
@@ -373,6 +506,8 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--always", action="store_true")
     a = ap.parse_args()
+    global DRY_RUN
+    DRY_RUN = a.dry_run
 
     checks, solo_checks, away_checks = load_checks(a.config)
     results, origin = collect(checks)

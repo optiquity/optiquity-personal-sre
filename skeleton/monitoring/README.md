@@ -33,7 +33,7 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 | `fleet-update-decisions.conf.template` | update decisions with a reason and a revisit date |
 | `fleet-composes.conf.template` | the compose stacks to check for image updates (reconciled against discovery) |
 | `fleet-nodes.conf.template` | your node inventory (`role | ssh-target | os | methods [| discovery folders]`) |
-| `local-checks.conf.template` | typed local checks (`service`, `mount`, `http`, `command`, `hash`, `synclag`) and the `solo` / `away` directives |
+| `local-checks.conf.template` | typed local checks (`service`, `mount`, `http`, `command`, `hash`, `synclag`, `prompts`) and the `solo` / `away` directives |
 | `fleet-local-check.plist.template` | launchd timer for the local probe (every 15 min) |
 | `mail.env.template` | SMTP secret stub for `fleet-mail` (host-local, chmod 600) |
 | `gatus-mail-relay` + `.service` | sends Gatus alerts through `fleet-mail` (your subject format); localhost only, hardened unit |
@@ -179,7 +179,15 @@ Two directives change how a check *alerts*: **`solo | <name>`** gives it its own
 combined digest's body but no longer triggers it — one event, one mail), and **`away | <name>`** marks a
 target that may simply be away, such as a laptop, whose unknowns never escalate. If an email fails to
 send, only the checks it covered keep their previous state, so the next run sends that one again. A
-`synclag` directory may be `host:path`, read over SSH by that node's own clock. The `mount` probe stats the
+`synclag` directory may be `host:path`, read over SSH by that node's own clock.
+
+**`prompts | <name> | local | <ssh-host>`** (macOS) alerts on a privacy prompt left waiting on a Mac's
+screen for five minutes — the failure in [guide 17c](../../guide/17c-case-the-check-that-stopped-the-server.md),
+where a scheduled job's read of a share waited on a prompt nobody could see. It reads macOS's privacy log
+(only the per-user service's requests; a log with no traffic is UNKNOWN, not clean), keeps its scan position
+in `$FLEET_PROMPT_STATE`, and a dry run never advances it. Make it `solo` so it mails on its own, and mark a
+laptop's row `away`. Its tests use a recorded log; prove the live path once with a real prompt. To stop the
+prompts at their source, see [`../launcher/`](../launcher/). The `mount` probe stats the
 mount point in a child process with a time limit, so a dead server cannot freeze the checker.
 
 Every check has **three outcomes**: OK, FAIL, or **UNKNOWN**, when the probe itself could not
