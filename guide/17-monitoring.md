@@ -506,8 +506,10 @@ a human noticing something else.
 - **Keep a registry of what you set, and read the live value.** Each row is a node, a setting, the
   expected value, and how to read it now; check them on every run. Read the **live** value, never a
   derived file that the same regeneration could rewrite. *Built and running in the fleet this came
-  from, where it flags Windows Update services whose start setting no longer matches what was chosen.
-  The starter kit does not ship it yet.*
+  from, where it flags Windows Update services whose start setting no longer matches what was chosen.*
+  The starter ships it as the `settings` check type, with a registry template
+  ([`skeleton/monitoring/`](../skeleton/monitoring/README.md)): rows name a reader from a fixed set and
+  never carry a command, one round trip per node, and a value that is not there is drift.
 - **A script that changes a setting reads the result back.** One "disable" script received *Access
   is denied*, discarded it in an empty `catch`, and reported the setting as off. A control that
   reports success it did not check is worse than none, because it stops you looking.

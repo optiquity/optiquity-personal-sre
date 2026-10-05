@@ -29,6 +29,8 @@ Config (default $HOME/.config/fleet-monitoring/local-checks.conf, override --con
                                                                 job's last run succeeded, if <job> is named)
       prompts | <name> | local | <ssh-host>             (macOS) a privacy prompt waiting unanswered on that
                                                         Mac's screen for PROMPT_WAIT_MIN minutes?
+      settings | <name> | <registry file>               every setting you DECIDED to keep, read LIVE on its
+                                                        node: one result row per registry line
     Two directives change how a named check ALERTS, not what it checks:
       solo    | <name>      it mails on its OWN (an alert you want as its own message). It stays in the
                             combined digest's body, but no longer triggers the digest — one event, one mail.
@@ -68,12 +70,25 @@ UNKNOWN (silence is what a broken query also prints), and the log is read with /
 bare `log` is a built-in. A laptop that may be away: mark the row `away`. --dry-run never advances the
 scan position it keeps in $FLEET_PROMPT_STATE.
 
+WHY `settings` EXISTS (guide § 17, "Settings the platform owns"). A setting you chose can be silently
+reverted — by an OS update, a vendor agent, a settings screen. A registry of what you set, read LIVE every
+run, turns each revert into a transition. Each registry line is
+    <node> | <setting> | <reader> <args> | <expected> | <since> | <decided by / why>
+node = `local` or an SSH host. ROWS NAME A READER FROM A FIXED SET AND NEVER CARRY A COMMAND — a registry of
+commands would be a way to run anything on every node — and every argument must match its reader's pattern
+before it reaches a shell. One round trip per node; a value that is not there is DRIFT; a node that does not
+answer is UNKNOWN (put a laptop's rows in their own `settings` line and mark it `away`).
+  macOS/Linux readers: json-key <abs file> <key> · ini-key <abs file> <key> · proc </proc/sys/…> ·
+    unit-enabled <unit> · plist-key <domain> <key> · file-mode <abs path> ("600 owner:group") ·
+    tailscale-pref <PrefName>
+  Windows readers (PowerShell over SSH, one batch): service-start <service> · reg-value <HKLM:\\path> <name>
+
 Exit: 0 all ok · 1 one or more failing · 3 an email failed to send (the checks it covered keep their
 previous state, so the next run sends it again; every other check's state is saved).
 Flags: --dry-run (print, no email/state), --always (email regardless).
 Environment: $FLEET_MAILER (default ~/.local/bin/fleet-mail), $FLEET_LOCAL_CHECK_STATE (state file).
 """
-import argparse, datetime, hashlib, json, os, platform, re, shlex, shutil, subprocess, sys, time
+import argparse, base64, datetime, hashlib, json, os, platform, re, shlex, shutil, subprocess, sys, time
 
 STATE = os.environ.get("FLEET_LOCAL_CHECK_STATE",
                        os.path.expanduser("~/.config/fleet-monitoring/local-check.state"))
@@ -436,8 +451,251 @@ def chk_prompts(name, arg, now=None):
                              + "; ".join(waiting) + " — answer it there (Screen Sharing)")
     return name, True, f"no prompt waiting ({requests} requests, all answered)"
 
+ABSENT = object()            # a value that is not there: for a setting you decided on, that IS the drift
+POSIX_READERS = {"json-key", "ini-key", "proc", "unit-enabled", "plist-key", "file-mode", "tailscale-pref"}
+WINDOWS_READERS = {"service-start", "reg-value"}
+_TOK = re.compile(r"^[A-Za-z0-9_.:@+/-]+$")          # one safe token: no spaces, quotes, ; $ ` |
+_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+_REGPATH = re.compile(r"^HKLM:\\[A-Za-z0-9\\ ._-]+$")
+_SAFE_NODE = re.compile(r"^[A-Za-z0-9_.@-]+$")
+# Read-only PowerShell helpers, defined once per batch. ⚠ Prefixed names on purpose: PowerShell resolves
+# ALIASES before functions, and short names collide — `r` is the built-in alias for Invoke-History, and a
+# helper named R failed every row ("positional parameter").
+_PS_HELPERS = [
+    "function fsSvc($n){ (Get-ItemProperty \"HKLM:\\SYSTEM\\CurrentControlSet\\Services\\$n\" -EA Stop).Start }",
+    "function fsReg($p,$n){ $x=(Get-ItemProperty $p -EA SilentlyContinue).$n; if($null -eq $x){'@ABSENT'}else{$x} }",
+]
+PS_BATCH_LIMIT = 7900      # cmd.exe caps a command line at 8191 characters
+
+def settings_parse(path):
+    """(rows, errors). errors: (line_no, text, why). A malformed line is REPORTED, never skipped."""
+    rows, errors = [], []
+    with open(path) as f:
+        for n, raw in enumerate(f, 1):
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) != 6 or not all(parts[:4]):
+                errors.append((n, line, "needs 6 fields: node | setting | reader <args> | expected | since | decided"))
+                continue
+            node, label, spec, expected, since, decided = parts
+            reader, _, argstr = spec.partition(" ")
+            rows.append({"n": n, "node": node, "label": label, "reader": reader, "argstr": argstr.strip(),
+                         "expected": expected, "since": since, "decided": decided,
+                         "name": f"setting: {node} {label}"})
+    return rows, errors
+
+def settings_args(reader, argstr):
+    """Validated arguments for a reader, or raise ValueError. The ONLY way a registry value reaches a command
+    line; every pattern here excludes the characters a shell or PowerShell would act on."""
+    a = argstr.split()
+    def need(cond, why):
+        if not cond:
+            raise ValueError(why)
+    if reader in ("json-key", "ini-key"):
+        need(len(a) == 2 and a[0].startswith("/") and bool(_TOK.match(a[0])) and ".." not in a[0]
+             and bool(_NAME.match(a[1])), "want <abs file> <key>")
+    elif reader == "proc":
+        need(len(a) == 1 and a[0].startswith("/proc/sys/") and bool(_TOK.match(a[0])) and ".." not in a[0],
+             "want </proc/sys/…>")
+    elif reader == "unit-enabled":
+        need(len(a) == 1 and bool(_TOK.match(a[0])), "want one unit name")
+    elif reader == "plist-key":
+        need(len(a) == 2 and bool(_TOK.match(a[0])) and bool(_NAME.match(a[1])), "want <domain> <key>")
+    elif reader == "file-mode":
+        need(len(a) == 1 and a[0].startswith("/") and bool(_TOK.match(a[0])) and ".." not in a[0], "want <abs path>")
+    elif reader in ("tailscale-pref", "service-start"):
+        need(len(a) == 1 and bool(_NAME.match(a[0])), "want one name")
+    elif reader == "reg-value":
+        path, _, val = argstr.rpartition(" ")
+        need(bool(_REGPATH.match(path)) and bool(_NAME.match(val)), "want <HKLM:\\path> <name>")
+        return [path, val]
+    else:
+        raise KeyError(reader)
+    return a
+
+def _settings_posix_cmd(reader, a):
+    """The READ command for one macOS/Linux row. Nothing here may write, create or restart anything."""
+    q = shlex.quote
+    if reader in ("json-key", "ini-key", "proc"):
+        return f"cat {q(a[0])}"
+    if reader == "unit-enabled":
+        return f"systemctl is-enabled {q(a[0])}"
+    if reader == "plist-key":
+        return f"defaults read {q(a[0])} {q(a[1])}"
+    if reader == "file-mode":
+        return (f"if [ \"$(uname)\" = Darwin ]; then stat -f '%Lp %Su:%Sg' {q(a[0])}; "
+                f"else stat -c '%a %U:%G' {q(a[0])}; fi")
+    if reader == "tailscale-pref":
+        return "tailscale debug prefs"
+    raise KeyError(reader)
+
+def _settings_ps_expr(reader, a):
+    """The READ expression for one Windows row: Get-* and property reads only."""
+    if reader == "service-start":
+        return f"fsSvc '{a[0]}'"
+    if reader == "reg-value":
+        return f"fsReg '{a[0]}' '{a[1]}'"
+    raise KeyError(reader)
+
+def settings_value(reader, a, out, rc):
+    """(value | ABSENT | None, why). None = the read could not answer (UNKNOWN)."""
+    text = out.strip()
+    if reader in ("json-key", "tailscale-pref"):
+        if rc != 0:
+            return None, f"read failed (rc={rc}): {text[:60]}"
+        try:
+            doc = json.loads(text)
+        except ValueError:
+            return None, "not valid JSON — the reader no longer matches its source"
+        key = a[1] if reader == "json-key" else a[0]
+        if not isinstance(doc, dict) or key not in doc:
+            return None, f"key {key} not found — the reader no longer matches its source"
+        v = doc[key]
+        if isinstance(v, bool):
+            return ("true" if v else "false"), ""
+        if isinstance(v, list):
+            return ",".join(sorted(str(x) for x in v)), ""
+        return ("null" if v is None else str(v)), ""
+    if reader == "ini-key":
+        if rc != 0:
+            return None, f"read failed (rc={rc}): {text[:60]}"
+        for ln in text.splitlines():
+            k, sep, v = ln.partition("=")
+            if sep and k.strip() == a[1]:
+                return v.strip().strip('"'), ""
+        return None, f"key {a[1]} not found — the reader no longer matches its source"
+    if reader == "plist-key":
+        if rc == 0 and text:
+            return text, ""
+        # back at the app's default — the drift this row exists to catch. Missing key: "Could not find key";
+        # missing domain: "Domain '…' not found" on newer macOS, "… does not exist" on older.
+        if "Could not find key" in text or "does not exist" in text or re.search(r"Domain .* not found", text):
+            return ABSENT, ""
+        return None, f"read failed (rc={rc}): {text[:60]}"
+    if reader == "unit-enabled":
+        word = text.splitlines()[0].strip() if text else ""
+        if word in ("enabled", "disabled", "static", "masked", "indirect", "generated", "enabled-runtime"):
+            return word, ""
+        return None, f"read failed (rc={rc}): {text[:60]}"
+    if reader == "proc":
+        return (text, "") if rc == 0 and text else (None, f"read failed (rc={rc}): {text[:60]}")
+    if reader == "file-mode":
+        if rc != 0 and ("No such file" in text or "cannot stat" in text):
+            return ABSENT, ""                 # the file is gone: that IS the drift
+        if rc != 0 or not re.match(r"^[0-7]{3,4} \S+:\S+$", text):
+            return None, f"read failed (rc={rc}): {text[:60]}"
+        return text, ""
+    if reader == "service-start":
+        return (text, "") if rc == 0 and text else (None, f"read failed: {text[:60]}")
+    if reader == "reg-value":
+        if rc != 0:
+            return None, f"read failed: {text[:60]}"
+        return (ABSENT, "") if text == "@ABSENT" else (text, "")
+    raise KeyError(reader)
+
+def _settings_transport(node, command, timeout=25):
+    """ONE bounded round trip to a node: `local`, or an SSH host."""
+    if node == "local":
+        return sh(["/bin/sh", "-c", command], timeout=timeout)
+    return sh(["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes", node, command], timeout=timeout)
+
+def settings_read_node(node, rows, windows):
+    """({row index: (value | ABSENT | None, why)}, reachable) for one node, in ONE round trip."""
+    if windows:
+        lines = ["$ErrorActionPreference='Stop'", *_PS_HELPERS]
+        for i, r in rows:
+            lines.append(f"try {{ $v = ({_settings_ps_expr(r['reader'], r['args'])}); \"@@{i}=\" + $v }} "
+                         f"catch {{ \"@@{i}!\" + $_.Exception.Message }}")
+        enc = base64.b64encode("\n".join(lines).encode("utf-16-le")).decode()
+        if len(enc) > PS_BATCH_LIMIT:
+            return {i: (None, f"{node}: read batch too long for one command line — split the registry") for i, _ in rows}, True
+        rc, out, err = _settings_transport(node, f"powershell -NoProfile -NonInteractive -EncodedCommand {enc}", 45)
+        got = {}
+        for ln in out.replace("\r", "").splitlines():
+            m = re.match(r"^@@(\d+)([=!])(.*)$", ln)
+            if m:
+                got[int(m.group(1))] = (m.group(2), m.group(3))
+        if not got:
+            return {i: (None, f"{node} did not answer ({(err or f'rc={rc}')[:60]})") for i, _ in rows}, False
+        res = {}
+        for i, r in rows:
+            if i not in got:
+                res[i] = (None, "no answer for this row")
+            elif got[i][0] == "!":
+                res[i] = (None, f"read failed: {got[i][1][:60]}")
+            else:
+                res[i] = settings_value(r["reader"], r["args"], got[i][1], 0)
+        return res, True
+    parts = [f'echo "@@B {i}"; {_settings_posix_cmd(r["reader"], r["args"])} 2>&1; r=$?; printf \'\\n@@E {i} %d\\n\' $r'
+             for i, r in rows]
+    rc, out, err = _settings_transport(node, "; ".join(parts))
+    sections, cur, buf = {}, None, []
+    for ln in out.splitlines():
+        if ln.startswith("@@B "):
+            cur, buf = int(ln.split()[1]), []
+        elif ln.startswith("@@E ") and cur is not None:
+            sections[cur] = ("\n".join(buf), int(ln.split()[2]))
+            cur = None
+        elif cur is not None:
+            buf.append(ln)
+    if not sections:
+        return {i: (None, f"{node} did not answer ({(err or f'rc={rc}')[:60]})") for i, _ in rows}, False
+    return {i: (settings_value(r["reader"], r["args"], *sections[i]) if i in sections
+                else (None, "no answer for this row")) for i, r in rows}, True
+
+def chk_settings(name, arg):
+    """ONE result per registry row, plus a summary row named after the check."""
+    path = os.path.expanduser(arg.strip())
+    try:
+        rows, errors = settings_parse(path)
+    except OSError as e:
+        return [(name, False, f"registry unreadable: {path} ({e.strerror}) — nothing is being checked")]
+    results = [(f"setting: registry line {n}", False, f"malformed — {why}: {text[:80]!r}") for n, text, why in errors]
+    if not rows:
+        return results + [(name, False, f"registry has no rows: {path} — nothing is being checked")]
+    by_node = {}
+    for r in rows:
+        if r["reader"] not in POSIX_READERS | WINDOWS_READERS:
+            results.append((r["name"], False, f"unknown reader '{r['reader']}' — this row cannot be checked"))
+            continue
+        if not _SAFE_NODE.match(r["node"]):
+            results.append((r["name"], False, f"node {r['node']!r} is not a plain host name — row not run"))
+            continue
+        try:
+            r["args"] = settings_args(r["reader"], r["argstr"])
+        except ValueError as e:
+            results.append((r["name"], False, f"bad arguments for {r['reader']} ({e}) — row not run"))
+            continue
+        by_node.setdefault(r["node"], []).append(r)
+    match = differ = unread = 0
+    for node, nrows in by_node.items():
+        windows = {r["reader"] in WINDOWS_READERS for r in nrows}
+        if len(windows) > 1:
+            results += [(r["name"], False, f"{node} mixes Windows and macOS/Linux readers — split it") for r in nrows]
+            continue
+        indexed = list(enumerate(nrows))
+        values, _ = settings_read_node(node, indexed, windows.pop())
+        for i, r in indexed:
+            v, why = values.get(i, (None, "no answer"))
+            if v is None:
+                unread += 1
+                results.append((r["name"], None, why))
+            elif v is not ABSENT and v == r["expected"]:
+                match += 1
+                results.append((r["name"], True, v))
+            else:
+                differ += 1
+                found = "absent" if v is ABSENT else v
+                results.append((r["name"], False, f"found {found}, expected {r['expected']} "
+                                                  f"(since {r['since']}, {r['decided']})"))
+    detail = (f"{len(rows)} rows on {len({r['node'] for r in rows})} node(s): {match} match, {differ} differ, "
+              f"{unread} unreadable" + (f", {len(errors)} malformed line(s)" if errors else ""))
+    return results + [(name, True, detail)]
+
 DISPATCH = {"service": chk_service, "mount": chk_mount, "http": chk_http, "command": chk_command,
-            "hash": chk_hash, "synclag": chk_synclag, "prompts": chk_prompts}
+            "hash": chk_hash, "synclag": chk_synclag, "prompts": chk_prompts, "settings": chk_settings}
 
 DIRECTIVES = ("solo", "away")
 

@@ -3,6 +3,20 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-05 — the settings registry: decided settings, read live
+
+- **New check type `settings | <name> | <registry file>`** in `fleet-local-check`, and
+  `managed-settings.conf.template` (seeded by `bootstrap-monitoring.sh`). Every setting you decided to keep
+  is read **live** on its node, one result row per line, so each revert alerts on its own.
+- **Rows name a reader from a fixed set and never carry a command**: JSON and INI keys, kernel settings, unit
+  state, macOS preferences, file modes, Tailscale preferences; on Windows, service start types and registry
+  values (one PowerShell batch, sized to fit one command line; helper names that can't collide with
+  PowerShell's aliases). Every argument is checked against its reader's pattern before it reaches a shell.
+- **One round trip per node; a value that is not there is drift; a node that does not answer is unknown.**
+  macOS 27's new wording for a missing preferences domain (*"Domain … not found"*) counts as drift too.
+- § 17 and `platforms/windows.md` point at it. **Tests:** 9 new (91), one reading real files through a real
+  shell; 10 planted defects, each caught.
+
 ## 2026-10-05 — security-flagged updates in the update checker
 
 - **`fleet-update-check --security`** — a daily, security-only run that alerts once on each **new** item:

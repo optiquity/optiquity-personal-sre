@@ -1,0 +1,32 @@
+# managed-settings.conf — every setting you DECIDED to keep, read LIVE on its node by the `settings` check
+# in local-checks.conf:   settings | managed settings | ~/.config/fleet-monitoring/managed-settings.conf
+#
+# One line per setting:
+#   <node> | <setting> | <reader> <args> | <expected> | <since> | <decided by / why>
+#     node      `local`, or an SSH host this node can reach (key auth)
+#     reader    one from the fixed set below — a row NEVER carries a command, and every argument must match
+#               its reader's pattern before it reaches a shell (a registry of commands would be a way to run
+#               anything on every node)
+#     expected  the value as the reader prints it; a value that is not there at all is DRIFT
+#
+# Readers (macOS/Linux):
+#   json-key <abs file> <key>      a top-level key of a JSON file (true/false, numbers, lists joined by ,)
+#   ini-key <abs file> <key>       key = value
+#   proc </proc/sys/…>             a Linux kernel setting
+#   unit-enabled <unit>            systemctl is-enabled: enabled / disabled / masked …
+#   plist-key <domain> <key>       macOS defaults read
+#   file-mode <abs path>           "600 owner:group" — for secret files whose mode must not drift
+#   tailscale-pref <PrefName>      a Tailscale preference (tailscale debug prefs)
+# Readers (Windows, PowerShell over SSH, one batch per node):
+#   service-start <service>        a service's start type (2 automatic, 3 manual, 4 disabled)
+#   reg-value <HKLM:\path> <name>  a registry value
+#
+# A laptop that may be away: give its rows their own registry file and `settings` line, and mark that line
+# `away` in local-checks.conf. Guide § 17, "Settings the platform owns".
+
+# local    | app telemetry      | json-key /etc/example-app/config.json telemetry | false | 2030-01 | chosen: off
+# local    | backup key mode    | file-mode /etc/example-backup/key              | 600 root:root | 2030-01 | secret
+# gateway  | ip forwarding      | proc /proc/sys/net/ipv4/ip_forward              | 1 | 2030-01 | subnet router role
+# gateway  | accept routes      | tailscale-pref RouteAll                         | false | 2030-01 | no hairpin (guide 08)
+# windows  | update service     | service-start wuauserv                          | 4 | 2030-01 | updates applied by hand
+# windows  | update policy      | reg-value HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU NoAutoUpdate | 1 | 2030-01 | updates by hand

@@ -33,7 +33,8 @@ The worked narrative is **[`guide/examples/E16-fleet-health-and-alerting.md`](..
 | `fleet-update-decisions.conf.template` | update decisions with a reason and a revisit date |
 | `fleet-composes.conf.template` | the compose stacks to check for image updates (reconciled against discovery) |
 | `fleet-nodes.conf.template` | your node inventory (`role | ssh-target | os | methods [| discovery folders]`) |
-| `local-checks.conf.template` | typed local checks (`service`, `mount`, `http`, `command`, `hash`, `synclag`, `prompts`) and the `solo` / `away` directives |
+| `local-checks.conf.template` | typed local checks (`service`, `mount`, `http`, `command`, `hash`, `synclag`, `prompts`, `settings`) and the `solo` / `away` directives |
+| `managed-settings.conf.template` | the settings registry the `settings` check reads: the readers, the row format, examples |
 | `fleet-local-check.plist.template` | launchd timer for the local probe (every 15 min) |
 | `mail.env.template` | SMTP secret stub for `fleet-mail` (host-local, chmod 600) |
 | `gatus-mail-relay` + `.service` | sends Gatus alerts through `fleet-mail` (your subject format); localhost only, hardened unit |
@@ -202,7 +203,15 @@ where a scheduled job's read of a share waited on a prompt nobody could see. It 
 (only the per-user service's requests; a log with no traffic is UNKNOWN, not clean), keeps its scan position
 in `$FLEET_PROMPT_STATE`, and a dry run never advances it. Make it `solo` so it mails on its own, and mark a
 laptop's row `away`. Its tests use a recorded log; prove the live path once with a real prompt. To stop the
-prompts at their source, see [`../launcher/`](../launcher/). The `mount` probe stats the
+prompts at their source, see [`../launcher/`](../launcher/).
+
+**`settings | <name> | <registry file>`** reads every setting you **decided** to keep, live, on its node — one
+result row per registry line, so each revert alerts on its own ([guide § 17](../../guide/17-monitoring.md),
+*"Settings the platform owns"*). Rows name a **reader** from a fixed set (JSON or INI keys, kernel settings,
+unit state, macOS preferences, file modes, Tailscale preferences; Windows service start types and registry
+values over SSH) and **never carry a command**; every argument is checked against its reader's pattern before
+it reaches a shell. One round trip per node; a value that is not there is **drift**; a node that does not
+answer is unknown. Template and reader list: `managed-settings.conf.template`. The `mount` probe stats the
 mount point in a child process with a time limit, so a dead server cannot freeze the checker.
 
 Every check has **three outcomes**: OK, FAIL, or **UNKNOWN**, when the probe itself could not

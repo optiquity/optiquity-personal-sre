@@ -95,7 +95,8 @@ found. So:
   script prints *"Windows Update is OFF"*. Read the state back and fail loudly.
 - **Check the live values on a schedule** (service start types, task states) and alert when they
   drift. A setting the platform actively repairs needs a persistence check, or it is *functional*,
-  not *done*.
+  not *done*. The starter's `settings` check reads service start types and registry values over SSH
+  ([`skeleton/monitoring/managed-settings.conf.template`](../skeleton/monitoring/managed-settings.conf.template)).
 - **Also set the policy against auto-restart while a user is logged on.** A pinned service is not
   the only path to a reboot. An update restart can still land in the middle of work.
 

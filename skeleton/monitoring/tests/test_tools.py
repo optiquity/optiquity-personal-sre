@@ -12,7 +12,7 @@ FAKE mailer. The fake calls the REAL fleet-mail with --dry-run, so each subject 
 is built and validated by the real code — then records what it was asked to send, and can be
 told to fail (FAKE_MAIL_RC) to prove a failed send is retried rather than forgotten.
 """
-import contextlib, datetime, importlib.util, json, os, re, shutil, subprocess, sys, tempfile, textwrap, time, unittest, urllib.error
+import base64, contextlib, datetime, importlib.util, json, os, re, shutil, subprocess, sys, tempfile, textwrap, time, unittest, urllib.error
 from importlib.machinery import SourceFileLoader
 
 sys.dont_write_bytecode = True
@@ -498,6 +498,138 @@ class PromptCheck(unittest.TestCase):
         r = lc.chk_prompts("prompts", "local")
         self.assertIs(r[1], False)
         self.assertIn("not macOS", r[2])
+
+
+class SettingsRegistry(unittest.TestCase):
+    """The settings registry (guide § 17, "Settings the platform owns") — in-process, transport replaced."""
+
+    def setUp(self):
+        self.lc = load(os.path.join(TOOLS, "fleet-local-check"), "fleet_local_check_settings")
+        self.tmp = tempfile.mkdtemp(prefix="settings-")
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.reg = os.path.join(self.tmp, "settings.conf")
+        self.calls = []
+
+    def registry(self, *lines):
+        write(self.reg, "\n".join(lines) + "\n")
+
+    def answer(self, by_node):
+        """Transport stub: by_node[node] is a list of (output, rc) per row, emitted in the POSIX batch format,
+        or a raw string (Windows output, or "" for a node that does not answer)."""
+        def transport(node, command, timeout=25):
+            self.calls.append((node, command))
+            reply = by_node.get(node, "")
+            if isinstance(reply, str):
+                return (0 if reply else 255), reply, ("" if reply else "ssh: connect timed out")
+            out = "".join(f"@@B {i}\n{o}\n@@E {i} {rc}\n" for i, (o, rc) in enumerate(reply))
+            return 0, out, ""
+        self.lc._settings_transport = transport
+
+    def rows(self):
+        return {r[0]: r for r in self.lc.chk_settings("managed settings", self.reg)}
+
+    def test_one_round_trip_per_node_and_one_result_per_row(self):
+        self.registry("local | telemetry | json-key /etc/app.json telemetry | false | 2030-01 | chosen",
+                      "local | mode | ini-key /etc/app.ini mode | strict | 2030-01 | chosen",
+                      "gw | ip forwarding | proc /proc/sys/net/ipv4/ip_forward | 1 | 2030-01 | gateway role")
+        self.answer({"local": [('{"telemetry": false}', 0), ("mode = strict", 0)], "gw": [("1", 0)]})
+        r = self.rows()
+        self.assertEqual(sorted(n for n, *_ in self.calls), ["gw", "local"], "one round trip per node")
+        self.assertIs(r["setting: local telemetry"][1], True)
+        self.assertIs(r["setting: local mode"][1], True)
+        self.assertIs(r["setting: gw ip forwarding"][1], True)
+        self.assertIn("3 match, 0 differ", r["managed settings"][2])
+
+    def test_a_value_that_is_not_there_is_drift(self):
+        self.registry("local | a pref | plist-key com.example.app SomeKey | 1 | 2030-01 | chosen",
+                      "local | a file | file-mode /etc/app.secret | 600 root:wheel | 2030-01 | secret",
+                      "local | old pref | plist-key com.example.gone Key | 1 | 2030-01 | chosen")
+        self.answer({"local": [("Error: Could not find key 'SomeKey' in domain 'com.example.app'.", 1),
+                               ("stat: /etc/app.secret: stat: No such file or directory", 1),
+                               ("Error: Domain 'com.example.gone' not found.", 1)]})
+        r = self.rows()
+        for name in ("setting: local a pref", "setting: local a file", "setting: local old pref"):
+            self.assertIs(r[name][1], False, r[name])
+            self.assertIn("found absent", r[name][2])
+
+    def test_a_read_that_cannot_answer_is_unknown_not_drift(self):
+        self.registry("local | bad json | json-key /etc/app.json telemetry | false | 2030-01 | chosen",
+                      "local | no key | ini-key /etc/app.ini mode | strict | 2030-01 | chosen",
+                      "away | anything | proc /proc/sys/net/ipv4/ip_forward | 1 | 2030-01 | chosen")
+        self.answer({"local": [("not json", 0), ("other = x", 0)], "away": ""})
+        r = self.rows()
+        self.assertIsNone(r["setting: local bad json"][1])
+        self.assertIsNone(r["setting: local no key"][1])
+        self.assertIsNone(r["setting: away anything"][1], "a node that does not answer is UNKNOWN")
+
+    def test_a_registry_value_never_reaches_a_shell_unchecked(self):
+        self.registry("local | inject 1 | unit-enabled foo;rm | x | 2030-01 | t",
+                      "local | inject 2 | json-key /etc/a.json $(id) | x | 2030-01 | t",
+                      "local | relative | json-key app.json key | x | 2030-01 | t",
+                      "local | escape | file-mode /etc/../etc/shadow | x | 2030-01 | t",
+                      "bad;host | via node | proc /proc/sys/x | 1 | 2030-01 | t",
+                      "local | unknown | rm-rf / | x | 2030-01 | t")
+        self.answer({"local": []})
+        r = self.rows()
+        for name in ("setting: local inject 1", "setting: local inject 2", "setting: local relative",
+                     "setting: local escape", "setting: bad;host via node", "setting: local unknown"):
+            self.assertIs(r[name][1], False, r[name])
+        self.assertEqual(self.calls, [], "no row was valid, so nothing may have run")
+
+    def test_malformed_lines_are_reported(self):
+        self.registry("local | too few | proc /proc/sys/x")
+        r = self.rows()
+        self.assertIs(r["setting: registry line 1"][1], False)
+        self.assertIs(r["managed settings"][1], False, "a registry with no valid rows checks nothing — say so")
+
+    def test_windows_rows_go_in_one_powershell_batch(self):
+        self.registry("win | update service | service-start wuauserv | 4 | 2030-01 | updates off",
+                      "win | update policy | reg-value HKLM:\\SOFTWARE\\Policies\\Example NoAutoUpdate | 1 | 2030-01 | t",
+                      "win | broken | service-start NoSuchService | 4 | 2030-01 | t")
+        self.answer({"win": "@@0=4\r\n@@1=@ABSENT\r\n@@2!Cannot find path\r\n"})
+        r = self.rows()
+        self.assertEqual(len(self.calls), 1)
+        node, cmd = self.calls[0]
+        self.assertTrue(cmd.startswith("powershell -NoProfile -NonInteractive -EncodedCommand "), cmd[:60])
+        script = base64.b64decode(cmd.split()[-1]).decode("utf-16-le")
+        self.assertIn("fsSvc 'wuauserv'", script)
+        self.assertNotRegex(script, r"function [A-Za-z]{1,2}\(", "short helper names collide with PowerShell aliases")
+        self.assertIs(r["setting: win update service"][1], True)
+        self.assertIs(r["setting: win update policy"][1], False)
+        self.assertIsNone(r["setting: win broken"][1])
+
+    def test_a_windows_batch_too_long_for_one_command_line_is_unknown(self):
+        self.registry(*[f"win | s{i} | service-start Service{i} | 4 | 2030-01 | t" for i in range(200)])
+        self.answer({"win": "@@0=4\r\n"})
+        r = self.rows()
+        self.assertIsNone(r["setting: win s0"][1])
+        self.assertIn("split the registry", r["setting: win s0"][2])
+        self.assertEqual(self.calls, [])
+
+    def test_a_node_mixing_windows_and_posix_readers_is_refused(self):
+        self.registry("mixed | a | service-start wuauserv | 4 | 2030-01 | t",
+                      "mixed | b | proc /proc/sys/x | 1 | 2030-01 | t")
+        self.answer({})
+        r = self.rows()
+        self.assertIs(r["setting: mixed a"][1], False)
+        self.assertIn("mixes", r["setting: mixed a"][2])
+
+
+class SettingsRegistryLive(LocalCheckBase):
+    def test_the_posix_batch_reads_real_files_through_a_real_shell(self):
+        app = os.path.join(self.tmp, "app.json")
+        write(app, '{"telemetry": false}')
+        os.chmod(app, 0o600)
+        import grp, pwd
+        st = os.stat(app)        # the file's REAL owner:group — on macOS a new file takes its folder's group
+        owner = f"{pwd.getpwuid(st.st_uid).pw_name}:{grp.getgrgid(st.st_gid).gr_name}"
+        reg = os.path.join(self.tmp, "settings.conf")
+        write(reg, f"local | telemetry | json-key {app} telemetry | false | 2030-01 | chosen\n"
+                   f"local | secret mode | file-mode {app} | 600 {owner} | 2030-01 | secret\n")
+        self.write_conf([f"settings | managed settings | {reg}"])
+        out = self.check("--dry-run").stdout
+        self.assertIn("[OK  ] setting: local telemetry: false", out)
+        self.assertIn("[OK  ] setting: local secret mode: 600", out)
 
 
 UNKNOWN_RUNS = 6     # past the escalation streak (4), so an away target's never-escalating is real
