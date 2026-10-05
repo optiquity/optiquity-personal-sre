@@ -37,6 +37,12 @@ Then, from inside a site's repo (the root or any subdirectory):
 - **It fails closed:** an unregistered repo, a repo listed twice, a name or output folder that could
   escape its directory, a failed build, and an **empty** build output all refuse. The last matters
   most: publishing mirrors with `--delete`, so an empty build would otherwise delete the live site.
+- **A production publish passes the site's own check first.** A registry row's optional 5th field is a
+  production check, run from the repo against the exact output about to be published, before anything
+  is copied — on every production publish, `--dry-run` and `--no-build` included; staging is not gated.
+  Any non-zero exit refuses. One build serves both targets, so the deploy step is the only point that
+  knows the target, and because the check lives in the platform's registry a site cannot switch it off
+  from its own repo.
 - ⚠ **It does not stop a session that means to do damage.** Sessions that run as the same OS user
   can reach each other's files directly. This makes cross-site damage by accident hard and visible;
   preventing it on purpose needs a separate OS user or container per site.

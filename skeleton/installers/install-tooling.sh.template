@@ -9,6 +9,12 @@
 # (see the platform spokes), and any role-conditional extras. Bump MARKER to force
 # a re-run under run_onchange.
 #
+# ⚠ The config manager keys run-once / run-on-change scripts by CONTENT and path: moving this file, or
+#   any edit to it, runs it again on every node. Keep every install here install-if-missing or
+#   version-pinned so a re-run is harmless — and when you upgrade a tool by hand, bump its pin here in
+#   the same change, or a rebuilt node quietly reinstalls the old version. A one-time installer with
+#   side effects (an app that starts on install) belongs outside the config manager's scripts.
+#
 # MARKER: tooling rev 1
 set -euo pipefail
 

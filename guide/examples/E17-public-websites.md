@@ -374,6 +374,11 @@ and the guardrail that holds is **structural**, not a line in each repo's rules 
   that could escape its directory, a failed build and an **empty** build output all refuse to
   publish. Publishing mirrors the output with `--delete`, so an empty build would otherwise delete
   the live site.
+- **Production passes the site's own check first.** One build serves staging and production, so the
+  build cannot know where it is headed; the deploy step is the one point that does. A registry row can
+  name a production check, which runs against the exact output about to be published, before anything
+  is copied, and refuses on any failure — including a dry run. Because the check lives in the
+  platform's registry, a site cannot switch it off from its own repo.
 - **Monitoring and backups are provisioned with the site, not after.** A health check and a backup
   do not follow a new site on their own; adding a registry row without them is adding an
   unmonitored, unbacked service ([§ 5](#5-monitoring-must-follow-the-traffic),

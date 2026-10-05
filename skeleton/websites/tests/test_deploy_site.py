@@ -216,6 +216,56 @@ class DeploySite(unittest.TestCase):
         self.assertEqual(os.listdir(os.path.join(real_srv, "site-b")), [], "the real root must be untouched")
         self.assertTrue(os.path.isfile(os.path.join(crafted, "srv", "site-b", "index.html")))
 
+    # ── the production publish gate ──────────────────────────────────────────────────────────────
+    def gate(self, check):
+        self.register([("site-a", self.repo, BUILD_OK, "dist", check)])
+
+    def test_the_production_check_sees_the_exact_output_before_anything_is_copied(self):
+        marker = os.path.join(self.tmp, "checked")
+        # the check records its argument, and whether the live site already had the new file at that moment
+        self.gate(f'f() {{ echo "$1" > {marker}; test -e {self.live()}/index.html && echo early >> {marker}; '
+                  f'test -f "$1/index.html"; }}; f')
+        r = self.run_deploy()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("gate:   PASS", r.stdout)
+        with open(marker) as fh:
+            seen = fh.read().split()
+        self.assertEqual(seen, [os.path.join(self.repo, "dist")], "the check ran on the output, before publishing")
+        self.assertTrue(os.path.exists(os.path.join(self.live(), "index.html")))
+
+    def test_a_refusing_check_publishes_nothing(self):
+        self.seed_live()
+        self.gate("echo 'stale sitemap' >&2; exit 1")
+        r = self.run_deploy()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("refused (exit 1)", r.stderr)
+        self.assertIn("stale sitemap", r.stdout, "the check's own words are shown")
+        self.assertEqual(sorted(os.listdir(self.live())), ["old.html"], "the live site is untouched")
+
+    def test_staging_is_not_gated(self):
+        self.gate("exit 1")
+        r = self.run_deploy("--staging")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(os.path.exists(os.path.join(self.live("site-a-stg"), "index.html")))
+
+    def test_dry_run_and_no_build_are_gated_too(self):
+        self.gate("exit 1")
+        for args in (("--dry-run",), ("--no-build",)):
+            with self.subTest(args=args):
+                if args == ("--no-build",):
+                    os.makedirs(os.path.join(self.repo, "dist"), exist_ok=True)
+                    with open(os.path.join(self.repo, "dist", "index.html"), "w") as fh:
+                        fh.write("built\n")
+                r = self.run_deploy(*args)
+                self.assertEqual(r.returncode, 1, r.stdout)
+                self.assertIn("refused", r.stderr)
+
+    def test_no_check_registered_publishes_and_says_so(self):
+        self.gate("-")
+        r = self.run_deploy()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("gate:   none", r.stdout)
+
     def test_help_exits_0_and_prints_usage(self):
         r = self.run_deploy("--help")
         self.assertEqual(r.returncode, 0)

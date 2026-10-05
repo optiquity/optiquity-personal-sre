@@ -18,7 +18,10 @@
 #
 # Fails closed. It refuses to publish when: not in a git repo · the repo is not registered, or is
 # registered twice · the name could escape its folder · the output dir resolves outside the repo ·
-# the build fails · the build output is EMPTY (--delete would otherwise wipe the live site).
+# the build fails · the build output is EMPTY (--delete would otherwise wipe the live site) · the site's
+# registered PRODUCTION CHECK refuses the exact output about to be published (production only; --dry-run
+# and --no-build included — one build serves staging and production, so this is the one point that
+# knows the target).
 #
 # WEBSITES_ROOT (default ~/websites) moves the registry AND the serving roots together. It exists
 # for tests and for a platform kept elsewhere; a crafted root only redirects the caller into it.
@@ -59,10 +62,10 @@ REPO="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 REPO_REAL="$(cd "$REPO" && pwd -P)"
 
 # ── look that repo up in the PLATFORM's registry, by real path ──────────────────────────────────
-NAME=""; BUILD_CMD=""; OUT=""; MATCHES=0
+NAME=""; BUILD_CMD=""; OUT=""; CHECK_CMD=""; MATCHES=0
 while IFS= read -r line || [ -n "$line" ]; do
   case "$(trim "$line")" in ''|\#*) continue ;; esac
-  IFS='|' read -r f_name f_path f_cmd f_out _ <<EOF
+  IFS='|' read -r f_name f_path f_cmd f_out f_check _ <<EOF
 $line
 EOF
   f_path="$(trim "${f_path:-}")"
@@ -72,6 +75,7 @@ EOF
   if [ -n "$real" ] && [ "$real" = "$REPO_REAL" ]; then
     MATCHES=$((MATCHES + 1))
     NAME="$(trim "${f_name:-}")"; BUILD_CMD="$(trim "${f_cmd:-}")"; OUT="$(trim "${f_out:-}")"
+    CHECK_CMD="$(trim "${f_check:-}")"
   fi
 done < "$REGISTRY"
 
@@ -114,6 +118,29 @@ case "$SRC_REAL/" in
 esac
 [ -n "$(ls -A "$SRC_REAL")" ] \
   || die "build output is EMPTY: $SRC_REAL — refusing to publish (--delete would wipe the live site)"
+
+# ── the production publish gate ─────────────────────────────────────────────────────────────────
+# Before EVERY production publish — --dry-run and --no-build included — the site's registered check
+# runs against the exact output about to be published, BEFORE anything is copied. It FAILS CLOSED:
+# any non-zero exit (a refusal, an error, a missing tool) stops the publish. The command lives in the
+# PLATFORM's registry, so a site cannot switch it off from its own repo: renaming the script it calls
+# just makes the check fail, which refuses. ⚠ Nothing may write into the output between the build and
+# this point, or the check has verified something other than what gets published.
+if [ "$STAGING" -eq 0 ]; then
+  if [ -n "$CHECK_CMD" ] && [ "$CHECK_CMD" != "-" ]; then
+    echo "  gate:   $CHECK_CMD <output dir>"
+    # captured, never piped: a pipe would report the LAST stage's status, not the check's
+    set +e
+    GATE_OUT="$(cd "$REPO_REAL" && bash -c "$CHECK_CMD"' "$1"' _ "$SRC_REAL" 2>&1)"
+    GATE_RC=$?
+    set -e
+    if [ -n "$GATE_OUT" ]; then printf '%s\n' "$GATE_OUT" | sed 's/^/    /'; fi
+    [ "$GATE_RC" -eq 0 ] || die "gate: the production check refused (exit $GATE_RC) — nothing was published"
+    echo "  gate:   PASS"
+  else
+    echo "  gate:   none — no production check registered for '$NAME'"
+  fi
+fi
 
 # ── publish ─────────────────────────────────────────────────────────────────────────────────────
 echo "  publishing $(find "$SRC_REAL" -type f | wc -l | tr -d ' ') file(s)…"

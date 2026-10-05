@@ -9,7 +9,7 @@
 #
 # One site per line, pipe-separated; blank lines and lines starting with # are ignored:
 #
-#   name | repo path | build command | output dir
+#   name | repo path | build command | output dir | production check
 #
 # name           lowercase letters, digits and hyphens; must not end in "-stg". It names the
 #                serving roots: <websites-root>/srv/<name>/ and <websites-root>/srv/<name>-stg/.
@@ -18,9 +18,13 @@
 # build command  run from the repo root; `-` for a site that needs no build. It cannot contain `|`
 #                (the separator): put a longer build in a script and call that.
 # output dir     relative to the repo root, inside it (no ..): what gets copied to the serving root.
+# production check  optional; `-` or empty for none. Run from the repo root with the output dir appended
+#                as its last argument, before EVERY production publish (staging is not gated); any
+#                non-zero exit refuses. Because it lives here, on the platform side, a site cannot switch
+#                it off from its own repo. A typical one: `npm run --silent check:production --`.
 #
 # Adding a row is not the whole of adding a site. Provision its serving root, its proxy block,
 # its monitoring endpoint and its backup in the same change — a site that is trivial to add and
 # unmonitored or unbacked is a liability, not a feature.
 
-<site-name> | ~/<path-to>/<site-repo> | npm run build | dist
+<site-name> | ~/<path-to>/<site-repo> | npm run build | dist | npm run --silent check:production --

@@ -3,6 +3,19 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-05 — a production publish gate for websites, and the installer's re-run caution
+
+- **`skeleton/websites/deploy-site.sh`: a production publish gate.** A `sites.conf` row's optional 5th field
+  names a production check, run from the repo against the exact output about to be published, **before
+  anything is copied** — on every production publish, `--dry-run` and `--no-build` included; staging is not
+  gated. Any non-zero exit refuses and leaves the live site untouched. The check lives in the platform's
+  registry, so a site cannot switch it off from its own repo. Four-field rows work as before (no check).
+  README, `sites.conf.template` and E17 updated. **Tests:** 5 new (22); 5 planted defects, each caught.
+- **`install-tooling.sh.template`: the re-run caution.** The config manager keys run-once and run-on-change
+  scripts by content and path, so moving or editing one runs it again on every node: keep every install
+  install-if-missing or version-pinned, bump a pin in the same change as a hand upgrade, and keep a
+  one-time installer with side effects outside the config manager's scripts.
+
 ## 2026-10-05 — the settings registry: decided settings, read live
 
 - **New check type `settings | <name> | <registry file>`** in `fleet-local-check`, and
