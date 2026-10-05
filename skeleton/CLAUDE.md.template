@@ -63,7 +63,8 @@ here, in the guide and in every other repo built from it. Your own rules start a
    managed file says where it applies: every node (the default) or which role.
 
 8. **Status lives in tracked docs, not in memory.** In `<registry-file>` and the active
-   per-project docs. Memory is for behavioral rules only.
+   per-project docs — each project's `STATUS.md` says where it stands. Memory is for behavioral
+   rules only.
 
 9. **No silent deferral.** Only defer when blocked, too large for now, or better grouped later — and
    write every deferral into the relevant plan doc (or the registry) with a reason and an
@@ -109,7 +110,8 @@ here, in the guide and in every other repo built from it. Your own rules start a
     relevant".
 
 15. **Every project gets a design pass before the work.** A design doc from `docs/design/`,
-    created at open alongside the postmortem and **agreed before implementation**: what could
+    created at open alongside the postmortem and a status file (`docs/status/TEMPLATE.md`), and
+    **agreed before implementation**: what could
     silently undo this, how we'd know, how both are tested. Re-read `docs/design/RULES.md` when a
     project opens, when choosing the form, when it is reopened, and when a postmortem names something
     the design should have forced — never recall it. "Remove the constraint" is not a

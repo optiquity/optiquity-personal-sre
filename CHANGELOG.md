@@ -3,6 +3,17 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-05 — the status file in the rules; no session-name format
+
+**Re-check your own repo:** rules 8 and 15 if you copied them from the templates.
+
+- **Rules 8 and 15 now name the status file**, in both rules templates and in chapter 03 (principles 8
+  and 15): opening a project creates its design doc, its postmortem draft and its status file.
+- **Corrected: no session-name format is required.** The previous entry's setup guide and chapter 16
+  told you to name each session `<machine>-<repo>-<project>`. A session takes whatever name you give it;
+  a lock records its holder's machine as well as its name, which is what tells two same-named sessions
+  apart. The peer-messaging standard is unchanged.
+
 ## 2026-10-05 — a status file per project; several sessions in one repo (designed, not yet proven)
 
 **Re-check your own repo:** add the status file to the place your rules say a project gets a design

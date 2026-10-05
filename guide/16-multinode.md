@@ -107,7 +107,7 @@ Four things collide when they share a repo, and each gets its own answer:
 | **Unfinished edits** in the same folder | A commit picks up another session's half-done work | **A git working copy per session.** The agent's own isolation then refuses that session's edits to the main folder |
 | **Files every project updates** — the registry, the dashboard | Every session edits the same lines | **A status file per project** ([04 · Structure](04-structure.md#where-a-project-stands--its-status-file)); the registry an index; dashboards assembled from per-project data by a written spec |
 | **The same machine or outside service** | Git merges files; nothing merges two half-applied changes to a NAS | **A lock** — a file in the repo, taken before a change and released after it |
-| **Names** | Session lists de-duplicate names on one machine only | **`<machine>-<repo>-<project>`** |
+| **Names** | Session lists de-duplicate names on one machine only | **No naming format** — a session takes any name you give it; a lock records its holder's machine as well as its name |
 
 ### Federated, deliberately
 

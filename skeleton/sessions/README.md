@@ -30,8 +30,8 @@ operator approves under their normal rules.
 | Ask | Why |
 |---|---|
 | Which machines, and which outside accounts or services, will sessions change? (Include anything configured only through a web portal) | These become the names that can be locked (step 5) |
-| Which projects will run in parallel first? | Each needs a status file (step 3) and becomes a session name |
-| Which machine do sessions start on, and is any started elsewhere? | Session names carry the machine; names are only de-duplicated on one machine |
+| Which projects will run in parallel first? | Each needs a status file (step 3) and gets its own working copy |
+| Which machines do sessions run on? | Each lock records the machine its holder runs on — session names may repeat across machines |
 | Do they reach sessions from other devices (remote access)? | Every session must be visible to the others, or a live lock holder looks gone |
 | Which of the repo's gitignored files does every working copy need? | They are not copied into a new working copy unless listed (step 2) |
 
@@ -109,13 +109,13 @@ before changing a machine or outside service*. Then the peer-messaging standard'
 One command (Claude Code shown; check the flags in your version):
 
 ```sh
-claude -w <project> -n <machine>-<repo>-<project> --remote-control <machine>-<repo>-<project>
+claude -w <project> -n <any-name> --remote-control <the-same-name>
 ```
 
 `-w` gives it its own working copy and branch; Claude Code then refuses that session's edits to the main
-folder, so **it cannot commit another session's unfinished edits**. A session working across the whole
-repo keeps the name `<machine>-<repo>`. **On start, on resume, and after a context summary**, a session
-reads its project's `STATUS.md` and lists the locks held in its own name.
+folder, so **it cannot commit another session's unfinished edits**. **The name is whatever you choose** —
+no format is required; it is how other sessions address this one. **On start, on resume, and after a
+context summary**, a session reads its project's `STATUS.md` and lists the locks held in its own name.
 
 ### §2 Landing a commit
 
@@ -175,7 +175,7 @@ manager, so its changes go through git too.
 | Files every project updates | A status file per project; the registry an index; assembled dashboards |
 | Rules files and shared memory | Operator approval, then a re-read message to every live session |
 | Two sessions changing one machine or service | A lock; a second lock needs permission |
-| Two sessions with one name | Name = machine + repo + project |
+| Two sessions with one name | The agent de-duplicates names on one machine; a lock records its holder's machine as well as its name |
 | The operator's attention | Each request stands alone and names its session |
 
 ### §6 What this does not catch

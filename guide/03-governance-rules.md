@@ -105,6 +105,8 @@ itself* keeps the config legible.
 ### 8. Status lives in tracked docs, not in memory
 The state of the system — what's done, in progress, deferred — lives in the project registry
 and docs (see [04 · Structure](04-structure.md)), not in the operator's conversational memory.
+Each project's own status file says where it stands and what happens next
+([04 · Structure](04-structure.md#where-a-project-stands--its-status-file)).
 
 **Why:** memory is lost at the end of a session; a deferred task mentioned only in chat is a
 task forgotten. If it matters, it's written down.
@@ -298,6 +300,10 @@ when a postmortem names something the design should have forced — never from m
 Design and postmortem are a loop: the design's *alternatives considered* becomes the
 postmortem's §2, and the postmortem's *what would have caught this sooner* becomes a standing
 prompt in the design template.
+
+**Opening a project creates three files:** the design doc, the postmortem draft, and the status file
+that says where the project stands
+([04 · Structure](04-structure.md#where-a-project-stands--its-status-file)).
 
 The mechanism is in [04 · Structure](04-structure.md#what-a-project-settles-before-it-starts).
 

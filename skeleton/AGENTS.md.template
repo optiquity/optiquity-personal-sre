@@ -42,7 +42,8 @@ Rules 1–18 are the framework's principles, same order and titles as `guide/03-
 6. **Re-read the rules before every commit.**
 7. **Default to symmetry across same-role nodes.** Divergence must be unavoidable or
    temporary-with-cleanup; a commit adding a managed file names where it applies.
-8. **Status lives in tracked docs, not in memory.** `<registry-file>` + project docs.
+8. **Status lives in tracked docs, not in memory.** `<registry-file>` + project docs (each
+   project's `STATUS.md` says where it stands).
 9. **No silent deferral.** Defer only when blocked, too large for now, or better grouped; write it
    into a plan doc with reason + when.
 10. **Reads are always free.**
@@ -67,7 +68,8 @@ Rules 1–18 are the framework's principles, same order and titles as `guide/03-
     gains follow-on work); re-read `docs/postmortems/RULES.md` at open, while appending, at close, and before any
     retroactive postmortem; projects already open at adoption get one at close, never back-dated;
     read related finished projects before writing up new work.
-15. **Every project gets a design pass before the work.** Created at open, agreed before
+15. **Every project gets a design pass before the work.** Created at open (with the postmortem and
+    a status file from `docs/status/`), agreed before
     implementation (`docs/design/`); re-read its RULES.md at open, choosing the form, reopening, and
     when a postmortem names a missed consideration. "Remove the constraint" is not a verdict: the
     honest ones are impossible as constrained, possible with effort, or possible but not worth it.
