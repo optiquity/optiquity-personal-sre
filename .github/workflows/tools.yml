@@ -31,4 +31,5 @@ jobs:
       - name: Guide links, link labels, chapter names and reading order
         run: python3 scripts/check-guide-links.py
       - name: Shell scripts parse
-        run: for f in $(git ls-files '*.sh'); do bash -n "$f" || exit 1; done
+        # the two bash files without a .sh name are listed by hand, or nothing would parse them
+        run: for f in $(git ls-files '*.sh') scripts/pre-commit.hook skeleton/installers/install-tooling.sh.template; do bash -n "$f" || exit 1; done

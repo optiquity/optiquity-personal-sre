@@ -32,7 +32,8 @@ Editing one when you meant the other is the easiest mistake to make here.
 | `guide/examples/` | Worked end-to-end examples (A/B/C/D/E series), catalogued in chapter 20. |
 | `platforms/` | The *how*, per OS — macOS, Linux, Windows, Raspberry Pi, Cloud. |
 | `skeleton/` | Starter files users copy. Indexed by `skeleton/README.md`. |
-| `scripts/` | `grep-guard.sh` — the leak guard (`--self-test` proves it); `check-rules-templates.py` — keeps the rules templates numbered like chapter 03. |
+| `scripts/` | `grep-guard.sh` — the leak guard (`--self-test` proves it); `pre-commit.hook` — runs it before every commit; `check-guide-links.py` — links, labels, chapter names and reading order; `check-rules-templates.py` — keeps the rules templates numbered like chapter 03 and rule 13 equal to the peer-messaging standard's block. |
+| `CHANGELOG.md` | What changed, newest first — one entry per published phase. |
 | `bootstrap.sh` | Creates a user's own repo (Tier-2 onboarding). |
 
 ## Rules for editing this repo

@@ -207,6 +207,6 @@ an actual difference rather than a bare number. Without it the field is unreadab
 | Version | Date | What changed |
 |---|---|---|
 | **1.3** | 2026-10-04 | §7 asks **"Does this belong in anything you publish?"** every time — what, generalised, belongs in a public framework or docs derived from the work. Added because the decision to ask it was once recorded and never built |
-| **1.2** | <date> | ⚠ **Raised the bump threshold.** A bump is for a MAJOR change; a small correction is an edit; **ask when unclear** |
-| **1.1** | <date> | Added `postmortem-version` + `template-version` and a **Revision log** section (R10) |
-| **1.0** | <date> | Initial |
+| **1.2** | 2026-09-14 | ⚠ **Raised the bump threshold.** A bump is for a MAJOR change; a small correction is an edit; **ask when unclear** |
+| **1.1** | 2026-09-14 | Added `postmortem-version` + `template-version` and a **Revision log** section (R10) |
+| **1.0** | 2026-09-13 | Initial |

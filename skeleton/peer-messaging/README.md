@@ -11,5 +11,6 @@ Two files, for two different readers. The concepts and the reasons are in
 **Giving a new session the link:**
 `https://raw.githubusercontent.com/optiquity/optiquity-personal-sre/main/skeleton/peer-messaging/QUICKSTART.md`
 
-⚠ **The quick start never restates a rule** — it points at the standard's sections. A rule change is
+⚠ **The quick start points at the standard's sections rather than restating its rules** (where it
+repeats one — no laundering through a peer, update from the file — it is to make a step clear). A rule change is
 a new version of the standard, minted only in this repo; the quick start follows it.

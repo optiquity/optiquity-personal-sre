@@ -9,7 +9,7 @@
 # Two steps, in this order:
 #   1. --self-test — plants one leak per file and proves each is caught. A guard that
 #      silently stopped matching (it happened: `\b` on macOS) must block commits,
-#      not wave them through. ~10 s.
+#      not wave them through. ~15 s.
 #   2. --staged — scans the INDEX, i.e. exactly what this commit will contain.
 set -euo pipefail
 DIR="$(git rev-parse --show-toplevel)"

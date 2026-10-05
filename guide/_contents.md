@@ -30,14 +30,14 @@ including the ready-to-run **monitoring module** — in [`../skeleton/`](../skel
 | 16 | [Multi-node](16-multinode.md) | The advanced layer: remote apply, session mobility, the fleet view — and the node that isn't like the others. |
 | 17 | [Monitoring](17-monitoring.md) | Knowing it works and hearing when it doesn't: health checks, coverage probes for batch work (why a runner's "success" isn't the work's), maintenance windows, self-retiring scaffolding, alerting, and the update digest. |
 | 17a | [**Case study** — six green checks over one broken system](17a-case-monitoring-the-proxy.md) | Six monitoring failures that looked unrelated are one defect: every probe measured something *adjacent* to the thing it watched. The adjacent thing is almost always healthy. |
-| 17b | [**Case study** — it failed loudly, into a file nobody reads](17b-case-loud-into-the-void.md) | Six days of skipped backups, each one correctly detected, correctly logged, and never seen. *Loud is a property of the sender; alerting is a property of the receiver.* |
+| 17b | [**Case study** — it failed loudly, for six days, into a file nobody reads](17b-case-loud-into-the-void.md) | Six days of skipped backups, each one correctly detected, correctly logged, and never seen. *Loud is a property of the sender; alerting is a property of the receiver.* |
 | 18 | [Setup](18-setup.md) | The onboarding journey — the three tiers and what they share. |
 | 19 | [Public/shared repos](19-sharing.md) | Publishing a scrubbed framework: derive-don't-copy + the grep-guard. |
 | 20 | [Example projects](20-example-projects.md) | A catalog of worked, end-to-end examples of the operator owning install + maintenance. |
 
 **Worked examples** — [`examples/`](examples/), catalogued in [20](20-example-projects.md): the
 A/B/C/D/E series, each an end-to-end project the operator owns. Several ship starter files in
-[`../skeleton/`](../skeleton/) — notably **[E16 · Health, alerting & the update digest](examples/E16-fleet-health-and-alerting.md)**,
+[`../skeleton/`](../skeleton/) — notably **[E16 · Fleet health, alerting, and the update digest](examples/E16-fleet-health-and-alerting.md)**,
 whose tools live in [`../skeleton/monitoring/`](../skeleton/monitoring/), and
 **[E17 · Hosting public websites from one box](examples/E17-public-websites.md)** — going public
 without opening a port, and the DNS migration that can take your email with it.

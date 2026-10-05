@@ -11,7 +11,7 @@ where the *why* lives; this table is just the map back.
 |---|---|---|
 | `CLAUDE.md.template` | The operator's rules file — the governance the AI reads at session start. | [03 · Governance](../guide/03-governance-rules.md) |
 | `AGENTS.md.template` | The same rules for a second CLI, so behaviour matches whichever you invoke. | [12 · Agents & skills](../guide/12-agents-skills.md) |
-| `settings/` | Three permission presets (permissive → cautious) for the CLI's auto-approve layer. | [10 · Permissions](../guide/10-permissions.md) |
+| `settings/` | Three permission presets (cautious · standard · trusting) for the CLI's auto-approve layer. | [10 · Permissions](../guide/10-permissions.md) |
 | `mcp/` | MCP server configs — each one a scoped capability grant. | [11 · MCP](../guide/11-mcp.md) |
 | `skills/` | Two worked `SKILL.md` examples (a vault read, a browser login). | [12 · Agents & skills](../guide/12-agents-skills.md) |
 | `installers/` | The idempotent, role-aware install-script pattern. | [07 · Tools & requirements](../guide/07-tools-requirements.md) |

@@ -201,6 +201,7 @@ starter file in `skeleton/` yet; the chapter describes what to build.
 ## Getting started
 
 Full walkthrough (intro, requirements, step-by-step): **[`GETTING-STARTED.md`](GETTING-STARTED.md)**.
+Already using it? **[`CHANGELOG.md`](CHANGELOG.md)** lists what changed and what to re-check in your own repo.
 
 Three onboarding tiers, all reaching the same working single-node setup — they differ only in
 how much is automated vs. explained:
@@ -221,7 +222,8 @@ servers) · an **AI coding CLI + account** (Claude Code = reference) · a config
 (chezmoi) · a secret store (OS keychain / vault).
 **Recommended:** **GitHub CLI (`gh`) + GitHub auth** (lets setup create your repo + lets the
 operator manage repos/PRs — *more token scope = more the operator can automate without asking*,
-see `guide/10-permissions.md`) · a **backup target** (governance Rule 4 requires backups) · `jq`.
+see `guide/10-permissions.md`) · a **backup target** (governance Rule 4 requires backups) · `jq` ·
+**Python 3** (standard library only — the monitoring and website starter tools are Python).
 **Hard (multi-node):** a private mesh (Tailscale) · SSH with keys.
 **Optional:** **MCP servers** (GitHub, filesystem, … — each a capability grant, `guide/11-mcp.md`)
 · a container runtime · an automation runtime · the multi-node coordination layer.
@@ -238,7 +240,8 @@ guide/          # THE HUB — platform-agnostic concepts (read these for the "wh
   01-concepts · 02-operator · 03-governance-rules · 04-structure · 05-chezmoi ·
   06-secrets · 07-tools-requirements · 08-networking · 09-runtimes · 10-permissions ·
   11-mcp · 12-agents-skills · 13-repo-comprehension · 14-automation ·
-  15-content-generation · 16-multinode · 17-monitoring · 17a/17b-case-… · 18-setup · 19-sharing
+  15-content-generation · 16-multinode · 17-monitoring · 18-setup · 19-sharing
+  03a/03b · 05a/05b · 07a · 17a/17b   # case studies, each beside its chapter
   20-example-projects · examples/   # worked, end-to-end install+maintenance examples
 platforms/      # THE SPOKES — per-OS "how" (macos ✓ · windows ◑ · linux ◑ · raspberry-pi ◑ · cloud ○)
 skeleton/       # generic starter files you copy + fill (all placeholders, no secrets)
@@ -248,8 +251,10 @@ skeleton/       # generic starter files you copy + fill (all placeholders, no se
   monitoring/ (health checks, alert mail, update digest — ready to run) ·
   repo-index/ (make a repo legible to the operator) ·
   design/ (long + short templates, rules — what a project must survive, settled BEFORE the work) ·
-  postmortems/ (template + rules — created when a project OPENS, not at close; feeds the design template)
-scripts/        # grep-guard (the never-leak backstop) + pre-commit hook
+  postmortems/ (template + rules — created when a project OPENS, not at close; feeds the design template) ·
+  peer-messaging/ (the standard + a quick start for a joining session) · websites/ (multi-site deploy starter)
+scripts/        # grep-guard (the never-leak backstop) + pre-commit hook · check-guide-links.py · check-rules-templates.py
+CHANGELOG.md    # what changed, newest first — what to re-check in your own repo
 GETTING-STARTED.md # ▶ the front door: intro + requirements + step-by-step
 bootstrap.sh    # Tier-2 onboarding (creates YOUR repo; --help for options)
 ```

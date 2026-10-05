@@ -35,15 +35,17 @@ set -euo pipefail
 
 # ── Files/dirs the GENERIC patterns skip ────────────────────────────────────
 #   - .git internals
-#   - the guard itself + the one doc that NAMES the secret shapes by design.
-#     Add your own allowlist entries — sparingly; every exclusion is a blind spot.
+#   - the guard itself, which must contain the patterns it looks for.
+#     (The secrets chapter was skipped whole until 2026-10-04, for ONE example line; that line was
+#     reworded and the chapter is scanned like any other.)
+#     Add your own allowlist entries — sparingly; every exclusion is a blind spot, and
+#     guide/19-sharing.md lists them all, so a clean result says what it did not read.
 #   ⚠ YOUR NAMES are never excluded: they are scanned in every file (NAME_EXCLUDES below).
 #     A chapter that documents a pattern has a reason to contain it; nothing has a reason to
 #     contain your name. (Until 2026-09-25 whole files were skipped for both, names included.)
 EXCLUDES=(
   ':(exclude).git/**'
   ':(exclude)**/grep-guard.sh'
-  ':(exclude)**/06-secrets.md'          # documents secret shapes by design
 )
 NAME_EXCLUDES=(
   ':(exclude).git/**'
@@ -106,7 +108,7 @@ MODE=tree
 # With a 5th argument "names", only NAME_EXCLUDES apply.
 scan() {
   local label="$1" flags_kind="$2" pattern="$3" root="$4" rc=0 hits
-  local ex=("${EXCLUDES[@]}") plain_ex=(--exclude=grep-guard.sh --exclude=06-secrets.md)
+  local ex=("${EXCLUDES[@]}") plain_ex=(--exclude=grep-guard.sh)
   if [ "${5:-}" = names ]; then ex=("${NAME_EXCLUDES[@]}"); plain_ex=(); fi
   local flags=(-nI --color=never)
   case "$flags_kind" in
@@ -205,16 +207,16 @@ self_test() {
       fi
     done
   done
-  # Exclusions: a NAME is caught even in the file the generic patterns skip; that skip still works
-  # for a documented secret shape; and the sharing chapter, skipped whole until 2026-09-25, is
-  # scanned. (Whole-file skips once hid names from every scan.)
+  # Former whole-file skips are scanned now: a NAME and a secret shape in the secrets chapter (skipped
+  # for generic patterns until 2026-10-04), and a home path in the sharing chapter (skipped whole until
+  # 2026-09-25). Whole-file skips once hid names, and shapes, from every scan.
   for mode in $modes; do
     for case_ in name-in-excluded shape-in-excluded shape-in-sharing; do
       rm -rf "$tmp/r"; mkdir -p "$tmp/r/guide"
       local f=06-secrets.md
       case "$case_" in
         name-in-excluded)  printf 'written by SelfTestBox9\n' > "$tmp/r/guide/$f" ;;
-        shape-in-excluded) printf 'export API_KEY=abcd1234efgh5678\n' > "$tmp/r/guide/$f" ;;
+        shape-in-excluded) printf 'export API_KEY=abcd1234efgh5678\n' > "$tmp/r/guide/$f" ;;   # now caught
         shape-in-sharing)  f=19-sharing.md; printf 'path %ssomeone/project\n' "$U" > "$tmp/r/guide/$f" ;;
       esac
       printf 'selftestbox9\n' > "$tmp/r/.grep-guard.local"
@@ -224,8 +226,7 @@ self_test() {
       fi
       local args=(); [ "$mode" = staged ] && args+=(--staged)
       local passed=0; ( cd "$tmp/r" && "$self" ${args[@]+"${args[@]}"} . ) >/dev/null 2>&1 && passed=1
-      if { [ "$case_" != shape-in-excluded ] && [ "$passed" -eq 0 ]; } || \
-         { [ "$case_" = shape-in-excluded ] && [ "$passed" -eq 1 ]; }; then ok=$((ok + 1))
+      if [ "$passed" -eq 0 ]; then ok=$((ok + 1))
       else note "  FAIL  $case_ ($mode)"; bad=$((bad + 1)); fi
     done
   done

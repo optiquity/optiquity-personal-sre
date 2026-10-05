@@ -4,7 +4,8 @@
 This repo is densely cross-linked and has been renumbered, and a renumbering leaves three kinds of
 damage a filename-only sweep misses. Four checks, over every tracked text file:
 
-  1. LINKS   every relative markdown link resolves to a file that exists (anchors not checked).
+  1. LINKS   every relative markdown link in a .md file resolves to a file that exists (anchors
+             not checked). Checks 2 and 3 read every tracked text file.
   2. LABELS  a link whose label starts with a chapter number points to THAT chapter:
              [14 · Sharing](19-sharing.md) is wrong even though the file exists.
   3. NAMES   a chapter file named in plain text — a code comment, a template header,

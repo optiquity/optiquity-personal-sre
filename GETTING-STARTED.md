@@ -80,23 +80,23 @@ Work through these phases with me, one at a time, confirming before moving on:
 4. STRUCTURE. Set up the project registry (PROJECTS.md) + a docs/ layout + (optionally) a status
    dashboard, following guide/04-structure.md ("The dashboard"). Explain the status taxonomy.
 
-5. CONFIG MANAGER. Help me install and initialize chezmoi against my repo: set my node's role and
-   non-secret data (from chezmoi.toml.example), and explain the dev-clone -> prod-source ->
-   pull+apply flow. Do NOT apply anything to the machine without showing me the diff + approval.
+5. PERMISSIONS. Recommend a permission preset for my role (cautious/standard/trusting) and help
+   me apply it to the CLI settings. Explain that even "trusting" never auto-approves pushes,
+   deletes, deploys, or service bootstraps.
 
 6. SECRETS. Set up the ignore files (allowlist/fail-closed pattern) and my secret store for the
    platform, and a runtime env file if needed. Confirm the "zero secrets in git" invariant.
    Never put a secret in a tracked file.
 
-7. PERMISSIONS. Recommend a permission preset for my role (cautious/standard/trusting) and help
-   me apply it to the CLI settings. Explain that even "trusting" never auto-approves pushes,
-   deletes, deploys, or service bootstraps.
+7. CONFIG MANAGER. Help me install and initialize chezmoi against my repo: set my node's role and
+   non-secret data (from chezmoi.toml.example), and explain the dev-clone -> prod-source ->
+   pull+apply flow. Do NOT apply anything to the machine without showing me the diff + approval.
 
-8. (OPTIONAL) NETWORKING, if multi-node: help me generate an SSH key (key-only, no passwords),
-   set up the private mesh (Tailscale), and record the SSH access edges I actually need.
-
-9. (OPTIONAL) MCP: ask which external capabilities I need (git host, filesystem, ...) and help me
+8. (OPTIONAL) MCP: ask which external capabilities I need (git host, filesystem, ...) and help me
    configure them from the templates — no tokens in committed config, filesystem scopes limited.
+
+9. (OPTIONAL) NETWORKING, if multi-node: help me generate an SSH key (key-only, no passwords),
+   set up the private mesh (Tailscale), and record the SSH access edges I actually need.
 
 10. FIRST PROJECT. Help me track one real thing I'm working on as a project in the registry with
     a plan doc — to exercise the whole loop.
@@ -143,6 +143,7 @@ Set these up first (or let the AI path / `bootstrap.sh` help). Full detail:
 | **GitHub CLI (`gh`) + GitHub auth** | lets setup create your repo + lets the operator manage repos/PRs. **The more permission you grant the token, the more the operator can automate without stopping to ask you** — a read-only token means it drafts and you push; a token that can create repos / merge PRs means it can do those unattended. Same convenience-vs-blast-radius trade-off as the permission presets (`guide/10-permissions.md`). Grant deliberately. |
 | **A backup target** | governance requires "back up before apply" (Rule 4). Decide where — a local dir, an external disk, a NAS — before you apply config. |
 | **`jq`** | JSON parsing (handy with `gh` and scripts). |
+| **Python 3** | the monitoring and website starter tools are Python — standard library only, no packages to install. |
 
 ### Hard — only if multi-node
 | Requirement | Why |
@@ -190,8 +191,9 @@ framework repo, and it commits nothing.
    The session reads the seeded rules + `PROJECTS.md`, sees the open **onboarding** project, and
    offers the next steps (referencing this guide). Its first proposed action is your **initial
    commit** — approve it to exercise the governed loop.
-4. **Finish onboarding** — the session walks you through: first commit → secrets → config
-   manager → permissions → (optional) networking/MCP → your first real project. Details live in
+4. **Finish onboarding** — the session walks you through: first commit → the rules and your
+   permission posture → secrets → config manager → (optional) MCP and multi-node → your first real
+   project. Details live in
    the seeded `docs/onboarding/PLAN.md`.
 
 ---

@@ -150,7 +150,7 @@ environment, which every child process inherits and which ends up pasted into di
 1. **Mount the secret as a read-only file.** Bind a `chmod 600` host file to `/run/secrets/<name>`
    (`- ./secrets/<name>:/run/secrets/<name>:ro`), or use compose's own `secrets:` section, which
    mounts the same way. The application reads the file.
-2. **Use the image's `*_FILE` variables where it has them** (for example `DB_PASSWORD_FILE=/run/secrets/db`).
+2. **Use the image's `*_FILE` variables where it has them** (for example, set `DB_PASSWORD_FILE` to `/run/secrets/db`).
    Where an image reads only environment variables, record that as a known exception rather than
    pretend.
 3. **Know the scope.** This keeps the secret out of `inspect` output, child processes and pasted

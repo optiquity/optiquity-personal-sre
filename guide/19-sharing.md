@@ -125,7 +125,17 @@ line held a home path *and* an IP, and the home-path pattern alone flagged it. *
 defects on one line proves only that one of your patterns works.**
 
 The guard **fails closed**: a hit exits 1, and a *scan error* exits 2. An unscanned tree is not
-a clean tree. A false positive costs you a `git` annotation; a false negative costs you a
+a clean tree.
+
+**What a clean result did not read** — every exclusion is a blind spot, so here is the whole list:
+- `.git/` internals, and **the guard script itself** (it must contain the patterns it looks for) —
+  skipped for the generic patterns only. **Your names are scanned in every file.**
+- **The local names file** (`.grep-guard.local`), which contains the names by definition.
+- **Anything your ignore files exclude** (the tree scan honours `.gitignore`), and **binary files**.
+
+A whole-file exclusion for one awkward line hides every other line of that file too. When a
+document needs an example that looks like a secret, reword the example — that is what this repo did
+with the one line that used to keep its secrets chapter unscanned. A false positive costs you a `git` annotation; a false negative costs you a
 permanent leak — so bias it toward noise.
 
 ## The publish workflow

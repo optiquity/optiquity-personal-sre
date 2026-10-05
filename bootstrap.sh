@@ -186,7 +186,9 @@ if [ "$REPO_READY" = 0 ] && [ "$CAN_CREATE" = 1 ]; then
   say "Ready to create your private repo:"
   info "  • create  https://$GIT_HOST/$GIT_USER/$REPO_NAME  (PRIVATE)"
   info "  • clone it to  $TARGET_DIR"
-  info "  • seed it (UNCOMMITTED) with your rules file, project registry, and an onboarding doc"
+  info "  • seed it (UNCOMMITTED) with your rules file, project registry and playbook, the open"
+  info "    onboarding project (plan, design, postmortem), the design + postmortem practice, and the"
+  info "    peer-messaging standard"
   info "  Nothing is committed or pushed; the seed is left for your AI CLI to commit (with your ok)."
   if ask "Proceed?"; then
     if gh repo view "$GIT_USER/$REPO_NAME" >/dev/null 2>&1; then

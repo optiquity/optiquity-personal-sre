@@ -3,6 +3,26 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-04 — housekeeping: what a clean scan did not read, and indexes that match the repo
+
+- **The leak guard scans the secrets chapter now.** It used to skip `guide/06-secrets.md` whole for the
+  generic patterns, to spare one example line; that line was reworded and the file is scanned like any
+  other (the self-test case flipped to "must be caught", still 66 checks). **If your guard copies the
+  old exclusion list, check what it hides.** [§ 19](guide/19-sharing.md) now lists every exclusion, so a
+  clean result says what it did not read.
+- **CI parses every shell file**, including the two bash files without a `.sh` name (the pre-commit hook
+  and the installer template) that it used to skip.
+- **Indexes and requirements:** the README's layout shows every case study, `peer-messaging/`,
+  `websites/`, all three scripts and this changelog (now linked from the README and `AGENTS.md`);
+  **Python 3** (standard library only) is listed as a requirement for the starter tools; the preset
+  names are cautious · standard · trusting; two index titles match their chapters.
+- **Onboarding in one order everywhere:** GETTING-STARTED's summary and the pasted setup prompt now
+  follow the seeded `docs/onboarding/PLAN.md` — rules and permissions, then secrets, then the config
+  manager, then the optional parts. `bootstrap.sh` says everything it seeds.
+- **Small:** the link checker's docstring says its link check covers `.md` files; the hook's self-test
+  takes ~15 s; the template revision logs carry real dates; the peer-messaging README no longer claims
+  the quick start never repeats a rule.
+
 ## 2026-10-04 — the rule text adopters copy, brought up to the rules
 
 The starter rules files are what `bootstrap.sh` seeds into every new repo, and they had fallen behind
