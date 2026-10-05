@@ -446,6 +446,43 @@ A row that can never be cleared is worse than no row. Two ways to create one:
 
 Either one teaches the reader to skim the one report where real updates appear.
 
+### Security updates: raised the same day, and honest about what cannot be flagged
+
+A weekly digest gives a security fix the same single row as any other update. Principle 11 says
+security updates are raised promptly ([03](03-governance-rules.md)), and that needs the checker to tell
+them apart — which depends on the install method, because each has a different signal or none:
+
+| Install method | Security signal | The question it answers |
+|---|---|---|
+| Debian/Ubuntu `apt` | the update comes from the distribution's **security suite** (`…-security`) | is this update a security release? |
+| Node, through a version manager | Node's release index marks **security releases** | is this update a security release? |
+| Python tools (`uv`, `pipx`, `pip --user`) | PyPI lists known vulnerabilities **of the installed version** | is what I run vulnerable? |
+| npm globals, Go-built binaries | **OSV** (the open vulnerability database), by name and version | is what I run vulnerable? |
+| Homebrew, macOS software update, container images, winget | **none** in what the tool returns | — |
+
+**The shape that works:**
+
+- **A daily, security-only run that alerts on *new* items**, once each. Nothing new, no mail; state is
+  saved only after the mail goes out, so a failed send is retried. The weekly digest opens with a
+  security section.
+- **Every digest names the methods with no security signal.** By package count the unflagged side is
+  often the larger one — a Mac's Homebrew alone — so "no security flag" must never read as "no security
+  problem". This is principle 11's *exclusions are visible*, applied to a blind spot you cannot close.
+- **A canary per source, on every run:** a query known to return a hit (an old version of a popular
+  package with published vulnerabilities; a release index with at least one security release). A
+  canary that comes back empty marks that method **unknown — security flagging broken**, never "none".
+  Otherwise an API that changes shape looks exactly like a quiet week.
+- **Match the security suite generically** (any `-security` suite), not by release name, or the next
+  distribution release silently switches flagging off.
+- **When the latest version is vulnerable too, say "no fixed release yet"** rather than propose an
+  update that fixes nothing.
+- **The daily job has a last-run stamp**, and the weekly digest flags it when it is more than two days
+  old — a stopped job is otherwise indistinguishable from nothing new.
+
+**Two tempting shortcuts that don't work:** grepping changelogs for `CVE-` over-flags (a whitespace-only
+fix can name a CVE), and a hand-curated list of "security-critical" packages is a guess dressed as a
+signal — the list, not any advisory, decides what counts.
+
 ## Settings the platform owns
 
 Some settings are correct when you set them and then quietly stop being true. The platform rewrites

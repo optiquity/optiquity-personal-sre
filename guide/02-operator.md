@@ -86,6 +86,30 @@ the work waits on both of you.
 needed from the owner was a single sentence in the middle. It happened twice, until the owner said
 they had no idea what to do. One instruction, with nothing else attached, unblocked it.
 
+## Write for the owner coming back later, and keep the scope where it was agreed
+
+The owner reads the operator's messages between other things, often hours later, with none of the
+session in their head. Four habits make those messages usable:
+
+- **Say what each thing is, in plain words, the first time it appears.** No internal label — a phase
+  code, a finding number, "the list" — unless the same message explains it. One sentence per item by
+  default; add detail only when the owner cannot decide without it, and offer more rather than
+  front-loading it. Before sending, reread it as the owner coming back with no memory of the session.
+- **For anything still running, lead with its live progress, dated** — "61% at 17:26" — or
+  say plainly that it cannot be read live, and how the owner can read it. Status from memory is how a
+  stalled job reads as fine.
+- **Before a multi-step operation, show every step, who does it, and the gate between steps.** The owner
+  may want to run the major steps themselves; a list made before anything starts is what lets them say
+  so.
+- **Findings made mid-batch go on a list for the owner, decided at the phase boundary.** A batch of work
+  finds other problems; fixing them in flight grows the work out of sight. Fix in flight only the same
+  claim in the same file as the batch's own change.
+
+⚠ **The case for the last one.** An audit of a public repo was being worked through in agreed batches,
+and each batch also fixed the defects it happened to find. Every one was disclosed, but the work kept
+growing, until the owner asked whether it was simply growing at random, with no design and no plan
+behind it. Partly, it was. The list-and-decide rule ended it.
+
 ## Reads are free; changes are gated
 
 The single most important property of working this way: **the friction is asymmetric, on

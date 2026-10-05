@@ -3,6 +3,23 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-04 — security updates raised the same day; writing for the owner
+
+- **§ 17, *Security updates: raised the same day, and honest about what cannot be flagged*:** which install
+  methods carry a security signal (a distribution's security suite, Node's release index, PyPI's and
+  OSV's vulnerability data) and which carry none (Homebrew, macOS software update, container images,
+  winget); a daily security-only alert for new items; every digest **names** the methods it cannot flag;
+  a canary per source so a broken source reads *unknown*, never *none*; match the security suite
+  generically; say "no fixed release yet" when the latest is vulnerable too. E10 classifies security
+  updates first.
+- **§ 02, *Write for the owner coming back later, and keep the scope where it was agreed*:** say what each
+  thing is in plain words, one sentence per item; lead with live progress, dated; show every step, its
+  owner and its gate before a multi-step operation; findings made mid-batch go on a list for the owner's
+  decision at the phase boundary.
+- **E10, update hygiene:** an install upgrades its outdated dependencies (list them in the approval); bump
+  the provisioning pin in the same change as a hand upgrade; upgrade through the provisioning line, not a
+  bare reinstall that drops a tool's extras; on an unattended Mac, check the screen afterwards.
+
 ## 2026-10-04 — a new case study, and four more shell traps
 
 - **New: [17c · Case study — the health check that stopped the media server](guide/17c-case-the-check-that-stopped-the-server.md).**

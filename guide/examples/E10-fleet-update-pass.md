@@ -46,6 +46,9 @@ index is stale.
 
 Not everything should be updated the same way:
 
+- **Security updates first.** Where the checker can flag them ([§ 17, security updates](../17-monitoring.md)),
+  they arrive the same day rather than in the weekly digest — still proposed, never applied without
+  approval. For the methods that cannot be flagged, the digest says so by name.
 - **Leaf tools** (CLIs, doc tooling) — low-risk; safe to bump.
 - **Service runtimes** (a language runtime an app depends on, a container image) — update only in
   a **window**, with a restart + smoke test; never mid-use.
@@ -69,6 +72,16 @@ Not everything should be updated the same way:
 - **Verify** after: services still up, tools resolve, a quick smoke test.
 - **Keep same-role nodes symmetric** ([Rule 7](../03-governance-rules.md)) — update a `workstation`
   as a canary, then mirror to the other same-role nodes.
+- **An install upgrades what it depends on.** `brew install X` also upgrades X's outdated
+  dependencies that are already installed. List them first (a dry run) and include them in the
+  approval, or the approval covered less than what happened.
+- **Bump the pin in the same change.** A tool upgraded by hand leaves your provisioning script's
+  pinned version behind, and a rebuilt node quietly reinstalls the old one — in one fleet, a version
+  with a published vulnerability.
+- **Upgrade through the provisioning line, not a bare reinstall.** A tool installed with optional
+  features (extras) loses them when it is reinstalled without them.
+- **On an unattended Mac, look at the screen afterwards** — an upgraded program can be waiting on a
+  privacy prompt nobody sees ([17c](../17c-case-the-check-that-stopped-the-server.md)).
 
 ### 4. Track it — including what you held back
 
