@@ -69,8 +69,8 @@ config-manager-shaped so a stranded file cannot become committable.
 ⚠ **A project's docs and its deployables cannot be co-located, and you should stop trying.**
 A service you run has design docs *and* a deployment directory that must land at a specific
 path. Nesting them under one project folder changes where it deploys. Tie them together in the
-**registry** instead — give each project a `Deploys:` line naming what it owns. The registry
-is already the index; let it carry this too.
+project's **status file** instead — its *Machines and services it changes* section names what it
+deploys. The status file already says where the project stands; let it carry this too.
 
 ⚠ **Ignore files are anchored by position, and moving one silently changes what it matches.**
 Any `.gitignore` pattern containing a slash is relative to the directory holding that file. A
@@ -81,29 +81,29 @@ defences (`**/`-anchored secret and junk patterns) in a separate root-level file
 cover the docs tree.
 
 **What to write down:** one table in your `README.md` saying what each top-level directory
-means, and the `Deploys:` field in the registry. Both are short. The reason they earn their
+means, and what each project deploys, in its status file. Both are short. The reason they earn their
 keep is that six months later "where does this go?" has one answer instead of a judgement call.
 
 
 ## The registry — one index of everything
 
 A single file at the repo root — call it `PROJECTS.md` — is the **master index**: every
-project, its status, a one-line summary, its related projects, and its docs. It's the entry
-point to the whole system.
+project, its status word, one line, and its status file. It's the entry point to the whole system.
 
 ```markdown
-## <project-name> — **<status>**
-**Folder:** `docs/<project-name>/` · **Related:** <other-projects>
-<One paragraph: what it is, where it stands, what's left.>
-- `PLAN.md` — **<status>** (<short note>)
+| Project | Status | Summary | Status file |
+|---|---|---|---|
+| <project-name> | **<status>** | <one line: what it is and where it stands> | `docs/<project-name>/STATUS.md` |
 ```
 
 The registry is **authoritative**. If a doc and the registry disagree, the registry wins and
 the doc is reconciled to it. This gives you one place to look and one place to trust.
 
-Keep each entry short once projects have status files (below): the registry is authoritative for
-**which projects exist and each one's status word**; the project's own `STATUS.md` holds where it stands.
-A registry that carries every project's running notes becomes the file every change touches.
+The registry is authoritative for **which projects exist and each one's status word**; the project's
+own `STATUS.md` (below) holds where it stands — its documents, related projects and running notes
+included. A row changes only when the status word or the line changes, and the line is the status
+file's summary, word for word. A registry that carries every project's running notes becomes the file
+every change touches.
 
 ### Status decays
 
@@ -214,8 +214,9 @@ three-step install.
 
 ## Where a project stands — its status file
 
-> ⛏ **Version 0.1 of the template — not yet proven in use.** The practice is settled; its section list
-> is expected to change.
+> ⛏ **Version 1.0 of the template — adopted in the source fleet, not yet proven by several sessions at
+> once.** Its sections held when every project's running notes moved into one; a pilot may still change
+> them.
 
 Between the design (before) and the postmortem (after) sits the question every session asks first:
 **where is this now, and what do I do next?** Each project answers it in one file,
@@ -234,7 +235,13 @@ Between the design (before) and the postmortem (after) sits the question every s
 **The test of a status file:** if the session that wrote it ended an hour ago, can a new one continue
 from this file alone? If "resume here" lives only in a chat, the answer is no.
 
-**Starter files:** [`skeleton/status/`](../skeleton/status/) — the template and a three-step install.
+**Opening a project** — the order its design, postmortem draft, status file and registry row are written
+and landed in, as one commit once the design is agreed:
+[`skeleton/sessions/STARTING.md`](../skeleton/sessions/STARTING.md) part C (it applies with one session
+too).
+
+**Starter files:** [`skeleton/status/`](../skeleton/status/) — the template, its rules and a three-step
+install.
 
 ## What a finished project leaves behind
 

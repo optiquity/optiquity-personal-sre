@@ -3,6 +3,32 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-06 — starting each kind of session; opening a project; the status file at 1.0
+
+**Re-check your own repo:** your registry, if it still holds each project's running notes; your lock
+helper, if your records say it is installed — check with `command -v` on each machine.
+
+- **New: [`skeleton/sessions/STARTING.md`](skeleton/sessions/STARTING.md)** — how to start, resume and
+  end each kind of session, with examples: **the general session** (in the main folder; owns the rules,
+  practices, templates and tools, and cross-project work — not a lead), **a session for an existing
+  project**, and **a session for a new project**. Its part C is the order for opening any project, with
+  one session or several: read the rules fresh, read the neighbours, draft the design, write the status
+  file, postmortem draft and registry row, agree the design, land it all as **one commit** — and only
+  then change anything. Chapters 02, 03 (principle 12), 04 and 16 and the setup guide point to it.
+- **The status file is at version 1.0**, with its own **[`RULES.md`](skeleton/status/RULES.md)** (whether,
+  when, where, who — S1–S9) and a revision log; `bootstrap.sh` seeds the rules, and fills the onboarding
+  project's status file so its summary is the registry's line, word for word.
+- **The registry is an index table** — status word, one line, status file — in chapter 04 and in the
+  seeded `PROJECTS.md`. What a project deploys moves from the registry to its status file.
+- **Locks record the holder's project** as well as its name and machine; `ALL` is how much of a resource
+  a change reaches, never who owns it. The helper refuses a lock from a project not yet on main
+  (`BUILD-LOCK-HELPER.md`, with its test).
+- **Learned in the source fleet:** a lock helper added to git's ignore allow-list but not to the config
+  manager's sat uninstalled on every machine while its records said "deployed"; its tests passed because
+  they ran it from the repo. The helper spec now says to check the install with a command. And the
+  detection step records what worked: one result per check, read from a clone your config manager keeps
+  current — and a migration that stamps every status file with one date makes them all stale together.
+
 ## 2026-10-06 — the pre-commit hook works from a git working copy, and with `commit -a`
 
 **Re-check your own repo:** take the new `scripts/grep-guard.sh`. If `git status` in your repo ever said

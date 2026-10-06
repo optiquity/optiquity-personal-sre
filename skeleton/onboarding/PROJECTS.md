@@ -1,8 +1,9 @@
 # PROJECTS.md — <repo-name> (project registry)
 
-The master index of every project in this repo — status, one-line summary, related projects,
-and docs. This is your source of truth for "what's going on" (governance Rule 8). See
-`guide/04-structure.md` in the framework reference for the full pattern.
+The index of every project in this repo: its status word, one line, and its status file. This is your
+source of truth for "what's going on" (governance Rule 8). **Where a project stands** — its state, queue,
+dated items, deferrals and documents — is in its own `docs/<project>/STATUS.md` (rules in
+`docs/status/RULES.md`). See `guide/04-structure.md` in the framework reference for the full pattern.
 
 > Seeded by `bootstrap.sh`. This is YOUR repo — edit freely (unlike the framework reference,
 > which is read-only). Nothing here is committed yet; your first commit is part of onboarding.
@@ -11,19 +12,15 @@ and docs. This is your source of truth for "what's going on" (governance Rule 8)
 pending · open · stable · resolved · deprecated · superseded · cancelled
 (see `guide/04-structure.md` for definitions)
 
----
+## Projects
 
-## onboarding — **open**
-**Folder:** `docs/onboarding/` · **Related:** everything (this is where setup finishes)
-Finish standing up this personal-SRE repo: make the first commit, wire the config manager
-(chezmoi), set up secrets + the permission preset, and (optionally) the private network. Your
-AI CLI should resume from `docs/onboarding/PLAN.md`. Node role: **<role>**.
-- `PLAN.md` — **open** (the resume-here checklist bootstrap left for you)
-- `DESIGN.md` — **draft** (short form: this setup's decisions — roles, posture, MCP)
-- `POSTMORTEM.md` — **draft** (entries appended as setup happens; finalised at close)
-- `STATUS.md` — **open** (where setup stands and what is next — a new session resumes from it)
+| Project | Status | Summary | Status file |
+|---|---|---|---|
+| onboarding | **open** | Finish standing up this repo (node role: <role>): first commit, config manager, secrets, permission preset. | `docs/onboarding/STATUS.md` |
 
 ---
 
-*Add a row here for each real project as you start it. Keep this file authoritative; if it and
-any status view disagree, this file wins.*
+*Add a row when a project opens — in the same commit as its design doc, postmortem draft and status file
+(the order: the framework's `skeleton/sessions/STARTING.md` part C). A row changes only when the status
+word or the line changes, and the line is the status file's Summary, word for word. If this file and any
+status view disagree, this file wins.*

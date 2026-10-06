@@ -20,7 +20,7 @@ The registry says *what state a thing is in*; this playbook says *how to do or f
 | **Do an install / follow a procedure** | the project's **runbook** → `docs/<project>/…` |
 | **Fix a known problem** | the **Troubleshooting index** below |
 | **Look up an external tool** | **External references** below |
-| Know a project's **status** | your **registry** (`PROJECTS.md`) |
+| Know a project's **status** | your **registry** (`PROJECTS.md`) for the status word; the project's `docs/<project>/STATUS.md` for where it stands |
 | See **live state** | your **dashboard**, if you built one |
 | Understand a **concept** | the framework **guide** |
 | Know the **behavioral rules** | your operator-rules doc (`CLAUDE.md` / `AGENTS.md`) |

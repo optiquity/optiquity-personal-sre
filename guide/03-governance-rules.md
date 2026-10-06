@@ -182,7 +182,9 @@ you want changed and let the owner change it. A session that owns infrastructure
 content, and vice versa — even when it would be faster, and even when asked. The one exception worth
 naming is a public repo derived from a private one: it may share its owner with its private source,
 because its author needs both, and the exception belongs in your rules by name
-([19 · Sharing](19-sharing.md)).
+([19 · Sharing](19-sharing.md)). With several sessions **in one repo**, the same rule goes one level
+down: each session owns one project, and one general session owns what is shared — the rules, the
+practices, the tools ([16 · Multi-node](16-multinode.md#several-sessions-in-one-repo)).
 
 **Exactly one document is canonical.** Not "the two copies are kept in sync" — *one* file, and every
 other mention of it is a pointer. This sounds like bookkeeping until it isn't:

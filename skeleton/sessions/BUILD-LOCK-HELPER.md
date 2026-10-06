@@ -12,7 +12,7 @@ everything outside its job — so build the refusals first.
 
 | Command | Does |
 |---|---|
-| `take <resource> [project]` | Adds the lock file for this session; `project` defaults to `ALL` |
+| `take <resource> [project]` | Adds the lock file for this session; `project` defaults to `ALL`. Records the **holder's project** too: its working copy's folder name, or a `--for <project>` flag, or `general` in the main folder |
 | `release <resource> [project]` | Removes this session's own lock file |
 | `list` | Shows every current lock, read from the remote |
 | `mine` | Shows the locks held in this session's name — run on start, on resume, after a context summary |
@@ -36,6 +36,8 @@ everything outside its job — so build the refusals first.
 
 - A resource name not in `locks/README.md`'s list.
 - A project that is not an existing project folder, or `ALL`.
+- A **holder's project** that has no folder on the remote's main — so a new project's session cannot
+  take any lock until its opening commit has landed.
 - A second lock on a resource that already has one, **unless** a permission is recorded (from the
   holder, or from the operator).
 - Releasing a lock this session does not hold.
@@ -52,6 +54,7 @@ everything outside its job — so build the refusals first.
 | A commit that would change a second file is refused before pushing | a variant that also writes outside `locks/` |
 | Releasing another session's lock is refused | the holder check removed |
 | An unreachable remote fails loudly and claims nothing | a wrong remote address |
+| A lock taken from a working copy records that folder as the holder's project; one whose project is not on main is refused | the holder-project check removed |
 | Two takeovers of one stale lock: exactly one succeeds | as the race above |
 
 ⚠ **A local bare repository can stand in for the git host in fast tests, but it cannot show how the real
@@ -64,3 +67,10 @@ list for that purpose.
 Install it once per machine through your config manager rather than running it from the repo — each
 working copy has its own copy of the repo's files, so a helper run from a working copy could be an older
 version than the one beside it.
+
+⚠ **Then check it is installed — on each machine, with a command (`command -v <helper>`).** A config
+manager that installs a folder like `~/.local/bin` from an allow-list skips a file missing from that
+list without a word, and git's own ignore files are a separate list. In the source fleet the helper was
+added to git's list, never to the config manager's, and sat uninstalled on every machine while its
+records said "deployed" — found by chance a day later, while checking something else. Its tests passed
+throughout, because they ran it from the repo.

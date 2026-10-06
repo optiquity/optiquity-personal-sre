@@ -236,14 +236,25 @@ if [ "$REPO_READY" = 1 ] && [ -d "$TARGET_DIR/.git" ]; then
   # file — all three created at open, not close.
   for f in README.md RULES.md TEMPLATE-SHORT.md TEMPLATE-LONG.md; do seed "$S/design/$f" "$TARGET_DIR/docs/design/$f"; done
   for f in README.md RULES.md TEMPLATE.md; do seed "$S/postmortems/$f" "$TARGET_DIR/docs/postmortems/$f"; done
-  for f in README.md TEMPLATE.md; do seed "$S/status/$f" "$TARGET_DIR/docs/status/$f"; done
+  for f in README.md RULES.md TEMPLATE.md; do seed "$S/status/$f" "$TARGET_DIR/docs/status/$f"; done
   seed "$S/design/TEMPLATE-SHORT.md" "$TARGET_DIR/docs/onboarding/DESIGN.md" \
        -e "1s|<project or thread>|onboarding|" -e "s|^opened:           <YYYY-MM-DD>|opened:           $TODAY|"
   seed "$S/postmortems/TEMPLATE.md" "$TARGET_DIR/docs/onboarding/POSTMORTEM.md" \
        -e "1s|<project or causal thread>|onboarding|" -e "s|^opened:             <YYYY-MM-DD>|opened:             $TODAY|"
+  # Its Summary is the registry's onboarding line, word for word (status/RULES.md S2); the note and
+  # the template's revision log (from its only line that is exactly "---") are dropped from the copy.
   seed "$S/status/TEMPLATE.md" "$TARGET_DIR/docs/onboarding/STATUS.md" \
        -e "1s|<project>|onboarding|" -e "s|^opened:        <YYYY-MM-DD>|opened:        $TODAY|" \
-       -e "s|^last-updated:  <YYYY-MM-DD>|last-updated:  $TODAY|"
+       -e "s|^last-updated:  <YYYY-MM-DD>|last-updated:  $TODAY|" \
+       -e "s|^status:        <.*|status:        open — bootstrapped; the setup checklist is docs/onboarding/PLAN.md|" \
+       -e "s|^\*\*Summary:\*\* .*|**Summary:** Finish standing up this repo (node role: <role>): first commit, config manager, secrets, permission preset.|" \
+       -e "s|^- \*\*<YYYY-MM-DD>\*\* — <what is true now>.*|- **$TODAY** — seeded by \`bootstrap.sh\`; nothing committed yet (unverified: check with \`git status\`)|" \
+       -e "s|^<!-- What a new session does first. One short paragraph. -->|Read \`docs/onboarding/PLAN.md\` — the checklist bootstrap left — and offer the next unchecked step.|" \
+       -e "s#^| 1 | <what> | .*#| 1 | The steps in \`docs/onboarding/PLAN.md\`, in order | operator · session | — | — |#" \
+       -e $'s#^| `DESIGN.md` | .*#| `PLAN.md` | open — the setup checklist |\\\n| `DESIGN.md` | draft — short form: this setup\'s decisions |#' \
+       -e "s#^| \`POSTMORTEM.md\` | .*#| \`POSTMORTEM.md\` | draft |#" \
+       -e '/^> \*\*Created when the project opens\*\*/,/^> In the copy, delete this note/{/^> In the copy/N;d;}' \
+       -e '/^---$/,$d' "${FILL[@]}"
   # Peer messaging. See skeleton/peer-messaging/PEER-MESSAGING.md §2.
   #   docs/peer-messaging/     the standard -- TRACKED (peers bootstrap from it)
   #   docs/peer-conversations/ the logs -- IGNORED

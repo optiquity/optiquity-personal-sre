@@ -13,9 +13,10 @@ user the next uncompleted step. Reference the framework's `GETTING-STARTED.md` a
   - `CLAUDE.md` (your rules file — the operator's guardrails; filled for this repo/role)
   - `PROJECTS.md` (the registry, with this onboarding project)
   - `PLAYBOOK.md` (the layered entrypoint — start of every session)
-  - `docs/design/` + `docs/postmortems/` (the design-pass and postmortem practice: rules + templates)
-  - `docs/onboarding/DESIGN.md` + `POSTMORTEM.md` (this project's own design doc and postmortem
-    draft, created at open, as the practice requires)
+  - `docs/design/` + `docs/postmortems/` + `docs/status/` (the design-pass, postmortem and status-file
+    practices: rules + templates)
+  - `docs/onboarding/DESIGN.md` + `POSTMORTEM.md` + `STATUS.md` (this project's own design doc,
+    postmortem draft and status file, created at open, as the practice requires)
   - `docs/peer-messaging/PEER-MESSAGING.md` (+ a `.gitignore` line for the peer logs)
   - `docs/onboarding/PLAN.md` (this file)
 

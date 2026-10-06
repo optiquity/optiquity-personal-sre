@@ -15,6 +15,7 @@ on a different project. With one session per repo, principle 12's default
 | File | What it is |
 |---|---|
 | `README.md` | This: the setup steps, then how the sessions work once it is set up |
+| [`STARTING.md`](STARTING.md) | **For you and your sessions:** how to start, resume and end each kind of session — the general session, a project session, a new project — with examples |
 | [`BUILD-LOCK-HELPER.md`](BUILD-LOCK-HELPER.md) | What the lock helper must do and refuse, and the tests that prove it — for your session to build |
 | [`../status/`](../status/README.md) | The status file every project gets — a prerequisite |
 
@@ -74,9 +75,9 @@ Create `locks/README.md` in the repo — a short page your sessions read — fro
 - **The lockable names:** one short lowercase name per machine or outside service from step 1's first
   answer. Any name not on this list is refused, so one machine can never be locked under two names.
 - **The file name rule:** `<name>--<project>.md`, where `<project>` is a project folder or `ALL`.
-- **What a lock file records:** in plain words — which session holds it, which machine that session runs
-  on, what it is changing, when it started and when it expects to finish, and who permitted it if the
-  resource was already locked.
+- **What a lock file records:** in plain words — which session holds it, **which project that session
+  works on**, which machine it runs on, what it is changing, when it started and when it expects to
+  finish, and who permitted it if the resource was already locked.
 - **The rules in Part 2 §4** below, in your own words.
 
 Show your operator the page before committing it.
@@ -84,22 +85,31 @@ Show your operator the page before committing it.
 ### Step 6 — build the lock helper
 
 Build it to [`BUILD-LOCK-HELPER.md`](BUILD-LOCK-HELPER.md), with every test there, each seen to fail on its
-planted defect. Then ask your operator one question: **may the helper commit and push lock changes
-without asking each time?** Its self-check (it can only ever change one file under `locks/`) is what
-makes that safe. Their answer is theirs; without it, every lock waits for them.
+planted defect. Install it through your config manager, then **check that it is actually installed on
+each machine** (`command -v <helper>`) before any record says so — see that file's last section. Then
+ask your operator one question: **may the helper commit and push lock changes without asking each
+time?** Its self-check (it can only ever change one file under `locks/`) is what makes that safe. Their answer is theirs; without it, every lock waits for them.
 
 ### Step 7 — the rules
 
 Propose adding to your rules file, under principle 12: *several sessions may work in this repo at once,
 each on one project, each in its own working copy, keeping its project's status file and taking a lock
-before changing a machine or outside service*. Then the peer-messaging standard's current version
+before changing a machine or outside service — except one **general session** in the main folder, which
+owns what is shared (the rules, the practices, the templates, the lockable list, the repo's tools) and
+work that spans projects*. Point the rule at [`STARTING.md`](STARTING.md) for how each kind is started.
+Then the peer-messaging standard's current version
 ([`../peer-messaging/`](../peer-messaging/PEER-MESSAGING.md)) for naming and logging.
 
 ### Step 8 — detection, then a pilot
 
 - **Propose three checks for your monitoring:** a lock older than a day; an open project whose status
   has not changed in two weeks; a working copy with unpushed work and no change for a week. Prove each by
-  planting the condition.
+  planting the condition. What worked in the source fleet: one result per check, listing every offender
+  (its holder, project and change for a lock); the locks and status files read from a clone your config
+  manager already keeps current, so the check needs no new credential; working copies on every machine
+  sessions run on, with a laptop that is away counted as unknown, not failed. ⚠ **A migration that stamps
+  every status file with one date makes them all go stale together two weeks later.** That is expected:
+  it is the prompt to update each one, or change its status word.
 - **Pilot with two sessions** on two low-risk projects for a few days before a third. Record every
   overlap and every machine change as it happens.
 
@@ -109,16 +119,11 @@ before changing a machine or outside service*. Then the peer-messaging standard'
 
 ### §1 Starting a session
 
-One command (Claude Code shown; check the flags in your version):
-
-```sh
-claude -w <project> -n <any-name> --remote-control <the-same-name>
-```
-
-`-w` gives it its own working copy and branch; Claude Code then refuses that session's edits to the main
-folder, so **it cannot commit another session's unfinished edits**. **The name is whatever you choose** —
-no format is required; it is how other sessions address this one. **On start, on resume, and after a
-context summary**, a session reads its project's `STATUS.md` and lists the locks held in its own name.
+**How to start, resume and end each kind — the general session, a project session, a new project — with
+examples: [`STARTING.md`](STARTING.md).** What the rest of this part relies on: a project session works
+in **its own working copy** (`claude -w <project> …`), so it cannot commit another session's unfinished
+edits; **the name is whatever you choose**; and **on start, on resume, and after a context summary**, a
+session reads its project's `STATUS.md` and lists the locks held in its own name.
 
 ### §2 Landing a commit
 
@@ -130,6 +135,10 @@ request to the operator stands alone — it names the session and the project, a
 status report.
 
 ### §3 Who edits what
+
+One **general session**, in the main folder, owns what is shared — the rules, the practices, the
+templates, the lockable list, the repo's tools — and work that spans projects. Owning is not exclusive
+editing; the table says who may edit what.
 
 | What | Who | How overlaps resolve |
 |---|---|---|
@@ -150,9 +159,10 @@ manager, so its changes go through git too.
 - **Locks are for changes, never reads**, and cover one change from its start until it is verified — not
   a project's whole life. Long-running jobs are machine state that monitoring watches, not locks. A
   session that only reads a locked resource treats what it sees as possibly mid-change.
-- **`ALL` is the default.** **Any second lock on a resource needs permission** from each existing holder,
-  or from the operator — recorded in the new lock. That permission covers sharing the lock only; the
-  change itself still needs the operator's approval.
+- **`ALL` is the default** — it is how much of the resource a change reaches, **never who owns it**; the
+  lock records the holder's project separately. **Any second lock on a resource needs permission** from
+  each existing holder, or from the operator — recorded in the new lock. That permission covers sharing
+  the lock only; the change itself still needs the operator's approval.
 - **The holder releases it** once the change is verified, and before the session ends.
 - **Deciding a lock is stale:** the holder is listed and answers → its answer decides · listed as
   offline, or listed but silent for ten minutes → **ask the operator** · not listed at all, while

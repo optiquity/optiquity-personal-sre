@@ -1,7 +1,8 @@
 # status — where each project stands
 
-> ⛏ **Version 0.1 — not yet proven in use.** The idea is settled; the section list is expected to change
-> as it is used. Your copy carries the version it came from, so a later change is easy to spot.
+> ⛏ **Version 1.0 — adopted in the source fleet, not yet proven by several sessions at once.** Its
+> sections held when every project's running notes moved into one; the pilot of several sessions may
+> still change them. Your copy carries the version it came from, so a later change is easy to spot.
 
 One file per project, created **when the project opens** — the same moment as its design doc
 ([`../design/`](../design/README.md)) and its postmortem draft ([`../postmortems/`](../postmortems/README.md)).
@@ -9,7 +10,12 @@ Opening a project produces all three.
 
 | File | What it is |
 |---|---|
+| [`RULES.md`](RULES.md) | **Whether, when, where and who** — read when a project opens, and when a session starts or resumes |
 | [`TEMPLATE.md`](TEMPLATE.md) | The blank status file. Copy it to `docs/<project>/STATUS.md` |
+
+**Opening a new project** — the order its design, postmortem, status file and registry row are written
+and landed in: [`../sessions/STARTING.md`](../sessions/STARTING.md) part C. It applies with one session
+per repo too.
 
 Explained in **[04 · Structure](../../guide/04-structure.md#where-a-project-stands--its-status-file)**.
 
@@ -37,10 +43,11 @@ Explained in **[04 · Structure](../../guide/04-structure.md#where-a-project-sta
 
 ## Install it
 
-1. **Copy `TEMPLATE.md`** to `docs/status/TEMPLATE.md` in your repo (`bootstrap.sh` does this for a new
-   repo).
+1. **Copy `RULES.md` and `TEMPLATE.md`** to `docs/status/` in your repo (`bootstrap.sh` does this for a
+   new repo).
 2. **Add one line to your rules file** where it already says a project gets a design doc and a
    postmortem at open: *"…and a status file from `docs/status/TEMPLATE.md`."*
-3. **Give existing open projects one** the next time a session works on each — copying their running
-   notes in unchanged, then shortening their registry entry to one line. ⚠ Do it for all of them in one
-   pass if you can: half the projects in one place and half in another is two places to look.
+3. **Give existing projects one** by [`RULES.md`](RULES.md) S8 — their running notes moved in unaltered,
+   by a script with a test that no line was lost, and each registry entry cut to one line. ⚠ Do it for
+   all of them in one pass if you can: half the projects in one place and half in another is two places
+   to look.

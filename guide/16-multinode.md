@@ -118,6 +118,11 @@ the same failure as a shared per-machine rules file), and **a coordinator that h
 session that the others depend on). What coordinates the sessions is what each already has: its
 project's documents, git, cross-session messaging, and the locks folder.
 
+**One general session, which is not a lead.** It works in the main folder and owns what no single project
+does — the rules, the practices, the templates, the repo's own tools — and work that spans projects. It
+assigns nothing and approves nothing; every other session works on exactly one project, in its own
+working copy.
+
 ### Why the locks live in the repo, not on the machines
 
 Putting a lock on the machine being changed looks natural, and fails three ways: there is no standard
@@ -134,13 +139,23 @@ it can change nothing else, you can give lock commits a standing approval while 
 waits for yours.
 
 **`ALL` by default, and a second lock needs permission.** A lock names the resource and the project —
-`nas--ALL`, or `nas--share-cleanup` beside it. Any second lock on a resource needs the holder's permission,
+`nas--ALL`, or `nas--share-cleanup` beside it. `ALL` is how much of the resource a change reaches,
+**never who owns it**: the lock records the holder's own project separately. Any second lock on a resource needs the holder's permission,
 or yours. The permission covers sharing the lock only; the change itself still needs your approval, so a
 peer never grants escalation ([03 · Governance](03-governance-rules.md), principle 13).
 
 **A lock outlives a session that forgets it.** So every session checks for its own locks when it starts,
 resumes or is summarised; your monitoring lists locks older than a day; and **"can't tell whether the
 holder is alive" is never "stale"** — a holder that is offline, or silent while it works, is your call.
+
+### Starting each kind of session
+
+Three kinds — the general session, a session for an existing project, and one for a new project — each
+started with one command and a first message:
+[`skeleton/sessions/STARTING.md`](../skeleton/sessions/STARTING.md), with examples. The new project is
+the one with an order to it: its design, postmortem draft, status file and registry row land as **one
+commit once the design is agreed**, and only then can it take a lock — the helper refuses a project
+whose folder is not yet on main, so no machine is changed for a project that does not yet exist.
 
 ### What it cannot do
 
