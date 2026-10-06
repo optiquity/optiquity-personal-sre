@@ -48,8 +48,11 @@ Propose, as one change:
 - ⚠ **Check every commit hook first.** From a linked working copy, git hands hooks `GIT_DIR` and
   `GIT_INDEX_FILE` as absolute paths. A hook that runs `git` in a scratch repository inherits them and can
   rewrite the **shared** config so that no checkout works. Test each hook by committing from a throwaway
-  working copy before any session uses one. *(This framework's own pre-commit hook has that defect today;
-  its fix is pending.)*
+  working copy before any session uses one. The fix is one line before a hook touches any other
+  repository: `unset $(git rev-parse --local-env-vars)` — git's own list of the variables that tie a
+  process to one repository. *(This framework's own pre-commit hook had that defect until 2026-10-06;
+  `scripts/test_pre_commit_hook.py` now proves, in CI, that a commit from a working copy and a
+  `git commit -a` both work and both still block a leak.)*
 
 ### Step 3 — give every project a status file
 

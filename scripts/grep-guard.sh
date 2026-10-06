@@ -158,6 +158,16 @@ SELFTEST_TMP=""
 self_test() {
   local self tmp ok=0 bad=0 i name content have_git=1 modes
   self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  # Run as a git hook, this process inherits the REAL repository's GIT_DIR (from a linked worktree) and
+  # GIT_INDEX_FILE (an absolute .git/index.lock under `git commit -a`). Left set, the throwaway repos below
+  # would re-initialise the real git dir (writing core.bare = true into the shared config, which breaks
+  # every checkout) and stage the planted leaks into the real commit's index. Clear every variable git
+  # names as local to a repository, so each throwaway repo is only itself. The scan of the real commit
+  # runs in a separate process (pre-commit.hook) and keeps them.
+  if command -v git >/dev/null 2>&1; then
+    # shellcheck disable=SC2046
+    unset $(git rev-parse --local-env-vars)
+  fi
   # global, not local: the EXIT trap runs after the function's scope is gone on some bash versions
   SELFTEST_TMP="$(mktemp -d "${TMPDIR:-/tmp}/grep-guard-selftest.XXXXXX")"
   trap 'rm -rf "${SELFTEST_TMP:-}"' EXIT

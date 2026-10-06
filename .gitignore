@@ -24,6 +24,9 @@ __pycache__/
 # publishing it would publish what it protects. See guide/19-sharing.md.
 .grep-guard.local
 
+# AI sessions' git working copies (skeleton/sessions/README.md step 2) — never commit one inside another
+.claude/worktrees/
+
 # Local, never-committed secrets — belt and braces; grep-guard is the real gate.
 .env
 .env.*

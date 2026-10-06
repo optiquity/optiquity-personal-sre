@@ -1,0 +1,3 @@
+# Gitignored files every new git working copy needs (skeleton/sessions/README.md step 2) — copied in
+# when an AI session creates its working copy. The leak guard refuses every commit without its names list.
+.grep-guard.local

@@ -3,6 +3,26 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-06 — the pre-commit hook works from a git working copy, and with `commit -a`
+
+**Re-check your own repo:** take the new `scripts/grep-guard.sh`. If `git status` in your repo ever said
+*"this operation must be run in a work tree"*, run `git config core.bare false` in the main checkout.
+
+- **Fixed: the hook's self-test could corrupt the repository.** Git hands a hook the real repository's
+  `GIT_DIR` (from a linked working copy) and `GIT_INDEX_FILE` (an absolute path under `git commit -a`).
+  The self-test's throwaway repositories inherited them: from a working copy it wrote `core.bare = true`
+  into the shared config, after which no checkout worked; under `commit -a` it staged its planted leaks
+  into the real commit, which then failed with "invalid object" after the scan had read the wrong index.
+  It now clears them first (`unset $(git rev-parse --local-env-vars)`); the scan of the real commit is
+  unchanged.
+- **New test, run in CI:** `scripts/test_pre_commit_hook.py` installs the hook as documented in a fresh
+  repository and commits both ways — each clean commit must go through, each leak must still be blocked,
+  and the repository must be intact afterwards. Against the previous guard, 4 of its 7 checks fail.
+- Several AI sessions in one repo (chapter 16, `skeleton/sessions/`) can now use working copies of this
+  repo; the setup guide's hook warning says how the fix was made, for your own hooks. This repo now
+  follows that guide's step 2 itself: `.claude/worktrees/` in `.gitignore`, and a `.worktreeinclude`
+  that copies the leak guard's names list into each new working copy.
+
 ## 2026-10-05 — the status file in the rules; no session-name format
 
 **Re-check your own repo:** rules 8 and 15 if you copied them from the templates.
