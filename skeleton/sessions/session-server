@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""session-server — start Claude Code's Remote Control session server for your repo. Stop it with Ctrl-C.
+
+Part of skeleton/sessions — how to use it: STARTING.md part D. Sessions you open from the Claude app (on a
+computer, in a browser or on a phone), choosing this server, each run on this machine in their own git
+working copy under .claude/worktrees/, started from your remote's main ("baseRef": "fresh" — README.md
+Part 1, step 2). Type /project in one to choose its project (project/SKILL.md).
+
+  session-server [more options, passed on to `claude remote-control`]
+
+Run it in your repo's main folder, or set SESSION_REPO to that folder. It refuses a working copy, and
+refuses to start a second server in the same folder. It starts no session in the main folder: that folder
+is the general session's. Install it on each machine that runs sessions, through your config manager,
+then check it is installed (`command -v session-server`). The flags are Claude Code's; check them in your
+version (`claude remote-control --help`).
+"""
+import os
+import socket
+import subprocess
+import sys
+
+REPO = os.environ.get("SESSION_REPO") or os.getcwd()
+CAPACITY = "3"       # sessions at once: start small for the pilot (README.md Part 1, step 8), raise it once proven
+MODE = "default"     # every action asks you; move to "auto" only once the pilot shows the sessions keep your rules
+
+
+def cwd_of(pid):
+    """The working folder of a process: /proc on Linux, lsof elsewhere; '' when it cannot be read."""
+    try:
+        return os.readlink("/proc/%s/cwd" % pid)
+    except OSError:
+        pass
+    out = subprocess.run(["lsof", "-a", "-p", pid, "-d", "cwd", "-Fn"], capture_output=True, text=True).stdout
+    paths = [ln[1:] for ln in out.splitlines() if ln.startswith("n")]
+    return paths[0] if paths else ""
+
+
+def running_here():
+    """PIDs of `claude remote-control` processes whose working folder is REPO."""
+    ps = subprocess.run(["ps", "-eo", "pid=,args="], capture_output=True, text=True)
+    here = os.path.realpath(REPO)
+    found = []
+    for line in ps.stdout.splitlines():
+        pid, _, args = line.strip().partition(" ")
+        toks = args.split()
+        if not any(os.path.basename(t) == "claude" and nxt == "remote-control" for t, nxt in zip(toks, toks[1:])):
+            continue
+        cwd = cwd_of(pid)
+        if cwd and os.path.realpath(cwd) == here:
+            found.append(pid)
+    return found
+
+
+def main():
+    if not os.path.isdir(os.path.join(REPO, ".git")):
+        print("session-server: %s is not a repo's main folder (a working copy has a .git file, not a folder) — "
+              "run it in the main folder, or set SESSION_REPO" % REPO, file=sys.stderr)
+        return 1
+    pids = running_here()
+    if pids:
+        print("session-server: a session server is already running in %s (pid %s). Stop it with Ctrl-C in its "
+              "terminal first." % (REPO, ", ".join(pids)), file=sys.stderr)
+        return 1
+    host, name = socket.gethostname().split(".")[0], os.path.basename(os.path.realpath(REPO))
+    print("Session server for %s on %s (up to %s sessions at once)." % (name, host, CAPACITY))
+    print("Open a session from the Claude app and choose this server (%s · %s). Then type /project in it." % (host, name))
+    print("Stop the server: Ctrl-C.")
+    sys.stdout.flush()
+    os.chdir(REPO)
+    args = ["claude", "remote-control", "--spawn", "worktree", "--capacity", CAPACITY, "--permission-mode", MODE,
+            "--no-create-session-in-dir"] + sys.argv[1:]
+    try:
+        os.execvp("claude", args)
+    except OSError as e:
+        print("session-server: cannot start claude: %s" % e, file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

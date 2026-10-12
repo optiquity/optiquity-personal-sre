@@ -17,6 +17,7 @@ on a different project. With one session per repo, principle 12's default
 | `README.md` | This: the setup steps, then how the sessions work once it is set up |
 | [`STARTING.md`](STARTING.md) | **For you and your sessions:** how to start, resume and end each kind of session — the general session, a project session, a new project — with examples |
 | [`BUILD-LOCK-HELPER.md`](BUILD-LOCK-HELPER.md) | What the lock helper must do and refuse, and the tests that prove it — for your session to build |
+| [`session-server`](session-server) · [`session-projects`](session-projects) · [`project/`](project/SKILL.md) | *Optional:* starting sessions from the Claude app — a starter for Claude Code's Remote Control server, a project lister, and the `/project` command that records a session's project and gives you its `/rename` line ([`STARTING.md`](STARTING.md) part D); with [`tests/`](tests/test_session_tools.py) |
 | [`../status/`](../status/README.md) | The status file every project gets — a prerequisite |
 
 ---
@@ -46,6 +47,9 @@ Propose, as one change:
   starts from the remote's main. The main folder falls behind while sessions push from their own copies.
 - **A `.worktreeinclude`** listing the files from step 1's last answer. ⚠ A leak guard that fails closed
   without its private list will refuse every commit in a working copy that lacks it.
+- *Only if you will start sessions from the Claude app* ([`STARTING.md`](STARTING.md) part D):
+  **`.claude/session-project` in the tracked `.gitignore`** too — the file `/project` writes in a session's
+  working copy.
 - ⚠ **Check every commit hook first.** From a linked working copy, git hands hooks `GIT_DIR` and
   `GIT_INDEX_FILE` as absolute paths. A hook that runs `git` in a scratch repository inherits them and can
   rewrite the **shared** config so that no checkout works. Test each hook by committing from a throwaway
@@ -97,6 +101,11 @@ each on one project, each in its own working copy, keeping its project's status 
 before changing a machine or outside service — except one **general session** in the main folder, which
 owns what is shared (the rules, the practices, the templates, the lockable list, the repo's tools) and
 work that spans projects*. Point the rule at [`STARTING.md`](STARTING.md) for how each kind is started.
+Two more sentences belong with it. *A session may edit a related project's files when its work needs them,
+saying so in the commit and messaging that project's session first if one is open — isolation between
+sessions is best effort, not strict at any cost.* And, if you will use the session server (part D): *a
+session started by the session server runs on this machine in its own working copy, whatever the server's
+own instructions say, and follows this file.*
 Then the peer-messaging standard's current version
 ([`../peer-messaging/`](../peer-messaging/PEER-MESSAGING.md)) for naming and logging.
 
@@ -145,6 +154,7 @@ editing; the table says who may edit what.
 | The project's own folder | its session | — |
 | Its own registry line, its own dashboard data | its session | at landing |
 | Shared code several projects use | any session that needs to, saying so in the commit | at landing; message the other session if its work is affected |
+| A related project's files | a session whose work needs them, saying so in the commit | message that project's session first if one is open; at landing — isolation is best effort, not strict at any cost |
 | Rules files and templates | any session, **with the operator's approval** | at landing; then it tells every live session to re-read them |
 | The agent's per-machine memory, if it keeps one | any session — behavioural notes only | ⚠ not in git and shared by every working copy, so a later write silently replaces an earlier one: one small edit at a time, re-read straight after |
 | Exchanges with **another repo's** sessions | any session talking to that peer | append-only, per the peer-messaging standard |
@@ -195,6 +205,10 @@ manager, so its changes go through git too.
 
 - **A session that changes a machine without taking a lock.** Lock-taking is a rule, not enforced;
   deciding which commands are "state-changing" in a hook is not reliable. A missing lock leaves no trace
-  except the machine's own state.
+  except the machine's own state. **One practice being tried in the source fleet:** every request to the
+  operator for a change to a machine or service carries a `Lock:` line naming the lock to take before its
+  first step (or *none — read-only*), and every step list for such a change starts with taking it —
+  including steps the operator does by hand, which is where the misses were. A missing line then shows at
+  the moment the operator approves.
 - **Checks scheduled inside a session die with it** — the status file's dated list is the record.
 - **Anything a pilot has not yet shown** — see the banner.

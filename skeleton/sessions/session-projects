@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""session-projects — the projects in your repo, to choose one for a session.
+
+Part of skeleton/sessions — used by the /project command (project/SKILL.md), and in a terminal before
+`claude -w <project>` (STARTING.md). Lists `all` (the general session), every open and pending project with
+its one-line summary, and `new` (a project with no folder yet), read from the registry (PROJECTS.md, the
+index table seeded by bootstrap.sh) on your remote's main — so a main folder that has fallen behind, as it
+does while sessions push from their own working copies, cannot mislead.
+
+  session-projects          open and pending projects
+  session-projects --all    every project
+
+Run it anywhere in your repo, or set SESSION_REPO to its main folder. Exit: 0 listed · 1 the registry
+unreadable, or a row in its project table malformed · 2 usage. If the remote cannot be reached, the local
+copy is listed and a warning says so.
+"""
+import argparse
+import os
+import re
+import subprocess
+import sys
+
+REMOTE, BRANCH, INDEX = "origin", "main", "PROJECTS.md"
+ROW = re.compile(r"^\| ([a-z0-9][a-z0-9-]*) \| \*\*(\w+)\*\* \| (.+?) \| (.+?) \|\s*$")
+STATUSES = ("pending", "open", "stable", "resolved", "deprecated", "superseded", "cancelled")
+FIRST = ("open", "pending")
+WIDTH = 96                     # a summary longer than this is cut, with an ellipsis
+
+
+class Bad(Exception):
+    pass
+
+
+def repo():
+    if os.environ.get("SESSION_REPO"):
+        return os.environ["SESSION_REPO"]
+    top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+    if top.returncode != 0:
+        raise Bad("not inside a git repo — run it in your repo, or set SESSION_REPO")
+    return top.stdout.strip()
+
+
+def source(root):
+    """(text of the registry, where it came from) — the remote's main when it can be fetched, else the local copy."""
+    git = ["git", "-C", root]
+    try:
+        f = subprocess.run(git + ["fetch", "--quiet", "--no-tags", REMOTE, BRANCH],
+                           capture_output=True, text=True, timeout=30)
+        if f.returncode == 0:
+            s = subprocess.run(git + ["show", "FETCH_HEAD:" + INDEX], capture_output=True, text=True, timeout=30)
+            if s.returncode == 0:
+                return s.stdout, "the remote's main"
+        why = (f.stderr or "").strip().splitlines()[-1:] or ["git fetch failed"]
+    except subprocess.TimeoutExpired:
+        why = ["no answer from the remote in 30 s"]
+    try:
+        with open(os.path.join(root, INDEX), encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError as e:
+        raise Bad("cannot read %s: %s" % (INDEX, e))
+    print("⚠ remote not reachable (%s) — this is the local copy in %s, which may be behind." % (why[0], root),
+          file=sys.stderr)
+    return text, "the local copy (may be behind)"
+
+
+def projects(text):
+    """[(name, status, summary)] from the table under '## Projects'. Any other row in that table is refused."""
+    rows, inside = [], False
+    for n, line in enumerate(text.splitlines(), 1):
+        if line.startswith("## "):
+            inside = line.strip() == "## Projects"
+            continue
+        if not inside or not line.startswith("|"):
+            continue
+        if line.startswith("| Project |") or re.match(r"^\|[-| ]+\|\s*$", line):
+            continue
+        m = ROW.match(line)
+        if not m or m.group(2) not in STATUSES:
+            raise Bad("%s line %d is not a project row: %s" % (INDEX, n, line[:100]))
+        rows.append((m.group(1), m.group(2), m.group(3)))
+    if not rows:
+        raise Bad("%s has no project rows under '## Projects'" % INDEX)
+    return rows
+
+
+def cut(text):
+    return text if len(text) <= WIDTH else text[:WIDTH - 1].rstrip() + "…"
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--all", action="store_true", help="every project, not only open and pending ones")
+    a = ap.parse_args()
+    try:
+        text, where = source(repo())
+        rows = projects(text)
+    except Bad as e:
+        print("session-projects: %s" % e, file=sys.stderr)
+        return 1
+    shown = [r for r in rows if r[1] in FIRST]
+    rest = [r for r in rows if r[1] not in FIRST]
+    if a.all:
+        shown += rest
+    w = max([len("new <name>")] + [len(r[0]) for r in shown])
+    sw = max([len(r[1]) for r in shown] + [0])
+    print("Projects in this repo — from %s:" % where)
+    lines = [("all", "", "the general session: the rules, shared tools, work across projects")]
+    lines += shown
+    lines += [("new <name>", "", "a project with no folder yet — lower-case letters, digits and hyphens")]
+    for i, (name, status, summary) in enumerate(lines, 1):
+        print("%3d  %-*s  %-*s  %s" % (i, w, name, sw, status, cut(summary)))
+    if rest and not a.all:
+        print("Not listed: %d stable, resolved or closed — session-projects --all" % len(rest))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

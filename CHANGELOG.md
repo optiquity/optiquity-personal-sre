@@ -3,6 +3,28 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-10-12 — sessions from the Claude app; the project a lock records; related projects' files
+
+**Re-check your own repo:** your lock helper, if your sessions will run through a session server — it must
+refuse a working copy with no project rather than record `general`.
+
+- **New: starting sessions from the Claude app** ([`skeleton/sessions/STARTING.md`](skeleton/sessions/STARTING.md)
+  part D) through Claude Code's Remote Control server, with three starters and their tests:
+  [`session-server`](skeleton/sessions/session-server) (a working copy per session, a small count, every action
+  asked, no session in the main folder, no second server), [`session-projects`](skeleton/sessions/session-projects)
+  (the projects from the registry on the remote's main) and a [`/project`](skeleton/sessions/project/SKILL.md)
+  command. Each test has a planted defect it is seen to catch, in CI.
+- **The lock helper's holder project** gains a step: in a working copy the server named, the project `/project`
+  recorded there; a working copy with no project is refused ([`BUILD-LOCK-HELPER.md`](skeleton/sessions/BUILD-LOCK-HELPER.md)).
+- **A related project's files** may be edited when a session's work needs them, said in the commit; isolation
+  between sessions is best effort, not strict at any cost (the setup's rules sentence, chapter 16, the
+  who-edits table).
+- **Learned in the source fleet:** the server tells each session it is running in a cloud container and to push
+  a branch of its own — a rules sentence counters it; opening a session in the app without choosing the server
+  starts an unrelated scratch session; and a command cannot rename a session, so `/project` hands the operator
+  the `/rename` line. And a practice being tried against missed locks: a `Lock:` line in every request for a
+  change, including the steps the operator does by hand.
+
 ## 2026-10-06 — starting each kind of session; opening a project; the status file at 1.0
 
 **Re-check your own repo:** your registry, if it still holds each project's running notes; your lock

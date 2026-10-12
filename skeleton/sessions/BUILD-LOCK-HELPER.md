@@ -12,7 +12,7 @@ everything outside its job — so build the refusals first.
 
 | Command | Does |
 |---|---|
-| `take <resource> [project]` | Adds the lock file for this session; `project` defaults to `ALL`. Records the **holder's project** too: its working copy's folder name, or a `--for <project>` flag, or `general` in the main folder |
+| `take <resource> [project]` | Adds the lock file for this session; `project` defaults to `ALL`. Records the **holder's project** too — see *The holder's project* below |
 | `release <resource> [project]` | Removes this session's own lock file |
 | `list` | Shows every current lock, read from the remote |
 | `mine` | Shows the locks held in this session's name — run on start, on resume, after a context summary |
@@ -32,12 +32,29 @@ everything outside its job — so build the refusals first.
 5. **Fixed commit-message prefix** (`lock:` / `unlock:`), so lock commits can be filtered out of history.
 6. **Time-limit every network call and fail loudly.** Never assume a lock was taken.
 
+## The holder's project
+
+Every lock records the project its holder works on, as well as its name and machine. In this order:
+
+1. a **`--for <project>`** flag, when given;
+2. else the **working copy's folder**, when it names a project (`claude -w <project>` gives
+   `.claude/worktrees/<project>/`);
+3. else the project **`/project` recorded** in that working copy, in `.claude/session-project` — a session
+   started by the session server works in a folder the server names, not after a project
+   ([`STARTING.md`](STARTING.md) part D, [`project/SKILL.md`](project/SKILL.md));
+4. else **`general`** — but only in the main folder, the general session's.
+
+**A working copy that names no project and records none is refused**, never taken for the general session.
+The recorded file is read only inside a working copy; the main folder ignores one.
+
 ## What it must refuse
 
 - A resource name not in `locks/README.md`'s list.
 - A project that is not an existing project folder, or `ALL`.
 - A **holder's project** that has no folder on the remote's main — so a new project's session cannot
   take any lock until its opening commit has landed.
+- A working copy with **no project** — its folder names none and nothing is recorded in it.
+- A **recorded project** that is not a valid name, or that disagrees with a folder that names a project.
 - A second lock on a resource that already has one, **unless** a permission is recorded (from the
   holder, or from the operator).
 - Releasing a lock this session does not hold.
@@ -55,6 +72,8 @@ everything outside its job — so build the refusals first.
 | Releasing another session's lock is refused | the holder check removed |
 | An unreachable remote fails loudly and claims nothing | a wrong remote address |
 | A lock taken from a working copy records that folder as the holder's project; one whose project is not on main is refused | the holder-project check removed |
+| A session-server working copy records the project `/project` wrote there; a record naming no project on main, a malformed record, or one disagreeing with the folder is refused; the main folder ignores a record | the recorded project ignored · the disagreement check removed · the name check on the record removed |
+| A working copy that names no project and records none is refused | a fallback to `general` |
 | Two takeovers of one stale lock: exactly one succeeds | as the race above |
 
 ⚠ **A local bare repository can stand in for the git host in fast tests, but it cannot show how the real

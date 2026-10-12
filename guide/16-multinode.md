@@ -121,7 +121,8 @@ project's documents, git, cross-session messaging, and the locks folder.
 **One general session, which is not a lead.** It works in the main folder and owns what no single project
 does — the rules, the practices, the templates, the repo's own tools — and work that spans projects. It
 assigns nothing and approves nothing; every other session works on exactly one project, in its own
-working copy.
+working copy — and may edit a related project's files when its work needs them, saying so in the commit:
+the isolation is best effort, not strict at any cost.
 
 ### Why the locks live in the repo, not on the machines
 
@@ -157,10 +158,20 @@ the one with an order to it: its design, postmortem draft, status file and regis
 commit once the design is agreed**, and only then can it take a lock — the helper refuses a project
 whose folder is not yet on main, so no machine is changed for a project that does not yet exist.
 
+**From the Claude app, through the session server.** Claude Code's Remote Control server can start sessions
+on a machine for you to open from the app, each in its own working copy — no terminal per session
+([`STARTING.md`](../skeleton/sessions/STARTING.md) part D). Two things it does not do for you: its working
+copies are not named after a project, so a `/project` command records the project for the lock helper; and
+a command cannot rename a session, so `/project` hands you the `/rename` line. And one thing it does that
+you must counter: it tells each session it is running in a cloud container, and to push a branch of its
+own — one sentence in your rules says otherwise.
+
 ### What it cannot do
 
 A session that changes a machine **without** taking a lock leaves no trace except the machine's state:
-lock-taking is a rule, not something a hook can reliably enforce. And none of this has yet survived a
+lock-taking is a rule, not something a hook can reliably enforce. In the source fleet the misses were
+changes the session prepared and the operator carried out by hand; the practice now being tried puts a
+`Lock:` line in every request for a change, so a missing one shows when the operator approves. And none of this has yet survived a
 week of sessions working side by side — the pilot comes first, and this section will change with it.
 
 ## A fleet view

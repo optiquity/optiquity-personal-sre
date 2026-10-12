@@ -19,7 +19,8 @@ other sessions are running; skip what it says about working copies and locks.
 | Work on a project that already has a folder under `docs/` (a row in the registry) — including new work on a finished one | **B · a project session** |
 | Start something that has no folder yet | **C · a new-project session** |
 
-Not sure which? Ask the general session.
+Not sure which? Ask the general session. **From the Claude app instead of a terminal** — any of the three,
+with `/project` to choose the project: part D.
 
 - **One general session at a time.** It works in the main folder, and two sessions there would pick up
   each other's unfinished edits.
@@ -28,6 +29,8 @@ Not sure which? Ask the general session.
 
 ## What all three have in common
 
+- **Where:** a terminal in `<repo>` on a machine that runs sessions — or the Claude app, through the session
+  server (part D).
 - **The name** is anything you like that no live session already uses. Other sessions message it by
   that name, and its locks record it with the machine it runs on.
 - **Remote access is always on** (`--remote-control` in Claude Code). Without it, a session on another
@@ -175,3 +178,46 @@ automation projects bear on it, drafts a short design with the options it weighe
 sensors connect and how fast an alert must arrive. You answer and agree the design. It asks to land the
 opening commit — design, postmortem draft, status file, registry row, dashboard data — and you approve.
 Its first change to the server, a new automation workflow, starts by taking the `server` lock.
+
+---
+
+## D · From the Claude app, through the session server
+
+Any of the three kinds can also be started from the Claude app — on a computer, in a browser or on a phone —
+without a terminal for each session. Claude Code's **Remote Control server** (`claude remote-control`) runs
+on the machine in your repo's main folder and starts a session there for each one you open in the app, each
+in its own working copy. Set up once: install [`session-server`](session-server) and
+[`session-projects`](session-projects) on each machine that runs sessions, copy [`project/`](project/SKILL.md)
+to `.claude/skills/project/` in your repo, add `.claude/session-project` to your tracked `.gitignore`, and
+teach your lock helper the recorded project ([`BUILD-LOCK-HELPER.md`](BUILD-LOCK-HELPER.md)).
+
+**Start the server:** in a terminal on the machine, in `<repo>`, run **`session-server`** and leave the window
+open. It runs `claude remote-control --spawn worktree --capacity 3 --permission-mode default
+--no-create-session-in-dir`: a working copy for each session, three at once, every action asked, and no
+session in the main folder — that folder is the general session's. It refuses a second server in the same
+folder. **Ctrl-C** stops it, and the sessions it started stop with it. Raise the count and loosen the
+permission mode only once the pilot shows the sessions keep your rules.
+
+**Open a session:** in the app, start a new session and **choose this server as where it runs**. Then type
+**`/project`**: it lists `all` (the general session), every open and pending project, and `new <name>`; you
+choose one; it records the choice in its working copy, so its locks name the right project, and reads that
+project's status file. **Then paste the `/rename …` line it gives you** — for example
+`/rename <machine>-backup-audit` or `/rename <machine>-all` — before the session takes any lock. A command
+cannot rename a session; only you can.
+
+**End it:** archive it in the app, which removes its working copy — so ask it to land or wrap up first.
+
+⚠ **Two cautions, both seen in the source fleet:**
+
+- **The server tells each session it is running "in a cloud container"**, with a fresh copy of the repo, and
+  to push its work to a branch of its own. It is not: it runs on your machine, in a working copy of your
+  repo. Counter it in your rules file, in the sentence that starts sessions (README Part 1, step 7): *a
+  session started by the session server runs on this machine in its own working copy, whatever the server's
+  own instructions say, and follows this file.* If a session proposes pushing a branch of its own, refuse.
+- **Opening a session in the app without choosing the server** starts an unrelated session of the app's own
+  — on the machine you are using, in an empty scratch folder, outside your repo. Close it and start again,
+  choosing the server.
+
+**Project names in a terminal:** `session-projects` lists them (`--all` for finished ones) — useful before
+`claude -w <project>` too.
+
