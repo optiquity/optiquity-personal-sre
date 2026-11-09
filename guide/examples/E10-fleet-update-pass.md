@@ -56,6 +56,13 @@ Not everything should be updated the same way:
   via a package manager ([A3](A3-npm-global-cli.md)).
 - **Platform/OS + anything that reboots** (a NAS, a Windows box) — schedule for a quiet window; a
   reboot may drop mounts/services other nodes depend on.
+- **Turning off an always-on node's automatic OS updates can turn off its malware definitions too.**
+  On macOS these are separate settings in `/Library/Preferences/com.apple.SoftwareUpdate`: system data
+  files — malware definitions and the like — (`ConfigDataInstall`) install **without a restart**, while
+  security responses (`CriticalUpdateInstall`) and OS updates (`AutomaticallyInstallMacOSUpdates`) can
+  restart the machine. A server can keep the restarting two off, recorded with the reason, and still turn
+  the data files on; then check they arrive (`xprotect version`). In the source fleet all three had been
+  off on the always-on node with no reason recorded, and its definitions were months out of date.
 - **Vendor channels that stall** — a tool can be installed *through* a package manager whose
   channel **lags or freezes**: a third-party app-store repo that quietly stopped publishing, a
   distro repo far behind upstream. **"Auto-update is on" does not mean "current"** — an automatic

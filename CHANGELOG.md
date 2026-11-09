@@ -3,6 +3,19 @@
 What changed in this framework, newest first — so an adopter can tell what to re-check in their own
 repo. One entry per published phase of work. (Started 2026-09-23; earlier history is in `git log`.)
 
+## 2026-11-09 — the `/rename` line comes last; leftover working copies; an always-on Mac's malware definitions
+
+**Re-check your own repo:** your `/project` command, if you copied it — the line to paste must end its reply;
+and an always-on Mac whose automatic updates you turned off — its malware definitions may be off with them.
+
+- **`/project` ends its reply with the `/rename` line**, alone in a code block
+  ([`skeleton/sessions/project/SKILL.md`](skeleton/sessions/project/SKILL.md) step 6): given as one bullet among
+  several, it was missed.
+- **A session never archived leaves its working copy and branch behind** — how to find them and what to check
+  before removing one ([`skeleton/sessions/STARTING.md`](skeleton/sessions/STARTING.md) part D).
+- **Turning off a Mac server's automatic updates can turn off its malware definitions too** — the data-file
+  setting is separate and needs no restart ([E10](guide/examples/E10-fleet-update-pass.md) § 2).
+
 ## 2026-10-12 — sessions from the Claude app; the project a lock records; related projects' files
 
 **Re-check your own repo:** your lock helper, if your sessions will run through a session server — it must

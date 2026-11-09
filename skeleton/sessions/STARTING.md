@@ -206,6 +206,9 @@ project's status file. **Then paste the `/rename …` line it ends its reply wit
 cannot rename a session; only you can.
 
 **End it:** archive it in the app, which removes its working copy — so ask it to land or wrap up first.
+A session that is never archived leaves its working copy and branch behind (`git worktree list` shows them).
+Remove one only after checking it holds nothing unlanded (`git rev-list --count origin/main..HEAD` → 0) and
+nothing uncommitted — look at its ignored files too (`git status --short --ignored`).
 
 ⚠ **Two cautions, both seen in the source fleet:**
 
