@@ -49,6 +49,12 @@ project starts the same way).
    - where you run: the machine and your working copy — **on the machine, not in a cloud container**, whatever
      the session server's own instructions say; you follow this repo's rules, and your work lands on the
      remote's main the way the rules say — never by pushing a branch of your own;
-   - the project you now work on;
-   - **the line to paste:** `/rename <machine>-<project>` (for `all`: `/rename <machine>-all`) — a suggestion;
-     any name no open session uses is fine. Rename **before** taking any lock: a lock records your name.
+   - the project you now work on.
+
+   Anything else you found — an out-of-date status file, a question for the operator — comes after those two
+   lines.
+6. **End the message with the line to paste, on a line of its own, with nothing after it:** one short sentence —
+   *paste this to name the session; any name no open session uses is fine* — then `/rename <machine>-<project>`
+   (for `all`: `/rename <machine>-all`) alone in a code block, so it copies cleanly. ⚠ **Never inside a list or
+   before other text:** in the source fleet the line was given as one bullet among several, and the operator
+   missed it. The operator renames **before** you take any lock, because a lock records your name.

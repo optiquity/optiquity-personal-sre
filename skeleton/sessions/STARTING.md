@@ -201,7 +201,7 @@ permission mode only once the pilot shows the sessions keep your rules.
 **Open a session:** in the app, start a new session and **choose this server as where it runs**. Then type
 **`/project`**: it lists `all` (the general session), every open and pending project, and `new <name>`; you
 choose one; it records the choice in its working copy, so its locks name the right project, and reads that
-project's status file. **Then paste the `/rename …` line it gives you** — for example
+project's status file. **Then paste the `/rename …` line it ends its reply with** — for example
 `/rename <machine>-backup-audit` or `/rename <machine>-all` — before the session takes any lock. A command
 cannot rename a session; only you can.
 
